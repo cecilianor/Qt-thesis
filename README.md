@@ -1,8 +1,15 @@
-# mbtest
+# Qt Bachelor Thesis Repository
+## About this Repository
+The following repository is dedicated to the bachelor thesis work by Eimen Oueslati, Nils Petter Skålerud, and Cecilia Norevik Bratlie. The developed software is for the Qt Group.
+
+The core goal is to develop a native and open-source parser and renderer for the MapBox vector format using the Qt framework. The binary data is retrieved from a server, parsed, and rendered on the screen. The Qt framework offers cross-platform C++ APIs for all essential tasks, including networking, binary file parsing, vector data rendering, and creating user interface elements.
+
+
+## Building Qt From Source and Rendering a Tile
 
 This is just a small test application to see if we can render MapBox maps with Qt.
 
-## Getting started
+### Getting started
 
 Build qt from source: https://code.qt.io/cgit/qt/qt5.git/ (Needed because of a recent bugfix in qtgrpc).
 
@@ -29,7 +36,7 @@ Compile with (e.g. in a new folder qt5-build, next to your qt5 folder)
 If you build Qt sucessfully, make sure that QtCreator knows where your Qt build is.
 Then you can just open the CMakeList.txt file of this project in QtCreator.
 
-## Test Data
+### Test Data
 
 The testdata contains a style sheet (tiles.json) from maptiler.com as well as three tiles (e.g. z12x2170y1190.mvt), also downloaded from maptiler.com.
 
@@ -47,22 +54,22 @@ that forwards to:
 (You have to fill out x,y,z yourself)
 
 
-## Status
+### Status
 
 * 28.12.23: The json style and the mvt tiles are parsed (incompletely) and some fill rendering is happening.
 * 29.12.23: Improved rendering a bit. Colors seem correct in the example and added lines.
 
 
-## References:
+### References:
 
-### GRPC intro
+#### GRPC intro
 https://grpc.io/docs/what-is-grpc/introduction/
 
-### Vector tile standard (the GRPC part)
+#### Vector tile standard (the GRPC part)
 https://docs.mapbox.com/data/tilesets/guides/vector-tiles-standards/
 
-### Style spec (the json part)
+#### Style spec (the json part)
 https://docs.mapbox.com/style-spec/guides/
 
-### Webmercator toy (to find the correct tile)
+#### Webmercator toy (to find the correct tile)
 https://www.maptiler.com/google-maps-coordinates-tile-bounds-projection
