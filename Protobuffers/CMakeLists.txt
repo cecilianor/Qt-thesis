@@ -15,6 +15,7 @@ qt_standard_project_setup()
 
 add_executable(Protobuffers
   main.cpp
+  VectorTiles.h
 )
 
 qt_add_protobuf(Protobuffers
