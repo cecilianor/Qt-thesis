@@ -36,7 +36,7 @@ class PolygonFeature : protected AbstractLayerFeature
 {
 public:
     PolygonFeature(int id);
-    AbstractLayerFeature::featureType type() const override { return LayerFeature::featureType::polygon; }
+    AbstractLayerFeature::featureType type() const override { return AbstractLayerFeature::featureType::polygon; }
     QRect boundingRect() const override;
     QPainterPath polygon() const;
 
@@ -51,7 +51,7 @@ class LineFeature : protected AbstractLayerFeature
 {
 public:
     LineFeature(int id);
-    AbstractLayerFeature::featureType type() const override { return LayerFeature::featureType::line; }
+    AbstractLayerFeature::featureType type() const override { return AbstractLayerFeature::featureType::line; }
     QRect boundingRect() const override;
     QPainterPath line() const;
 
@@ -66,7 +66,7 @@ class PointFeature : protected AbstractLayerFeature
 {
 public:
     PointFeature(int id);
-    AbstractLayerFeature::featureType type() const override { return LayerFeature::featureType::point; }
+    AbstractLayerFeature::featureType type() const override { return AbstractLayerFeature::featureType::point; }
     void addPoint(QPoint point);
 
     QList<QPoint> points() const;
@@ -83,7 +83,7 @@ class UnknownFeature : protected AbstractLayerFeature
 {
 public:
     UnknownFeature(int id);
-    AbstractLayerFeature::featureType type() const override { return LayerFeature::featureType::unknown; }
+    AbstractLayerFeature::featureType type() const override { return AbstractLayerFeature::featureType::unknown; }
 };
 
 /*
