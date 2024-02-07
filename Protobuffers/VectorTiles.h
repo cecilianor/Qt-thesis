@@ -7,11 +7,13 @@
 #include <QList>
 #include <QPainterPath>
 
-
-class LayerFeature {
+/*
+ * This abstract class is the base for all the classes representing different layer features.
+ */
+class AbstractLayerFeature {
 
 public:
-    LayerFeature();
+    AbstractLayerFeature();
 
     enum class featureType : int8_t {
         polygon,
@@ -27,11 +29,14 @@ private:
     const int m_id;
 };
 
-class PolygonFeature : protected LayerFeature
+/*
+ * This class represents a plygon feature. the class contains the id and geometry of the feature.
+ */
+class PolygonFeature : protected AbstractLayerFeature
 {
 public:
     PolygonFeature(int id);
-    LayerFeature::featureType type() const override { return LayerFeature::featureType::polygon; }
+    AbstractLayerFeature::featureType type() const override { return LayerFeature::featureType::polygon; }
     QRect boundingRect() const override;
     QPainterPath polygon() const;
 
@@ -39,12 +44,14 @@ private:
     QPainterPath m_polygon;
 };
 
-
-class LineFeature : protected LayerFeature
+/*
+ * This class represents a linsestring feature. the class contains the id and geometry of the feature.
+ */
+class LineFeature : protected AbstractLayerFeature
 {
 public:
     LineFeature(int id);
-    LayerFeature::featureType type() const override { return LayerFeature::featureType::line; }
+    AbstractLayerFeature::featureType type() const override { return LayerFeature::featureType::line; }
     QRect boundingRect() const override;
     QPainterPath line() const;
 
@@ -52,12 +59,14 @@ private:
     QPainterPath m_line;
 };
 
-
-class PointFeature : protected LayerFeature
+/*
+ * This class represents a point feature. the class contains the id and geometry of the feature.
+ */
+class PointFeature : protected AbstractLayerFeature
 {
 public:
     PointFeature(int id);
-    LayerFeature::featureType type() const override { return LayerFeature::featureType::point; }
+    AbstractLayerFeature::featureType type() const override { return LayerFeature::featureType::point; }
     void addPoint(QPoint point);
 
     QList<QPoint> points() const;
@@ -66,13 +75,21 @@ private:
     QList<QPoint> m_points;
 };
 
-class UnknownFeature : protected LayerFeature
+/*
+ * This class represents an unkow feature.
+ * these features will not be further processed.
+ */
+class UnknownFeature : protected AbstractLayerFeature
 {
 public:
     UnknownFeature(int id);
-    LayerFeature::featureType type() const override { return LayerFeature::featureType::unknown; }
+    AbstractLayerFeature::featureType type() const override { return LayerFeature::featureType::unknown; }
 };
 
+/*
+ *This class represents a single layer in a vector tile.
+ *the class contains a list with all the features in the layer as well as other layer details.
+ */
 class TileLayer {
 
 public:
@@ -96,6 +113,10 @@ private:
 
 };
 
+/*
+ * This class represents a vector tile deserialized form a protobuf file.
+ * the class contains all map with all the layers within the tile.
+ */
 class VectorTile {
 
 public:
