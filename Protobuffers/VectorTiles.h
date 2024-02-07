@@ -32,11 +32,11 @@ private:
 /*
  * This class represents a plygon feature. the class contains the id and geometry of the feature.
  */
-class PolygonFeature : protected AbstractLayerFeature
+class PolygonFeature : public AbstractLayerFeature
 {
 public:
-    PolygonFeature(int id);
-    AbstractLayerFeature::featureType type() const override { return AbstractLayerFeature::featureType::polygon; }
+    PolygonFeature() {};
+    AbstractLayerFeature::featureType type() const override;
     QRect boundingRect() const override;
     QPainterPath polygon() const;
 
@@ -47,11 +47,11 @@ private:
 /*
  * This class represents a linsestring feature. the class contains the id and geometry of the feature.
  */
-class LineFeature : protected AbstractLayerFeature
+class LineFeature : public AbstractLayerFeature
 {
 public:
-    LineFeature(int id);
-    AbstractLayerFeature::featureType type() const override { return AbstractLayerFeature::featureType::line; }
+    LineFeature(){};
+    AbstractLayerFeature::featureType type() const override;
     QRect boundingRect() const override;
     QPainterPath line() const;
 
@@ -62,11 +62,11 @@ private:
 /*
  * This class represents a point feature. the class contains the id and geometry of the feature.
  */
-class PointFeature : protected AbstractLayerFeature
+class PointFeature : public AbstractLayerFeature
 {
 public:
-    PointFeature(int id);
-    AbstractLayerFeature::featureType type() const override { return AbstractLayerFeature::featureType::point; }
+    PointFeature(){};
+    AbstractLayerFeature::featureType type() const override;
     void addPoint(QPoint point);
 
     QList<QPoint> points() const;
@@ -79,11 +79,11 @@ private:
  * This class represents an unkow feature.
  * these features will not be further processed.
  */
-class UnknownFeature : protected AbstractLayerFeature
+class UnknownFeature : public AbstractLayerFeature
 {
 public:
-    UnknownFeature(int id);
-    AbstractLayerFeature::featureType type() const override { return AbstractLayerFeature::featureType::unknown; }
+    UnknownFeature(){};
+    AbstractLayerFeature::featureType type() const override;
 };
 
 /*
@@ -125,6 +125,6 @@ public:
 
     void DeserializeMessage(QByteArray data);
     QRect boundingRect() const;
-    QMap<QString, TileLayer*> m_layer;
+    QMap<QString, TileLayer*> m_layers;
 };
 #endif // VECTORTILES_H
