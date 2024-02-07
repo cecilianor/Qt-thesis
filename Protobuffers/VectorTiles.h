@@ -104,7 +104,7 @@ public:
 
     int extent() const;
 
-    QList<LayerFeature*> m_features;
+    QList<AbstractLayerFeature*> m_features;
 
 private:
     const int m_version;
