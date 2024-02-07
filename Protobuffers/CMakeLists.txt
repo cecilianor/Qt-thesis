@@ -16,6 +16,13 @@ qt_standard_project_setup()
 add_executable(Protobuffers
   main.cpp
 )
+
+qt_add_protobuf(Protobuffers
+    PROTO_FILES
+    vector_tile.proto
+)
+
+
 target_link_libraries(Protobuffers PRIVATE
     Qt6::Core
     Qt6::Protobuf
