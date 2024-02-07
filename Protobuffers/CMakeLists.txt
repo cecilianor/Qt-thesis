@@ -9,14 +9,19 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core)
+find_package(Qt6 REQUIRED COMPONENTS Core Protobuf Grpc Widgets Network)
+
+qt_standard_project_setup()
 
 add_executable(Protobuffers
   main.cpp
-  vector_tile.proto
 )
-target_link_libraries(Protobuffers Qt${QT_VERSION_MAJOR}::Core)
+target_link_libraries(Protobuffers PRIVATE
+    Qt6::Core
+    Qt6::Protobuf
+    Qt6::Widgets
+    Qt6::Network
+)
 
 include(GNUInstallDirs)
 install(TARGETS Protobuffers
