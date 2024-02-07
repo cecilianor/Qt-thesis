@@ -1,0 +1,2 @@
+set(__QT_DEPLOY_TARGET_HttpClient_FILE C:/Users/ayman/OneDrive/Skrivebord/Qt learning/Http client/build-HttpClient-Desktop_x86_windows_msys_pe_64bit-Debug/HttpClient.exe)
+set(__QT_DEPLOY_TARGET_HttpClient_RUNTIME_DLLS C:/Users/ayman/QTProject/qt5-build/qtbase/bin/Qt6Widgets.dll;C:/Users/ayman/QTProject/qt5-build/qtbase/bin/Qt6Network.dll;C:/Users/ayman/QTProject/qt5-build/qtbase/bin/Qt6Gui.dll;C:/Users/ayman/QTProject/qt5-build/qtbase/bin/Qt6Core.dll)
