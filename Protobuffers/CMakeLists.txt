@@ -17,6 +17,7 @@ add_executable(Protobuffers
   main.cpp
   VectorTiles.h
   VectorTiles.cpp
+  networkcontroller.h networkcontroller.cpp
 )
 
 qt_add_protobuf(Protobuffers
