@@ -7,11 +7,6 @@ AbstractLayerFeature::featureType PolygonFeature::type() const
     return AbstractLayerFeature::featureType::polygon;
 }
 
-QRect PolygonFeature::boundingRect() const
-{
-    return m_polygon.boundingRect().toRect();
-}
-
 QPainterPath PolygonFeature::polygon() const
 {
     return m_polygon;
@@ -23,11 +18,6 @@ QPainterPath PolygonFeature::polygon() const
 AbstractLayerFeature::featureType LineFeature::type() const
 {
     return AbstractLayerFeature::featureType::line;
-}
-
-QRect LineFeature::boundingRect() const
-{
-    return m_line.boundingRect().toRect();
 }
 
 QPainterPath LineFeature::line() const
@@ -158,7 +148,6 @@ LineFeature* lineFeatureFromProto(const vector_tile::Tile::Feature &feature)
 
 PointFeature* pointFeatureFromProto(const vector_tile::Tile::Feature &feature)
 {
-    qDebug() << "    create PointFeature";
     PointFeature *newFeature = new PointFeature();
 
     qint32 x = 0;
@@ -196,19 +185,6 @@ VectorTile::~VectorTile() {
     }
 }
 
-
-QRect TileLayer::boundingRect() const {
-    QRect rect;
-    for (const auto &feature : m_features) {
-        //qDebug() << "    " << rect;
-        if (feature->type() == AbstractLayerFeature::featureType::polygon ||
-            feature->type() == AbstractLayerFeature::featureType::line )
-            rect = rect.united(feature->boundingRect());
-    }
-    return rect;
-}
-
-
 void VectorTile::DeserializeMessage(QByteArray data)
 {
     QProtobufSerializer serializer;
@@ -225,7 +201,7 @@ void VectorTile::DeserializeMessage(QByteArray data)
     for (auto layer : tile.layers()) {
         qDebug() << "Parsing layer" << layer.name();
         qDebug() << " layer version: " << layer.version();
-        qDebug() << " layer id: " << layer.extent();
+        qDebug() << " layer extent: " << layer.extent();
         TileLayer *newLayer = new TileLayer(layer.version(), layer.name(), layer.extent());
         m_layers.insert(QString::fromStdString(layer.name().toStdString()), newLayer);
 

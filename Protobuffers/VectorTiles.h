@@ -13,7 +13,7 @@
 class AbstractLayerFeature {
 
 public:
-    AbstractLayerFeature();
+    AbstractLayerFeature() {}
 
     enum class featureType : int8_t {
         polygon,
@@ -23,10 +23,7 @@ public:
     };
 
     virtual featureType type() const = 0;
-    virtual QRect boundingRect() const { return QRect(); }
-
-private:
-    const int m_id;
+    int m_id;
 };
 
 /*
@@ -35,9 +32,8 @@ private:
 class PolygonFeature : public AbstractLayerFeature
 {
 public:
-    PolygonFeature() {};
+    PolygonFeature() {}
     AbstractLayerFeature::featureType type() const override;
-    QRect boundingRect() const override;
     QPainterPath polygon() const;
 
 private:
@@ -50,9 +46,8 @@ private:
 class LineFeature : public AbstractLayerFeature
 {
 public:
-    LineFeature(){};
+    LineFeature(){}
     AbstractLayerFeature::featureType type() const override;
-    QRect boundingRect() const override;
     QPainterPath line() const;
 
 private:
@@ -65,10 +60,9 @@ private:
 class PointFeature : public AbstractLayerFeature
 {
 public:
-    PointFeature(){};
+    PointFeature(){}
     AbstractLayerFeature::featureType type() const override;
     void addPoint(QPoint point);
-
     QList<QPoint> points() const;
 
 private:
@@ -82,7 +76,7 @@ private:
 class UnknownFeature : public AbstractLayerFeature
 {
 public:
-    UnknownFeature(){};
+    UnknownFeature(){}
     AbstractLayerFeature::featureType type() const override;
 };
 
@@ -95,8 +89,6 @@ class TileLayer {
 public:
     TileLayer(int version, QString name, int extent);
     ~TileLayer();
-
-    QRect boundingRect() const;
 
     int version() const;
 
@@ -124,7 +116,6 @@ public:
     ~VectorTile();
 
     void DeserializeMessage(QByteArray data);
-    QRect boundingRect() const;
     QMap<QString, TileLayer*> m_layers;
 };
 #endif // VECTORTILES_H
