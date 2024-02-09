@@ -2,6 +2,7 @@
 #define VECTORTILES_H
 
 #include <QByteArray>
+#include <QFile>
 #include <QRect>
 #include <QMap>
 #include <QList>
@@ -120,4 +121,17 @@ public:
     void DeserializeMessage(QByteArray data);
     QMap<QString, TileLayer*> m_layers;
 };
+
+namespace Bach {
+    inline QString testDataDir = "testdata/";
+
+    inline VectorTile tileFromFile(QString string) {
+        auto file = QFile(string);
+        file.open(QIODevice::ReadOnly);
+        VectorTile tile;
+        tile.DeserializeMessage(file.readAll());
+        return tile;
+    }
+}
+
 #endif // VECTORTILES_H

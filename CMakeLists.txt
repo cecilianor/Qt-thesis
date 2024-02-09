@@ -56,3 +56,7 @@ install(TARGETS maptest
 )
 
 qt_finalize_executable(maptest)
+
+
+qt_add_executable(cmd_example cmd_example.cpp)
+target_link_libraries(cmd_example PUBLIC maplib)
