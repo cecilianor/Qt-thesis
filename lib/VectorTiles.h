@@ -35,7 +35,8 @@ class PolygonFeature : public AbstractLayerFeature
 public:
     PolygonFeature() {}
     AbstractLayerFeature::featureType type() const override;
-    QPainterPath polygon() const;
+    QPainterPath const& polygon() const;
+    QPainterPath& polygon();
 
 private:
     QPainterPath m_polygon;
@@ -103,6 +104,7 @@ private:
     const int m_version;
     const QString m_name;
     const int m_extent;
+
 };
 
 /*
