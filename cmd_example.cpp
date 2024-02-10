@@ -12,6 +12,9 @@ int main(int argc, char *argv[]) {
     QMap<TileCoord, VectorTile const*> tileStorage;
     tileStorage.insert({0, 0, 0}, &tile000);
 
+    QMap<QString, QColor> layerColors;
+    layerColors.insert("water", Qt::blue);
+
     QImage image(2000, 2000, QImage::Format_ARGB32);
     image.fill(Qt::white);
 
@@ -23,7 +26,8 @@ int main(int argc, char *argv[]) {
         0.5,
         0,
         0,
-        tileStorage);
+        tileStorage,
+        layerColors);
 
     image.save("output.png");
 

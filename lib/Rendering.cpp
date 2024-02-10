@@ -27,3 +27,28 @@ QVector<TileCoord> Bach::CalcVisibleTiles(
     }
     return visibleTiles;
 }
+
+void paintSingleTileDebug(
+    QPainter& painter,
+    TileCoord const& tileCoord,
+    QPoint pixelPos,
+    QTransform const& transform)
+{
+
+    painter.setPen(Qt::green);
+    painter.drawLine(transform.map(QLineF{ QPointF(0.45, 0.45), QPointF(0.55, 0.55) }));
+    painter.drawLine(transform.map(QLineF{ QPointF(0.55, 0.45), QPointF(0.45, 0.55) }));
+    painter.drawRect(transform.mapRect(QRectF(0, 0, 1, 1)));
+
+    {
+        // Text rendering has issues if our coordinate system is [0, 1].
+        // So we get it back to unscaled and just offset where we need it.
+        painter.save();
+        QTransform transform;
+        transform.translate(pixelPos.x(), pixelPos.y());
+        painter.setTransform(transform);
+        painter.drawText(10, 30, tileCoord.toString());
+
+        painter.restore();
+    }
+}

@@ -4,8 +4,6 @@
 #include <QPainter>
 #include <QMap>
 
-#include <optional>
-
 #include "TileCoord.h"
 #include "VectorTiles.h"
 
@@ -16,18 +14,21 @@ namespace Bach {
         double vpZoomLevel,
         int mapZoomLevel);
 
-    struct PaintSingleTile_Params {
-
-    };
-
     inline void paintSingleTile(
         VectorTile const& tileData,
         QPainter& painter,
+        QMap<QString, QColor> const& layerColors,
         QTransform const& transformIn)
     {
-        for (auto const& layer : tileData.m_layers) {
-            for (auto const& featureIn : layer->m_features)
-            {
+        for (auto const& [layerName, layer]: tileData.m_layers.asKeyValueRange()) {
+            auto layerColorIt = layerColors.find(layerName);
+            if (layerColorIt != layerColors.end()) {
+                painter.setBrush(*layerColorIt);
+            } else {
+                painter.setBrush(Qt::NoBrush);
+            }
+
+            for (auto const& featureIn : layer->m_features) {
                 if (featureIn->type() != AbstractLayerFeature::featureType::polygon) {
                     continue;
                 }
@@ -44,26 +45,11 @@ namespace Bach {
         }
     }
 
-    inline void paintSingleTileDebug(
+    void paintSingleTileDebug(
         QPainter& painter,
         TileCoord const& tileCoord,
         QPoint pixelPos,
-        QTransform const& transform)
-    {
-        painter.drawLine(transform.map(QLineF{ QPointF(0.45, 0.45), QPointF(0.55, 0.55) }));
-        painter.drawLine(transform.map(QLineF{ QPointF(0.55, 0.45), QPointF(0.45, 0.55) }));
-        painter.drawRect(transform.mapRect(QRectF(0, 0, 1, 1)));
-
-        {
-            painter.save();
-            QTransform transform;
-            transform.translate(pixelPos.x(), pixelPos.y());
-            painter.setTransform(transform);
-
-            painter.drawText(10, 30, tileCoord.toString());
-            painter.restore();
-        }
-    }
+        QTransform const& transform);
 
     inline void paintTiles(
         QPainter& painter,
@@ -71,18 +57,19 @@ namespace Bach {
         double vpY,
         double viewportZoomLevel,
         int mapZoomLevel,
-        QMap<TileCoord, VectorTile const*> const& tileContainer)
+        QMap<TileCoord, VectorTile const*> const& tileContainer,
+        QMap<QString, QColor> const& layerColors)
     {
-        auto width = painter.window().width();
-        auto height = painter.window().height();
+        auto viewportWidth = painter.window().width();
+        auto viewportHeight = painter.window().height();
         auto visibleTiles = CalcVisibleTiles(
             vpX,
             vpY,
             viewportZoomLevel,
             mapZoomLevel);
 
-        auto largestDimension = qMax(width, height);
-        double vpAspectRatio = (double)width / (double)height;
+        auto largestDimension = qMax(viewportWidth, viewportHeight);
+        double vpAspectRatio = (double)viewportWidth / (double)viewportHeight;
 
         double scale = pow(2, viewportZoomLevel - mapZoomLevel);
         double tileWidthNorm = scale;
@@ -99,9 +86,9 @@ namespace Bach {
         double centerNormX = vpX * totalTilesAtZoom * tileWidthNorm - 1.0 / 2;
         double centerNormY = vpY * totalTilesAtZoom * tileHeightNorm - 1.0 / 2;
 
-        if (height >= width) {
+        if (viewportHeight >= viewportWidth) {
             centerNormX += -0.5 * vpAspectRatio + 0.5;
-        } else if (width >= height) {
+        } else if (viewportWidth >= viewportHeight) {
             centerNormY += -0.5 * (1 / vpAspectRatio) + 0.5;
         }
 
@@ -123,8 +110,8 @@ namespace Bach {
             painter.setTransform(transform);
 
             auto pen = painter.pen();
-            pen.setColor(Qt::green);
-            pen.setWidth(2);
+            pen.setColor(Qt::white);
+            pen.setWidth(1);
             painter.setPen(pen);
 
             QTransform test;
@@ -141,7 +128,7 @@ namespace Bach {
                     tileWidthPixels,
                     tileHeightPixels);
 
-                paintSingleTile(tileData, painter, test);
+                paintSingleTile(tileData, painter, layerColors, test);
 
                 painter.restore();
             }

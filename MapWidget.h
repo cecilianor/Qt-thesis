@@ -46,6 +46,8 @@ public:
 
     // Temporary. This probably does not belong here.
     QMap<TileCoord, VectorTile const*> tileStorage;
+    // Temporary. This probably does not belong here.
+    QMap<QString, QColor> layerColors;
 
 private:
     // Zoom level of viewport

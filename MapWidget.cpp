@@ -48,5 +48,6 @@ void MapWidget::paintEvent(QPaintEvent* event) {
         y,
         getViewportZoomLevel(),
         getMapZoomLevel(),
-        tileStorage);
+        tileStorage,
+        layerColors);
 }
