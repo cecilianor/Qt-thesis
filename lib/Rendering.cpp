@@ -1,5 +1,23 @@
 #include "Rendering.h"
 
+int Bach::CalcMapZoomLevelForTileSizePixels(
+    int vpWidth,
+    int vpHeight,
+    double vpZoom,
+    int desiredTileWidth)
+{
+    // Calculate current tile size based on the largest dimension and current scale
+    int currentTileSize = qMax(vpWidth, vpHeight);
+
+    // Calculate desired scale factor
+    double desiredScale = (double)desiredTileWidth / currentTileSize;
+
+    double newMapZoomLevel = vpZoom - log2(desiredScale);
+
+    // Clamp output to zoom level range.
+    return std::clamp((int)round(newMapZoomLevel), 0, maxZoomLevel);
+}
+
 QVector<TileCoord> Bach::CalcVisibleTiles(
     double vpX,
     double vpY,
@@ -28,13 +46,12 @@ QVector<TileCoord> Bach::CalcVisibleTiles(
     return visibleTiles;
 }
 
-void paintSingleTileDebug(
+void Bach::paintSingleTileDebug(
     QPainter& painter,
     TileCoord const& tileCoord,
     QPoint pixelPos,
     QTransform const& transform)
 {
-
     painter.setPen(Qt::green);
     painter.drawLine(transform.map(QLineF{ QPointF(0.45, 0.45), QPointF(0.55, 0.55) }));
     painter.drawLine(transform.map(QLineF{ QPointF(0.55, 0.45), QPointF(0.45, 0.55) }));

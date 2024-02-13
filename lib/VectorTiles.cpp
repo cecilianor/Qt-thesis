@@ -24,7 +24,12 @@ AbstractLayerFeature::featureType LineFeature::type() const
     return AbstractLayerFeature::featureType::line;
 }
 
-QPainterPath LineFeature::line() const
+QPainterPath const& LineFeature::line() const
+{
+    return m_line;
+}
+
+QPainterPath& LineFeature::line()
 {
     return m_line;
 }

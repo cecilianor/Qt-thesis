@@ -26,6 +26,15 @@ int main(int argc, char *argv[])
     tileStorage.insert({1, 1, 0}, &tile110);
     auto tile111 = Bach::tileFromFile(Bach::testDataDir + "z1x1y1.mvt");
     tileStorage.insert({1, 1, 1}, &tile111);
+    auto tile200 = Bach::tileFromFile(Bach::testDataDir + "z2x0y0.mvt");
+    tileStorage.insert({2, 0, 0}, &tile200);
+    auto tile211 = Bach::tileFromFile(Bach::testDataDir + "z2x1y1.mvt");
+    tileStorage.insert({2, 1, 1}, &tile211);
+    auto tile212 = Bach::tileFromFile(Bach::testDataDir + "z2x1y2.mvt");
+    tileStorage.insert({2, 1, 2}, &tile212);
+    auto tile233 = Bach::tileFromFile(Bach::testDataDir + "z2x3y3.mvt");
+    tileStorage.insert({2, 3, 3}, &tile233);
+
 
     layerColors.insert("water", QColor(Qt::blue).lighter(75));
     layerColors.insert("landcover", QColor(Qt::lightGray).lighter());

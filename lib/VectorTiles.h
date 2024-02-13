@@ -51,7 +51,8 @@ class LineFeature : public AbstractLayerFeature
 public:
     LineFeature(){}
     AbstractLayerFeature::featureType type() const override;
-    QPainterPath line() const;
+    QPainterPath const& line() const;
+    QPainterPath& line();
 
 private:
     QPainterPath m_line;

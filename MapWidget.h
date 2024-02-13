@@ -32,7 +32,10 @@ public:
         if (overrideMapZoom) {
             return overrideMapZoomLevel;
         } else {
-            return qMax(0, (int)round(getViewportZoomLevel() + mapZoomLevelOffset));
+            return Bach::CalcMapZoomLevelForTileSizePixels(
+                width(),
+                height(),
+                getViewportZoomLevel());
         }
     }
 

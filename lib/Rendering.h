@@ -8,6 +8,15 @@
 #include "VectorTiles.h"
 
 namespace Bach {
+    constexpr int maxZoomLevel = 16;
+    const int defaultDesiredTileWidth = 256;
+
+    int CalcMapZoomLevelForTileSizePixels(
+        int vpWidth,
+        int vpHeight,
+        double vpZoom,
+        int desiredTileWidth = defaultDesiredTileWidth);
+
     QVector<TileCoord> CalcVisibleTiles(
         double vpX,
         double vpY,
@@ -29,18 +38,39 @@ namespace Bach {
             }
 
             for (auto const& featureIn : layer->m_features) {
-                if (featureIn->type() != AbstractLayerFeature::featureType::polygon) {
-                    continue;
+                switch (featureIn->type()) {
+                case AbstractLayerFeature::featureType::polygon: {
+                    auto* feature = dynamic_cast<PolygonFeature*>(featureIn);
+                    auto const& path = feature->polygon();
+
+                    QTransform transform = transformIn;
+                    transform.scale(1 / 4096.0, 1 / 4096.0);
+                    auto newPath = transform.map(path);
+
+                    painter.save();
+                    //painter.setBrush(Qt::NoBrush);
+                    painter.setPen(Qt::NoPen);
+                    painter.drawPath(newPath);
+                    painter.restore();
                 }
+                break;
+                case AbstractLayerFeature::featureType::line: {
+                    auto* feature = dynamic_cast<LineFeature*>(featureIn);
+                    auto const& path = feature->line();
+                    QTransform transform = transformIn;
+                    transform.scale(1 / 4096.0, 1 / 4096.0);
+                    auto newPath = transform.map(path);
 
-                auto* feature = dynamic_cast<PolygonFeature*>(featureIn);
-                auto const& path = feature->polygon();
-
-                QTransform transform = transformIn;
-                transform.scale(1 / 4096.0, 1 / 4096.0);
-                auto newPath = transform.map(path);
-
-                painter.drawPath(newPath);
+                    painter.save();
+                    painter.setPen(Qt::red);
+                    painter.setBrush(Qt::NoBrush);
+                    painter.drawPath(newPath);
+                    painter.restore();
+                }
+                break;
+                default:
+                    break;
+                }
             }
         }
     }
