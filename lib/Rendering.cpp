@@ -21,23 +21,39 @@ int Bach::CalcMapZoomLevelForTileSizePixels(
 QVector<TileCoord> Bach::CalcVisibleTiles(
     double vpX,
     double vpY,
+    double vpAspect,
     double vpZoomLevel,
     int mapZoomLevel)
 {
     mapZoomLevel = qMax(0, mapZoomLevel);
-    QVector<TileCoord> visibleTiles;
+
     auto vpWidthNorm = 1 / pow(2, vpZoomLevel);
+    auto vpHeightNorm = vpWidthNorm; // Initial assumption: square aspect ratio
+    // Adjust for aspect ratio
+    if (vpAspect > 1.0) {
+        // Viewport is wider than it is tall
+        vpHeightNorm /= vpAspect;
+    } else {
+        // Viewport is taller than it is wide or square
+        vpWidthNorm *= vpAspect;
+    }
+
     auto vpMinNormX = vpX - (vpWidthNorm / 2.0);
     auto vpMaxNormX = vpX + (vpWidthNorm / 2.0);
-    auto vpMinNormY = vpY - (vpWidthNorm / 2.0);
-    auto vpMaxNormY = vpY + (vpWidthNorm / 2.0);
+    auto vpMinNormY = vpY - (vpHeightNorm / 2.0);
+    auto vpMaxNormY = vpY + (vpHeightNorm / 2.0);
 
     auto tileCount = 1 << mapZoomLevel;
 
-    auto leftmostTileX = (int)qMax(0.0, floor(vpMinNormX * tileCount));
-    auto rightmostTileX = (int)qMin((double)tileCount-1, ceil(vpMaxNormX * tileCount));
-    auto topmostTileY = (int)qMax(0.0, floor(vpMinNormY * tileCount));
-    auto bottommostTileY = (int)qMin((double)tileCount-1, ceil(vpMaxNormY * tileCount));
+    auto clampToGrid = [&](int i) {
+        return std::clamp(i, 0, tileCount-1);
+    };
+    auto leftmostTileX = clampToGrid(floor(vpMinNormX * tileCount));
+    auto rightmostTileX = clampToGrid(ceil(vpMaxNormX * tileCount));
+    auto topmostTileY = clampToGrid(floor(vpMinNormY * tileCount));
+    auto bottommostTileY = clampToGrid(ceil(vpMaxNormY * tileCount));
+
+    QVector<TileCoord> visibleTiles;
     for (int y = topmostTileY; y <= bottommostTileY; y++) {
         for (int x = leftmostTileX; x <= rightmostTileX; x++) {
             visibleTiles += { mapZoomLevel, x, y };

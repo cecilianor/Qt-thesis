@@ -43,6 +43,7 @@ public:
         return Bach::CalcVisibleTiles(
             x,
             y,
+            (double)width() / height(),
             getViewportZoomLevel(),
             getMapZoomLevel());
     }
@@ -57,7 +58,7 @@ private:
     // Range [0, 16]
     // This should never go below 0 in final release, but
     // is useful for testing.
-    double viewportZoomLevel = -1;
+    double viewportZoomLevel = 0;
 
     // Default should be 0 for final release.
     // This offsets the map zoom compared to viewport zoom.

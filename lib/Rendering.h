@@ -20,6 +20,7 @@ namespace Bach {
     QVector<TileCoord> CalcVisibleTiles(
         double vpX,
         double vpY,
+        double vpAspect,
         double vpZoomLevel,
         int mapZoomLevel);
 
@@ -92,14 +93,15 @@ namespace Bach {
     {
         auto viewportWidth = painter.window().width();
         auto viewportHeight = painter.window().height();
+        double vpAspectRatio = (double)viewportWidth / (double)viewportHeight;
         auto visibleTiles = CalcVisibleTiles(
             vpX,
             vpY,
+            vpAspectRatio,
             viewportZoomLevel,
             mapZoomLevel);
 
         auto largestDimension = qMax(viewportWidth, viewportHeight);
-        double vpAspectRatio = (double)viewportWidth / (double)viewportHeight;
 
         double scale = pow(2, viewportZoomLevel - mapZoomLevel);
         double tileWidthNorm = scale;
