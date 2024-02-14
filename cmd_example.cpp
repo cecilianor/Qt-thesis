@@ -20,6 +20,7 @@ int main(int argc, char *argv[]) {
 
     QPainter painter(&image);
 
+    /*
     Bach::paintTiles(
         painter,
         0.5,
@@ -28,6 +29,7 @@ int main(int argc, char *argv[]) {
         0,
         tileStorage,
         layerColors);
+*/
 
     image.save("output.png");
 

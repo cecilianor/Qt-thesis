@@ -5,7 +5,7 @@
 #include <QPainter>
 #include <QMap>
 
-#include "VectorTiles.h"
+
 #include "MapWidget.h"
 
 int main(int argc, char *argv[])
@@ -13,8 +13,20 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
 
     MapWidget mapWidget;
+    auto& styleSheet = mapWidget.styleSheet;
     auto& tileStorage = mapWidget.tileStorage;
-    auto& layerColors = mapWidget.layerColors;
+
+    QJsonDocument doc;
+    QJsonParseError parseError;
+    QFile fStyle(Bach::testDataDir + "tiles.json");
+    fStyle.open(QIODevice::ReadOnly);
+    doc = QJsonDocument::fromJson(fStyle.readAll(), &parseError);
+
+    if (parseError.error != QJsonParseError::NoError) {
+        qWarning() << "Parse error at" << parseError.offset << ":" << parseError.errorString();
+        return 0;
+    }
+    styleSheet.parseSheet(doc);
 
     auto tile000 = Bach::tileFromFile(Bach::testDataDir + "z0x0y0.mvt");
     tileStorage.insert({0, 0, 0}, &tile000);
@@ -34,11 +46,6 @@ int main(int argc, char *argv[])
     tileStorage.insert({2, 1, 2}, &tile212);
     auto tile233 = Bach::tileFromFile(Bach::testDataDir + "z2x3y3.mvt");
     tileStorage.insert({2, 3, 3}, &tile233);
-
-
-    layerColors.insert("water", QColor(Qt::blue).lighter(75));
-    layerColors.insert("landcover", QColor(Qt::lightGray).lighter());
-    layerColors.insert("globallandcover", QColor(Qt::green).lighter(75));
 
     mapWidget.show();
 

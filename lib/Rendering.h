@@ -6,6 +6,7 @@
 
 #include "TileCoord.h"
 #include "VectorTiles.h"
+#include "Layerstyle.h"
 
 namespace Bach {
     constexpr int maxZoomLevel = 16;
@@ -27,9 +28,55 @@ namespace Bach {
     inline void paintSingleTile(
         VectorTile const& tileData,
         QPainter& painter,
-        QMap<QString, QColor> const& layerColors,
+        int mapZoomLevel,
+        float viewportZoomLevel,
+        StyleSheet const& styleSheet,
         QTransform const& transformIn)
     {
+        for (auto const& abstractLayerStyle : styleSheet.m_layerStyles) {
+
+            // Background is a special case and has no associated layer.
+            if (abstractLayerStyle->type() == AbstractLayereStyle::LayerType::background) {
+                // Fill the entire tile with a single color
+                auto const& layerStyle = *static_cast<BackgroundStyle const*>(abstractLayerStyle);
+                auto backgroundColor = layerStyle.getColorAtZoom(mapZoomLevel);
+                painter.fillRect(transformIn.mapRect(QRect(0, 0, 1, 1)), backgroundColor);
+                continue;
+            }
+
+            auto layerExists = tileData.m_layers.contains(abstractLayerStyle->m_sourceLayer);
+            if (!layerExists) {
+                continue;
+            }
+            auto const& layer = *tileData.m_layers[abstractLayerStyle->m_sourceLayer];
+
+            if (abstractLayerStyle->type() == AbstractLayereStyle::LayerType::fill) {
+                auto const& layerStyle = *static_cast<FillLayerStyle const*>(abstractLayerStyle);
+
+                painter.setBrush(layerStyle.getFillColorAtZoom(mapZoomLevel));
+
+                for (auto const& abstractFeature : layer.m_features) {
+                    if (abstractFeature->type() == AbstractLayerFeature::featureType::polygon) {
+                        auto const& feature = *static_cast<PolygonFeature const*>(abstractFeature);
+                        auto const& path = feature.polygon();
+
+                        QTransform transform = transformIn;
+                        transform.scale(1 / 4096.0, 1 / 4096.0);
+                        auto newPath = transform.map(path);
+
+                        painter.save();
+                        painter.setPen(Qt::NoPen);
+                        painter.drawPath(newPath);
+                        painter.restore();
+                    }
+                }
+            }
+        }
+
+
+
+
+        /*
         for (auto const& [layerName, layer]: tileData.m_layers.asKeyValueRange()) {
             auto layerColorIt = layerColors.find(layerName);
             if (layerColorIt != layerColors.end()) {
@@ -74,6 +121,7 @@ namespace Bach {
                 }
             }
         }
+*/
     }
 
     void paintSingleTileDebug(
@@ -89,7 +137,7 @@ namespace Bach {
         double viewportZoomLevel,
         int mapZoomLevel,
         QMap<TileCoord, VectorTile const*> const& tileContainer,
-        QMap<QString, QColor> const& layerColors)
+        StyleSheet const& styleSheet)
     {
         auto viewportWidth = painter.window().width();
         auto viewportHeight = painter.window().height();
@@ -160,7 +208,13 @@ namespace Bach {
                     tileWidthPixels,
                     tileHeightPixels);
 
-                paintSingleTile(tileData, painter, layerColors, test);
+                paintSingleTile(
+                    tileData,
+                    painter,
+                    mapZoomLevel,
+                    viewportZoomLevel,
+                    styleSheet,
+                    test);
 
                 painter.restore();
             }

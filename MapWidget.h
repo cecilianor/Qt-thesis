@@ -7,6 +7,7 @@
 #include "Rendering.h"
 #include "VectorTiles.h"
 #include "TileCoord.h"
+#include "Layerstyle.h"
 
 class MapWidget : public QWidget
 {
@@ -51,7 +52,7 @@ public:
     // Temporary. This probably does not belong here.
     QMap<TileCoord, VectorTile const*> tileStorage;
     // Temporary. This probably does not belong here.
-    QMap<QString, QColor> layerColors;
+    StyleSheet styleSheet;
 
 private:
     // Zoom level of viewport

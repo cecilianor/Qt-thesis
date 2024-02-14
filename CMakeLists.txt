@@ -19,7 +19,9 @@ qt_add_library(maplib STATIC
     lib/VectorTiles.h
     lib/Rendering.cpp
     lib/Rendering.h
-    lib/TileCoord.h)
+    lib/TileCoord.h
+    lib/Layerstyle.h
+    lib/Layerstyle.cpp)
 qt_add_protobuf(maplib
     PROTO_FILES
         lib/vector_tile.proto
