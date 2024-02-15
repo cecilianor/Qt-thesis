@@ -12,8 +12,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Protobuf)
 qt_standard_project_setup()
 
-
-
 qt_add_library(maplib STATIC
     lib/VectorTiles.cpp
     lib/VectorTiles.h
@@ -28,6 +26,8 @@ qt_add_protobuf(maplib
 )
 target_include_directories(maplib PUBLIC "lib")
 target_link_libraries(maplib PUBLIC Qt6::Widgets Qt6::Protobuf)
+
+
 
 
 
@@ -59,6 +59,13 @@ install(TARGETS maptest
 
 qt_finalize_executable(maptest)
 
+
+# Set up function that applies copy directory command to executable
+add_custom_command(
+    TARGET maptest POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/testdata $<TARGET_FILE_DIR:maptest>/testdata
+)
 
 qt_add_executable(cmd_example cmd_example.cpp)
 target_link_libraries(cmd_example PUBLIC maplib)
