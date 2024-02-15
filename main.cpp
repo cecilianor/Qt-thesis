@@ -5,7 +5,6 @@
 #include <QPainter>
 #include <QMap>
 
-
 #include "MapWidget.h"
 
 int main(int argc, char *argv[])

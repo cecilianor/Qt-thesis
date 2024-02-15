@@ -10,7 +10,7 @@
 
 namespace Bach {
     constexpr int maxZoomLevel = 16;
-    const int defaultDesiredTileWidth = 256;
+    const int defaultDesiredTileWidth = 512;
 
     int CalcMapZoomLevelForTileSizePixels(
         int vpWidth,
@@ -70,6 +70,36 @@ namespace Bach {
                         painter.restore();
                     }
                 }
+            }
+            else if (abstractLayerStyle->type() == AbstractLayereStyle::LayerType::line) {
+                auto const& layerStyle = *static_cast<LineLayerStyle const*>(abstractLayerStyle);
+
+                painter.save();
+                auto pen = painter.pen();
+                auto lineColor = layerStyle.getLineColorAtZoom(mapZoomLevel);
+                //lineColor.setAlphaF(layerStyle.getLineOpacityAtZoom(mapZoomLevel));
+                pen.setColor(lineColor);
+                pen.setWidth(layerStyle.getLineWidthAtZoom(mapZoomLevel));
+                //pen.setMiterLimit(layerStyle.getLineMitterLimitAtZoom(mapZoomLevel));
+                painter.setPen(pen);
+
+                painter.setBrush(Qt::NoBrush);
+
+                for (auto const& abstractFeature : layer.m_features) {
+                    if (abstractFeature->type() == AbstractLayerFeature::featureType::line) {
+                        auto& feature = *static_cast<LineFeature const*>(abstractFeature);
+                        auto const& path = feature.line();
+                        QTransform transform = transformIn;
+                        transform.scale(1 / 4096.0, 1 / 4096.0);
+                        auto newPath = transform.map(path);
+
+                        painter.save();
+                        painter.drawPath(newPath);
+                        painter.restore();
+                    }
+                }
+
+                painter.restore();
             }
         }
 
