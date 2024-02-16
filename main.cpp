@@ -12,9 +12,7 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-
-    auto download = [&](TileCoord coord) -> QByteArray
-    {
+    
         TileURL tileURL; // Gets different URLs to download PBF tiles
         std::pair<QByteArray, TileURL::ErrorCode> styleSheetURL = tileURL.getStylesheet(TileURL::styleSheetType::basic_v2);
         auto responseData = styleSheetURL;
@@ -40,7 +38,8 @@ int main(int argc, char *argv[])
         std::pair<QString, TileURL::ErrorCode> pbfLink = tileURL.getPBFLink(tilesLink.first);
         qDebug () <<"\n\tLink to the PBF tiles: " << pbfLink.first;
 
-
+        auto download = [&](TileCoord coord) -> QByteArray
+        {
         // Exchange the {x, y z} in link
 
         auto fn = [=](TileCoord const& tileCoord) -> QString {
@@ -59,7 +58,7 @@ int main(int argc, char *argv[])
     auto& tileStorage = mapWidget.tileStorage;
 
     QJsonDocument doc;
-    QJsonParseError parseError;
+    //QJsonParseError parseError;
     QFile fStyle(Bach::testDataDir + "tiles.json");
     fStyle.open(QIODevice::ReadOnly);
     doc = QJsonDocument::fromJson(fStyle.readAll(), &parseError);
