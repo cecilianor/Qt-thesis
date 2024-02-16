@@ -126,6 +126,12 @@ public:
 namespace Bach {
     inline QString testDataDir = "testdata/";
 
+    inline VectorTile tileFromByteArray(QByteArray bytes) {
+        VectorTile tile;
+        tile.DeserializeMessage(bytes);
+        return tile;
+    }
+
     inline VectorTile tileFromFile(QString string) {
         auto file = QFile(string);
         file.open(QIODevice::ReadOnly);

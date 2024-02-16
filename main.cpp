@@ -7,9 +7,52 @@
 
 #include "MapWidget.h"
 
+#include "TileURL.h"
+
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
+    auto download = [&](TileCoord coord) -> QByteArray
+    {
+        TileURL tileURL; // Gets different URLs to download PBF tiles
+        std::pair<QByteArray, TileURL::ErrorCode> styleSheetURL = tileURL.getStylesheet(TileURL::styleSheetType::basic_v2);
+        auto responseData = styleSheetURL;
+        if (responseData.second != TileURL::ErrorCode::success) {
+            qWarning() << "There was an error: " << responseData.first;
+            return 0;
+        }
+
+        // Parse the stylesheet
+        QJsonParseError parseError;
+        QJsonDocument styleSheetJson = QJsonDocument::fromJson(responseData.first, &parseError);
+
+        if (parseError.error != QJsonParseError::NoError) {
+            qWarning() << "Parse error at" << parseError.offset << ":" << parseError.errorString();
+            return 0;
+        }
+
+        // Grab link to tiles.json format link
+        std::pair<QString, TileURL::ErrorCode> tilesLink = tileURL.getTilesLink(styleSheetJson, "maptiler_planet");
+        qDebug () <<"\n\tLink to tiles: " << tilesLink.first;
+
+        // Grab link to the XYZ PBF tile format based on the tiles.json link
+        std::pair<QString, TileURL::ErrorCode> pbfLink = tileURL.getPBFLink(tilesLink.first);
+        qDebug () <<"\n\tLink to the PBF tiles: " << pbfLink.first;
+
+
+        // Exchange the {x, y z} in link
+
+        auto fn = [=](TileCoord const& tileCoord) -> QString {
+            auto temp = pbfLink.first;
+            temp.replace("{z}", QString::number(tileCoord.zoom));
+            temp.replace("{x}", QString::number(tileCoord.x));
+            temp.replace("{y}", QString::number(tileCoord.y));
+            return temp;
+        };
+        NetworkController controller;
+        return controller.sendRequest(fn(coord));
+    };
 
     MapWidget mapWidget;
     auto& styleSheet = mapWidget.styleSheet;
@@ -27,24 +70,38 @@ int main(int argc, char *argv[])
     }
     styleSheet.parseSheet(doc);
 
-    auto tile000 = Bach::tileFromFile(Bach::testDataDir + "z0x0y0.mvt");
+    auto tile000 = Bach::tileFromByteArray(download({0, 0, 0}));
     tileStorage.insert({0, 0, 0}, &tile000);
-    auto tile100 = Bach::tileFromFile(Bach::testDataDir + "z1x0y0.mvt");
+    auto tile100 = Bach::tileFromByteArray(download({1, 0, 0}));
     tileStorage.insert({1, 0, 0}, &tile100);
     auto tile101 = Bach::tileFromFile(Bach::testDataDir + "z1x0y1.mvt");
     tileStorage.insert({1, 0, 1}, &tile101);
-    auto tile110 = Bach::tileFromFile(Bach::testDataDir + "z1x1y0.mvt");
+    auto tile110 = Bach::tileFromByteArray(download({1, 1, 0}));
     tileStorage.insert({1, 1, 0}, &tile110);
     auto tile111 = Bach::tileFromFile(Bach::testDataDir + "z1x1y1.mvt");
     tileStorage.insert({1, 1, 1}, &tile111);
-    auto tile200 = Bach::tileFromFile(Bach::testDataDir + "z2x0y0.mvt");
-    tileStorage.insert({2, 0, 0}, &tile200);
-    auto tile211 = Bach::tileFromFile(Bach::testDataDir + "z2x1y1.mvt");
-    tileStorage.insert({2, 1, 1}, &tile211);
-    auto tile212 = Bach::tileFromFile(Bach::testDataDir + "z2x1y2.mvt");
-    tileStorage.insert({2, 1, 2}, &tile212);
-    auto tile233 = Bach::tileFromFile(Bach::testDataDir + "z2x3y3.mvt");
-    tileStorage.insert({2, 3, 3}, &tile233);
+
+    /*
+    auto tileCount = 1 << 2;
+    for (int x = 0; x < tileCount; x++) {
+        for (int y = 0; y < tileCount; y++) {
+            auto temp = new VectorTile(Bach::tileFromByteArray(download({2, x, y})));
+            tileStorage.insert({2, x, y}, temp);
+        }
+    }
+
+    {
+        auto tileCount = 1 << 3;
+        for (int x = 0; x < tileCount; x++) {
+            for (int y = 0; y < tileCount; y++) {
+                auto temp = new VectorTile(Bach::tileFromByteArray(download({3, x, y})));
+                tileStorage.insert({3, x, y}, temp);
+            }
+        }
+    }
+    */
+
+
 
     mapWidget.show();
 

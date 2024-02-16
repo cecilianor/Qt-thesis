@@ -18,6 +18,12 @@ int Bach::CalcMapZoomLevelForTileSizePixels(
     return std::clamp((int)round(newMapZoomLevel), 0, maxZoomLevel);
 }
 
+/*
+QPair<double, double> calcViewportSizeNorm(double vpZoomLevel, double viewportAspect) {
+    auto temjp = 1 / pow(2, vpZoomLevel);
+}
+*/
+
 QVector<TileCoord> Bach::CalcVisibleTiles(
     double vpX,
     double vpY,

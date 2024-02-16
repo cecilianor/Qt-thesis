@@ -9,7 +9,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Protobuf)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Protobuf Network)
 qt_standard_project_setup()
 
 qt_add_library(maplib STATIC
@@ -19,13 +19,17 @@ qt_add_library(maplib STATIC
     lib/Rendering.h
     lib/TileCoord.h
     lib/Layerstyle.h
-    lib/Layerstyle.cpp)
+    lib/Layerstyle.cpp
+    lib/TileURL.h
+    lib/TileURL.cpp
+    lib/networkcontroller.h
+    lib/networkcontroller.cpp)
 qt_add_protobuf(maplib
     PROTO_FILES
         lib/vector_tile.proto
 )
 target_include_directories(maplib PUBLIC "lib")
-target_link_libraries(maplib PUBLIC Qt6::Widgets Qt6::Protobuf)
+target_link_libraries(maplib PUBLIC Qt6::Widgets Qt6::Protobuf Qt6::Network)
 
 
 

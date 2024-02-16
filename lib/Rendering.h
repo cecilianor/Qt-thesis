@@ -3,6 +3,7 @@
 
 #include <QPainter>
 #include <QMap>
+#include <QPair>
 
 #include "TileCoord.h"
 #include "VectorTiles.h"
@@ -11,6 +12,8 @@
 namespace Bach {
     constexpr int maxZoomLevel = 16;
     const int defaultDesiredTileWidth = 512;
+
+    QPair<double, double> calcViewportSizeNorm(double viewportZoom, double viewportAspect);
 
     int CalcMapZoomLevelForTileSizePixels(
         int vpWidth,
