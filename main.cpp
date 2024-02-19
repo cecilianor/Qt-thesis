@@ -12,10 +12,14 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
-    
-        TileURL tileURL; // Gets different URLs to download PBF tiles
-        std::pair<QByteArray, TileURL::ErrorCode> styleSheetURL = tileURL.getStylesheet(TileURL::styleSheetType::basic_v2);
-        auto responseData = styleSheetURL;
+    TileURL tileURL; // Gets different URLs to download PBF tiles
+
+    QString mapTilerKey = tileURL.readKey("key.txt"); // Read key from file
+        if(mapTilerKey == "") {return 0;}
+
+    std::pair<QByteArray, TileURL::ErrorCode> styleSheetURL =
+        tileURL.getStylesheet(TileURL::styleSheetType::basic_v2, mapTilerKey);
+    auto responseData = styleSheetURL;
         if (responseData.second != TileURL::ErrorCode::success) {
             qWarning() << "There was an error: " << responseData.first;
             return 0;

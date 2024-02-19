@@ -1,6 +1,7 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QFile>
 
 #include "TileURL.h"
 #include "networkcontroller.h"
@@ -9,18 +10,20 @@
 TileURL::TileURL() {};
 
 /**
- * @brief TileURL::getStylesheet gets a stylesheet from mapTiler
- * @param type The type of the stylesheet passed as an enum
- * @return response
+ * @brief TileURL::getStylesheet gets a stylesheet from MapTiler
+ * @param type The type of the stylesheet passed as an enum.
+ * @param key The MapTiler key.
+ * @return The response from MapTiler.
  */
-std::pair<QByteArray, TileURL::ErrorCode> TileURL::getStylesheet(styleSheetType type) {
+std::pair<QByteArray, TileURL::ErrorCode> TileURL::getStylesheet(styleSheetType type, QString key) {
     NetworkController networkController;
     QByteArray response="";
+    QString url;
 
     switch(type) {
     case (TileURL::styleSheetType::basic_v2) : {
-        response = networkController.sendRequest(QString(
-            "https://api.maptiler.com/maps/basic-v2/style.json?key=bWo4cKyYIs8K3SkrLiTk"));
+        url = "https://api.maptiler.com/maps/basic-v2/style.json?key=" + key;
+        response = networkController.sendRequest(QString(url));
         break;
         }
     default: {
@@ -182,3 +185,21 @@ std::pair<QString, TileURL::ErrorCode> TileURL::getPBFLink (const QString & tile
     }
     return std::make_pair("Link wasn't found...", ErrorCode::unknownError);
 };
+
+/**
+ * @brief TileURL::readKey reads a key from file.
+ * @param filePath is the relative path + filename that's storing the key.
+ * @return The key if successfully read from file.
+ */
+QString TileURL::readKey(QString filePath) {
+
+    QFile file(filePath);
+
+    if (!file.open(QFile::ReadOnly | QFile::Text)) {
+        qDebug() << "Couldn't read key...";
+        return QString();
+    }
+    QTextStream in(&file);
+
+    return in.readAll().trimmed();
+}
