@@ -4,11 +4,15 @@
 #include <QWidget>
 #include <QPainter>
 
-#include "Rendering.h"
 #include "VectorTiles.h"
 #include "TileCoord.h"
 #include "Layerstyle.h"
 
+/* Widget class responsible for displaying the actual map.
+ * Should be used as a smaller widget within a larger Widget hierarchy.
+ *
+ * This MapWidget has a built-in viewport configuration (zoom level and center coordinates).
+ */
 class MapWidget : public QWidget
 {
     Q_OBJECT
@@ -20,37 +24,20 @@ public:
     void paintEvent(QPaintEvent*) override;
     void keyPressEvent(QKeyEvent*) override;
 
-    // Zoom level of viewport.
-    // This is a floating number and can be partially zoomed between
-    // discrete steps.
-    // Range [0, 16]
-    [[nodiscard]] auto getViewportZoomLevel() const {
-        return viewportZoomLevel;
-    }
+    /* Zoom level of viewport. This is a floating number and can be partially zoomed between
+     * discrete steps.
+     *
+     * Range [0, 16]
+     */
+    double getViewportZoomLevel() const;
 
     // Guaranteed to be an exact integer.
-    [[nodiscard]] auto getMapZoomLevel() const {
-        if (overrideMapZoom) {
-            return overrideMapZoomLevel;
-        } else {
-            return Bach::CalcMapZoomLevelForTileSizePixels(
-                width(),
-                height(),
-                getViewportZoomLevel());
-        }
-    }
+    int getMapZoomLevel() const;
 
-    [[nodiscard]] auto CalcVisibleTiles() const {
-        return Bach::CalcVisibleTiles(
-            x,
-            y,
-            (double)width() / height(),
-            getViewportZoomLevel(),
-            getMapZoomLevel());
-    }
+    QVector<TileCoord> CalcVisibleTiles() const;
 
     // Temporary. This probably does not belong here.
-    QMap<TileCoord, VectorTile const*> tileStorage;
+    QMap<TileCoord, const VectorTile*> tileStorage;
     // Temporary. This probably does not belong here.
     StyleSheet styleSheet;
 

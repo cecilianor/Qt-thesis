@@ -1,6 +1,7 @@
 #include "TileCoord.h"
 
-QString TileCoord::toString() const {
+QString TileCoord::toString() const
+{
     // Create formatted string based on the members.
     return QString("zoom %1 (%2, %3)")
         .arg(zoom)
@@ -8,7 +9,8 @@ QString TileCoord::toString() const {
         .arg(y);
 }
 
-bool TileCoord::operator<(TileCoord const& other) const {
+bool TileCoord::operator<(const TileCoord &other) const
+{
     if (zoom < other.zoom)
         return true;
     else if (zoom > other.zoom)
@@ -25,6 +27,7 @@ bool TileCoord::operator<(TileCoord const& other) const {
         return false;
 }
 
-bool TileCoord::operator==(TileCoord const& other) const {
+bool TileCoord::operator==(const TileCoord& other) const
+{
     return zoom == other.zoom && x == other.x && y == other.y;
 }

@@ -7,16 +7,29 @@
 //
 // This is the C++ equivalent of the tile-position-triplet in the report.
 struct TileCoord {
+    /* Map zoom level of this tile's position. Range [0, 16].
+     */
     int zoom = 0;
+
+    /* X direction index-coordinate of this tile.
+     *
+     * Should always be in the range [0, tilecount-1]
+     * where tilecount = 2^zoom
+     */
     int x = 0;
+    /* Y direction index-coordinate of this tile.
+     *
+     * Should always be in the range [0, tilecount-1]
+     * where tilecount = 2^zoom
+     */
     int y = 0;
 
     QString toString() const;
 
     // Define less-than operator and the equality operator
     // in order to allow using this type as a key in QMap
-    bool operator<(TileCoord const& other) const;
-    bool operator==(TileCoord const& other) const;
+    bool operator<(const TileCoord &other) const;
+    bool operator==(const TileCoord &other) const;
 };
 
 #endif

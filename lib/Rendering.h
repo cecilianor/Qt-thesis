@@ -11,7 +11,13 @@
 
 namespace Bach {
     constexpr int maxZoomLevel = 16;
-    const int defaultDesiredTileWidth = 512;
+    /* Controls the default value for how big tiles should appear on-screen.
+     * Smaller values mean each individual tile will appear smaller on screen and provide more detail,
+     * larger means each it will appear larger.
+     *
+     * Expressed in pixels.
+     */
+    const int defaultDesiredTileSizePixels = 512;
 
     /* Calculates the width and height of the viewport in world-normalized coordinates.
      * This means the size expressed as a fraction of the world map. For example,
@@ -27,7 +33,7 @@ namespace Bach {
     QPair<double, double> calcViewportSizeNorm(double viewportZoom, double viewportAspect);
 
     /* Calculates the closest map zoom level as such that a tile's on-screen size
-     * is closest to "desiredTileWidth".
+     * is closest to 'desiredTileSize'.
      *
      * Parameters:
      *      vpWidth expects the width of the viewport in pixels.
@@ -41,9 +47,12 @@ namespace Bach {
         int vpWidth,
         int vpHeight,
         double vpZoom,
-        int desiredTileWidth = defaultDesiredTileWidth);
+        int desiredTileSize = defaultDesiredTileSizePixels);
 
     /* Calculates the set of visible tiles in a viewport.
+     *
+     * The method is described in the report in the figure with caption
+     * "Calculating set of tiles within viewport"
      *
      * vpAspect expects the aspect ratio of the viewport, expressed as a fraction width / height.
      *
