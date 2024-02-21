@@ -18,6 +18,7 @@ qt_add_library(maplib STATIC
     lib/Rendering.cpp
     lib/Rendering.h
     lib/TileCoord.h
+    lib/TileCoord.cpp
     lib/Layerstyle.h
     lib/Layerstyle.cpp
     lib/TileURL.h

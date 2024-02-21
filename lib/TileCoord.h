@@ -3,31 +3,20 @@
 
 #include <QString>
 
+// Represents the position of a tile within the maps grid at a given zoom level.
+//
+// This is the C++ equivalent of the tile-position-triplet in the report.
 struct TileCoord {
-    int zoom;
-    int x;
-    int y;
+    int zoom = 0;
+    int x = 0;
+    int y = 0;
 
-    [[nodiscard]] QString toString() const {
-        return QString("zoom %1 (%2, %3)")
-            .arg(zoom)
-            .arg(x)
-            .arg(y);
-    }
+    QString toString() const;
 
     // Define less-than operator and the equality operator
-    // in order to allow using this type as a key in QMap<>
-    [[nodiscard]] bool operator<(TileCoord const& other) const noexcept {
-        if (zoom < other.zoom) return true;
-        if (zoom > other.zoom) return false;
-        if (x < other.x) return true;
-        if (x > other.x) return false;
-        if (y < other.y) return true;
-        return false;
-    }
-    [[nodiscard]] bool operator==(TileCoord const& other) const {
-        return zoom == other.zoom && x == other.x && y == other.y;
-    }
+    // in order to allow using this type as a key in QMap
+    bool operator<(TileCoord const& other) const;
+    bool operator==(TileCoord const& other) const;
 };
 
 #endif
