@@ -61,7 +61,6 @@ public:
     // Functionality making different requests
     std::pair<QByteArray, ErrorCode> getStylesheet(styleSheetType type, QString key); // Implemented
     std::pair<QString, ErrorCode> getTilesLink(const QJsonDocument & styleSheet, QString sourceType);// Implemented Gets dynamic url as a string based on source type!
-    std::pair<QByteArray, ErrorCode> getPBFLink(sourceType type);                             // Implemented. Makes requests to hardcoded urls!
     std::pair<QString, ErrorCode> getPBFLink (const QString & tileSheetUrl);                          // Implemented. Get PBF link based on dynamic or static url.
 
     // Key reader

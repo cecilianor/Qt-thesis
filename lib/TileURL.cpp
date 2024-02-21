@@ -85,58 +85,6 @@ std::pair<QString, TileURL::ErrorCode> TileURL::getTilesLink(const QJsonDocument
 };
 
 /**
- * @brief TileURL::getTilelesheet gets a stylesheet based on a map's mapTiler source type.
- * It's been implemented for the maptiler_planet source type, but the class can support
- * other source types as well (not implemented yet).
- *
- * The function makes a get request to the corresponding maptiler API and returns the
- * response.
- *
- * BUG: This function should not have the sourceTypes hardcoded. I managed to mix
- * up the style sheets and tile sheets while implementing. This source code
- * should just be used for testing purposes.
- *
- * @param type the source type (enum).
- * @return The response from the GET request. The default is to return "".
- */
-std::pair<QByteArray, TileURL::ErrorCode> TileURL::getPBFLink(sourceType type) {
-    // Set up a network controller to make a request to mapTiler
-    NetworkController networkController;
-    QByteArray response ="";
-
-    switch (type) {
-    case (TileURL::sourceType::maptiler_planet) : {
-        // Note here that maptiler_planet links to maptype 'v3'.
-        response = networkController.sendRequest(QString(
-            "https://api.maptiler.com/tiles/v3/tiles.json?key=bWo4cKyYIs8K3SkrLiTk"));
-        break;
-    }
-    case(TileURL::sourceType::land) : {
-        response = networkController.sendRequest(QString(
-            "https://api.maptiler.com/tiles/land/tiles.json?key=bWo4cKyYIs8K3SkrLiTk"));
-        break;
-    }
-    case (TileURL::sourceType::ocean) : {
-        response = networkController.sendRequest(QString(
-            "https://api.maptiler.com/maps/ocean/style.json?key=bWo4cKyYIs8K3SkrLiTk"));
-        break;
-
-    }
-    case(TileURL::sourceType::unknown) : {
-        return std::make_pair("Unknown source type", ErrorCode::unknownError);
-        break;
-    }
-    default: {
-        // Return an empty string as the default case.
-        return std::make_pair("Unknown source type", ErrorCode::unknownError);
-        break;
-        }
-    }
-
-    return std::make_pair(response, ErrorCode::success);
-};
-
-/**
  * @brief TileURL::getPBFLink gets a PBF link based on tileSheet link.
  * @param tileSheetUrl the link/url to the stylesheet.
  * @return The link to PBF tiles.
