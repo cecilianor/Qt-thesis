@@ -20,7 +20,7 @@ int Bach::calcMapZoomLevelForTileSizePixels(
     return std::clamp((int)round(newMapZoomLevel), 0, maxZoomLevel);
 }
 
-QPair<double, double> calcViewportSizeNorm(double vpZoomLevel, double viewportAspect) {
+QPair<double, double> Bach::calcViewportSizeNorm(double vpZoomLevel, double viewportAspect) {
     // Math formula can be seen in the figure in the report, with the caption
     // "Calculating viewport size as a factor of the world map"
     auto temp = 1 / pow(2, vpZoomLevel);
@@ -39,23 +39,31 @@ QVector<TileCoord> Bach::calcVisibleTiles(
 {
     mapZoomLevel = qMax(0, mapZoomLevel);
 
+    // We need to calculate the width and height of the viewport in terms of
+    // world-normalized coordinates.
     auto [vpWidthNorm, vpHeightNorm] = calcViewportSizeNorm(vpZoomLevel, vpAspect);
 
+    // Figure out the 4 edges in world-normalized coordinate space.
     auto vpMinNormX = vpX - (vpWidthNorm / 2.0);
     auto vpMaxNormX = vpX + (vpWidthNorm / 2.0);
     auto vpMinNormY = vpY - (vpHeightNorm / 2.0);
     auto vpMaxNormY = vpY + (vpHeightNorm / 2.0);
 
+    // Amount of tiles in each direction for this map zoom level.
     auto tileCount = 1 << mapZoomLevel;
 
     auto clampToGrid = [&](int i) {
         return std::clamp(i, 0, tileCount-1);
     };
+
+    // Convert edges into the index-based grid coordinates, and apply a clamp operation
+    // in case the viewport goes outside the map.
     auto leftmostTileX = clampToGrid(floor(vpMinNormX * tileCount));
     auto rightmostTileX = clampToGrid(ceil(vpMaxNormX * tileCount));
     auto topmostTileY = clampToGrid(floor(vpMinNormY * tileCount));
     auto bottommostTileY = clampToGrid(ceil(vpMaxNormY * tileCount));
 
+    // Iterate over our two ranges to build our list.
     QVector<TileCoord> visibleTiles;
     for (int y = topmostTileY; y <= bottommostTileY; y++) {
         for (int x = leftmostTileX; x <= rightmostTileX; x++) {
@@ -65,21 +73,43 @@ QVector<TileCoord> Bach::calcVisibleTiles(
     return visibleTiles;
 }
 
-void paintSingleTileDebug(
-    QPainter& painter,
-    TileCoord const& tileCoord,
+/* This is a helper function for visualizing the boundaries of each tile.
+ *
+ * It is responsible for drawing green borders around each tile.
+ *
+ * This function assumes the painter's state has been set up such that
+ * it's not modified from the default pixel-based coordinate space.
+ *
+ * The pen width needs to be set appropriately before using this function.
+ */
+static void paintSingleTileDebug(
+    QPainter &painter,
+    const TileCoord &tileCoord,
     QPoint pixelPos,
-    QTransform const& transform)
+    const QTransform &transform)
 {
     painter.setPen(Qt::green);
+
+    // Draw the X in the middle of the tile first, by using tile-normalized coordinates
+    // from 0.45 to 0.55.
     painter.drawLine(transform.map(QLineF{ QPointF(0.45, 0.45), QPointF(0.55, 0.55) }));
     painter.drawLine(transform.map(QLineF{ QPointF(0.55, 0.45), QPointF(0.45, 0.55) }));
-    painter.drawRect(transform.mapRect(QRectF(0, 0, 1, 1)));
 
+    // Then draw the boundary of the tile.
+    {
+        painter.save();
+        painter.setBrush(Qt::NoBrush);
+        painter.drawRect(transform.mapRect(QRectF(0, 0, 1, 1)));
+        painter.restore();
+    }
+
+    // Draw the text that shows the coordinates of the tile itself.
     {
         // Text rendering has issues if our coordinate system is [0, 1].
-        // So we get it back to unscaled and just offset where we need it.
+        // So we reset the coordinate system back to unscaled and
+        // just offset the text to where we need it.
         painter.save();
+
         QTransform transform;
         transform.translate(pixelPos.x(), pixelPos.y());
         painter.setTransform(transform);
@@ -89,13 +119,16 @@ void paintSingleTileDebug(
     }
 }
 
+/* This function takes care of rendering a single tile.
+ * This is called repeatedly from the 'paintTiles' function.
+ */
 static void paintSingleTile(
-    VectorTile const& tileData,
-    QPainter& painter,
+    const VectorTile &tileData,
+    QPainter &painter,
     int mapZoomLevel,
     float viewportZoomLevel,
-    StyleSheet const& styleSheet,
-    QTransform const& transformIn)
+    const StyleSheet &styleSheet,
+    const QTransform &transformIn)
 {
     for (auto const& abstractLayerStyle : styleSheet.m_layerStyles) {
 
@@ -169,13 +202,13 @@ static void paintSingleTile(
 }
 
 void Bach::paintTiles(
-    QPainter& painter,
+    QPainter &painter,
     double vpX,
     double vpY,
     double viewportZoomLevel,
     int mapZoomLevel,
-    QMap<TileCoord, VectorTile const*> const& tileContainer,
-    StyleSheet const& styleSheet)
+    const QMap<TileCoord, const VectorTile*> &tileContainer,
+    const StyleSheet &styleSheet)
 {
     auto viewportWidth = painter.window().width();
     auto viewportHeight = painter.window().height();

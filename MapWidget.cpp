@@ -1,5 +1,7 @@
 #include "MapWidget.h"
 
+#include "Rendering.h"
+
 #include <QPainter>
 #include <QKeyEvent>
 #include <QtMath>
@@ -15,7 +17,8 @@ MapWidget::~MapWidget() {
 
 }
 
-void MapWidget::keyPressEvent(QKeyEvent* event) {
+void MapWidget::keyPressEvent(QKeyEvent* event)
+{
     auto amount = 0.1 / pow(2, getViewportZoomLevel());
     if (event->key() == Qt::Key::Key_Up) {
         this->y -= amount;
@@ -40,7 +43,8 @@ void MapWidget::keyPressEvent(QKeyEvent* event) {
     }
 }
 
-void MapWidget::paintEvent(QPaintEvent* event) {
+void MapWidget::paintEvent(QPaintEvent* event)
+{
     QPainter painter(this);
     Bach::paintTiles(
         painter,
@@ -50,4 +54,31 @@ void MapWidget::paintEvent(QPaintEvent* event) {
         getMapZoomLevel(),
         tileStorage,
         styleSheet);
+}
+
+double MapWidget::getViewportZoomLevel() const
+{
+    return viewportZoomLevel;
+}
+
+int MapWidget::getMapZoomLevel() const
+{
+    if (overrideMapZoom) {
+        return overrideMapZoomLevel;
+    } else {
+        return Bach::calcMapZoomLevelForTileSizePixels(
+            width(),
+            height(),
+            getViewportZoomLevel());
+    }
+}
+
+QVector<TileCoord> MapWidget::CalcVisibleTiles() const
+{
+    return Bach::calcVisibleTiles(
+        x,
+        y,
+        (double)width() / height(),
+        getViewportZoomLevel(),
+        getMapZoomLevel());
 }
