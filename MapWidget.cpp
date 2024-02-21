@@ -1,5 +1,7 @@
 #include "MapWidget.h"
 
+#include "Rendering.h"
+
 #include <QPainter>
 #include <QKeyEvent>
 #include <QtMath>
