@@ -74,3 +74,18 @@ add_custom_command(
 
 qt_add_executable(cmd_example cmd_example.cpp)
 target_link_libraries(cmd_example PUBLIC maplib)
+
+# All testing related code goes in here
+if (BUILD_TESTS)
+    find_package(Qt6 REQUIRED COMPONENTS Test)
+
+    qt_add_executable(
+        unit_test
+        tests/unit-tests/testgettile.cpp
+    )
+    target_link_libraries(unit_test PUBLIC maplib Qt6::Test)
+
+    # Adds our executable to CTest.
+    enable_testing()
+    add_test(NAME MyTest COMMAND unit_test)
+endif()
