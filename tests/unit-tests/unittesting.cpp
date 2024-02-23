@@ -5,7 +5,7 @@
 
 #include <QObject>
 
-class TestGetTile : public QObject
+class UnitTesting : public QObject
 {
     Q_OBJECT
 
@@ -17,13 +17,12 @@ private slots:
     //void renderingTests();
 };
 
-
-QTEST_MAIN(TestGetTile)
-#include "testgettile.moc"
-
+QTEST_MAIN(UnitTesting)
+// This include needs to match the name of this .cpp file.
+#include "unittesting.moc"
 
 // Try to get a key that's correct
-void TestGetTile::readKey_returns_success_when_valid_key() {
+void UnitTesting::readKey_returns_success_when_valid_key() {
     TileURL tileURL;
 
     QString keyFromFile = tileURL.readKey("testkey.txt");
@@ -33,7 +32,7 @@ void TestGetTile::readKey_returns_success_when_valid_key() {
 }
 
 // Try to get a key that's wrong
-void TestGetTile::readKey_returns_failure_when_invalid_key() {
+void UnitTesting::readKey_returns_failure_when_invalid_key() {
     TileURL tileURL;
 
     QString keyFromFile = tileURL.readKey("testkey.txt");
@@ -45,7 +44,7 @@ void TestGetTile::readKey_returns_failure_when_invalid_key() {
 /// Tests of getting styleshehets
 // Get a supported stylesheet
 // Note that this specific test will fail if an illegal key is provided
-void TestGetTile:: getStyleSheet_returns_success_on_supported_stylesheet() {
+void UnitTesting::getStyleSheet_returns_success_on_supported_stylesheet() {
     TileURL tileURL;
     QString key = tileURL.readKey("key.txt");
 
@@ -57,7 +56,7 @@ void TestGetTile:: getStyleSheet_returns_success_on_supported_stylesheet() {
 
 // Get a non-supported stylesheet
 // Note that this specific test will fail if an illegal key is provided
-void TestGetTile:: getStyleSheet_returns_failure_on_unsupported_stylesheet() {
+void UnitTesting::getStyleSheet_returns_failure_on_unsupported_stylesheet() {
     TileURL tileURL;
     QString key = tileURL.readKey("key.txt");
 
