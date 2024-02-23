@@ -3,6 +3,7 @@
 #include <QImage>
 #include <QPainter>
 #include <QMap>
+#include <QMessageBox>
 
 #include "MapWidget.h"
 
@@ -19,8 +20,13 @@ int main(int argc, char *argv[])
 
      // Read key from file.
     QString mapTilerKey = tileUrl.readKey("key.txt");
-    if(mapTilerKey == "")
-        return 0;
+    if(mapTilerKey == "") {
+        QMessageBox::critical(
+            nullptr,
+            "Critical failure",
+            "Unable to load file 'key.txt'. This key is necessary to contact MapTiler. The application will now shut down.");
+        return -1;
+    }
 
     // Picks stylesheet to load and loads it.
     auto styleSheetType = TileURL::styleSheetType::basic_v2;
