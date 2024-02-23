@@ -9,7 +9,7 @@
 
 TileURL::TileURL() {};
 
-/**
+/*!
  * @brief TileURL::getStylesheet gets a stylesheet from MapTiler
  * @param type The type of the stylesheet passed as an enum.
  * @param key The MapTiler key.
@@ -35,7 +35,7 @@ std::pair<QByteArray, TileURL::ErrorCode> TileURL::getStylesheet(styleSheetType 
     return std::make_pair(response, ErrorCode::success);
 };
 
-/**
+/*!
  * @brief TileURL::getTilesLink grabs a link to a mapTiler tile sheet
  * @param styleSheet is the stylesheet to get the link from
  * @param sourceType is the map source type passed as a QString
@@ -84,8 +84,11 @@ std::pair<QString, TileURL::ErrorCode> TileURL::getTilesLink(const QJsonDocument
     return std::make_pair("", ErrorCode::unknownError);
 };
 
-/**
- * @brief TileURL::getPBFLink gets a PBF link based on tileSheet link.
+/*!
+ * @brief TileURL::getPBFLink gets a PBF link based on the url to a tile sheet.
+ *
+ * The function returns either a success message or an error message and error code.
+ *
  * @param tileSheetUrl the link/url to the stylesheet.
  * @return The link to PBF tiles.
  */
@@ -134,7 +137,7 @@ std::pair<QString, TileURL::ErrorCode> TileURL::getPBFLink (const QString & tile
     return std::make_pair("Link wasn't found...", ErrorCode::unknownError);
 };
 
-/**
+/*!
  * @brief TileURL::readKey reads a key from file.
  * @param filePath is the relative path + filename that's storing the key.
  * @return The key if successfully read from file.
