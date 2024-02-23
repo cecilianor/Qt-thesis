@@ -151,3 +151,13 @@ QString TileURL::readKey(QString filePath) {
 
     return in.readAll().trimmed();
 }
+
+QByteArray TileURL::loadStyleSheetFromWeb(const QString &mapTilerKey, TileURL::styleSheetType &styleSheetType)
+{
+
+    std::pair<QByteArray, TileURL::ErrorCode> styleSheetResult = getStylesheet(styleSheetType, mapTilerKey);
+    if (styleSheetResult.second != TileURL::ErrorCode::success) {
+        qWarning() << "There was an error: " << styleSheetResult.first;
+    }
+    return styleSheetResult.first;
+}

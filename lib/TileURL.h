@@ -63,6 +63,8 @@ public:
     std::pair<QString, ErrorCode> getTilesLink(const QJsonDocument & styleSheet, QString sourceType);// Implemented Gets dynamic url as a string based on source type!
     std::pair<QString, ErrorCode> getPBFLink (const QString & tileSheetUrl);                          // Implemented. Get PBF link based on dynamic or static url.
 
+    QByteArray loadStyleSheetFromWeb(const QString &mapTilerKey, styleSheetType &styleSheetType);
+
     // Key reader
     QString readKey(QString tilePath);
 

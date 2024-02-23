@@ -8,14 +8,6 @@
 
 #include "TileURL.h"
 
-QByteArray loadStyleSheetFromWeb(const QString &mapTilerKey, TileURL &tileURL)
-{
-    std::pair<QByteArray, TileURL::ErrorCode> styleSheetResult = tileURL.getStylesheet(TileURL::styleSheetType::basic_v2, mapTilerKey);
-    if (styleSheetResult.second != TileURL::ErrorCode::success) {
-        qWarning() << "There was an error: " << styleSheetResult.first;
-    }
-    return styleSheetResult.first;
-}
 
 QString getPbfLinkTemplate(TileURL &tileUrl, const QByteArray &styleSheetBytes)
 {
@@ -62,7 +54,9 @@ int main(int argc, char *argv[])
     if(mapTilerKey == "")
         return 0;
 
-    auto styleSheetBytes = loadStyleSheetFromWeb(mapTilerKey, tileUrl);
+    // Picks stylesheet to load and loads it.
+    auto styleSheetType = TileURL::styleSheetType::basic_v2;
+    auto styleSheetBytes = tileUrl.loadStyleSheetFromWeb(mapTilerKey, styleSheetType);
 
     // Gets the link template where we have to switch out x, y,z in the link.
     auto pbfLinkTemplate = getPbfLinkTemplate(tileUrl, styleSheetBytes);
