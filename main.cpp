@@ -8,25 +8,12 @@
 
 #include "TileURL.h"
 
-QString getPbfLink(const TileCoord &tileCoord, const QString &pbfLinkTemplate)
-{
-    // Exchange the {x, y z} in link
-    auto copy = pbfLinkTemplate;
-    copy.replace("{z}", QString::number(tileCoord.zoom));
-    copy.replace("{x}", QString::number(tileCoord.x));
-    copy.replace("{y}", QString::number(tileCoord.y));
-    return copy;
-}
-
-QByteArray downloadTile(const QString &pbfLink)
-{
-    NetworkController controller;
-    return controller.sendRequest(pbfLink);
-}
-
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+    // Makes individual GET requests.
+    NetworkController networkController;
+
     // Gets different URLs to download PBF tiles.
     TileURL tileUrl;
 
@@ -58,13 +45,16 @@ int main(int argc, char *argv[])
     styleSheet.parseSheet(doc);
 
     // Download tiles, or load them from disk, then insert into the tile-storage map.
-    auto tile000 = Bach::tileFromByteArray(downloadTile(getPbfLink({0, 0, 0}, pbfLinkTemplate)));
+    auto tile000 = Bach::tileFromByteArray(tileUrl.downloadTile(
+        tileUrl.setPbfLink({0, 0, 0}, pbfLinkTemplate), networkController));
     tileStorage.insert({0, 0, 0}, &tile000);
-    auto tile100 = Bach::tileFromByteArray(downloadTile(getPbfLink({1, 0, 0}, pbfLinkTemplate)));
+    auto tile100 = Bach::tileFromByteArray(tileUrl.downloadTile(
+        tileUrl.setPbfLink({1, 0, 0}, pbfLinkTemplate), networkController));
     tileStorage.insert({1, 0, 0}, &tile100);
     auto tile101 = Bach::tileFromFile(Bach::testDataDir + "z1x0y1.mvt");
     tileStorage.insert({1, 0, 1}, &tile101);
-    auto tile110 = Bach::tileFromByteArray(downloadTile(getPbfLink({1, 1, 0}, pbfLinkTemplate)));
+    auto tile110 = Bach::tileFromByteArray(tileUrl.downloadTile(
+        tileUrl.setPbfLink({1, 1, 0}, pbfLinkTemplate), networkController));
     tileStorage.insert({1, 1, 0}, &tile110);
     auto tile111 = Bach::tileFromFile(Bach::testDataDir + "z1x1y1.mvt");
     tileStorage.insert({1, 1, 1}, &tile111);

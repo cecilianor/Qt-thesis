@@ -4,6 +4,7 @@
 #include <QFile>
 
 #include "TileURL.h"
+#include "TileCoord.h"
 #include "networkcontroller.h"
 #include "qjsonarray.h"
 
@@ -193,4 +194,39 @@ QString TileURL::getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QSt
     // Grab link to the XYZ PBF tile format based on the tiles.json link
     std::pair<QString, TileURL::ErrorCode> pbfLink = getPBFLink(tilesLinkResult.first);
     return pbfLink.first;
+}
+
+/*!
+ * \brief TileURL::setPbfLink sets the link that will be used to download a protobuf tile.
+ *
+ * This function takes the templatized version that's used when getting a protobuf tile.
+ * It will consist of a link on the form:
+ *      'https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key=myKey'
+ *
+ * To get an actual tile, the x, y, and z coordinates must be replaced with the correct
+ * coordinates of the tile.
+ *
+ * \param tileCoord is the coordinate to the PBF tile.
+ * \param pbfLinkTemplate is the templatized link.
+ * \return The generated link to the requested PBF tile.
+ */
+QString TileURL::setPbfLink(const TileCoord &tileCoord, const QString &pbfLinkTemplate)
+{
+    // Exchange the {x, y z} in link
+    auto copy = pbfLinkTemplate;
+    copy.replace("{z}", QString::number(tileCoord.zoom));
+    copy.replace("{x}", QString::number(tileCoord.x));
+    copy.replace("{y}", QString::number(tileCoord.y));
+    return copy;
+}
+
+/*!
+ * \brief TileURL::downloadTile downloads a protobuf tile.
+ * \param pbfLink is the URL to make the get request to.
+ * \param controller is the network controller making the request.
+ * \return the response from the GET request.
+ */
+QByteArray TileURL::downloadTile(const QString &pbfLink, NetworkController &controller)
+{
+    return controller.sendRequest(pbfLink);
 }

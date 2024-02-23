@@ -6,6 +6,7 @@
 #include <QJsonObject>
 #include <QJsonArray>
 
+#include "TileCoord.h"
 #include "networkcontroller.h"
 
 class TileURL
@@ -65,6 +66,8 @@ public:
 
     QByteArray loadStyleSheetFromWeb(const QString &mapTilerKey, styleSheetType &styleSheetType);
     QString getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType);
+    QString setPbfLink(const TileCoord &tileCoord, const QString &pbfLinkTemplate);
+    QByteArray downloadTile(const QString &pbfLink, NetworkController &controller);
     // Key reader
     QString readKey(QString tilePath);
 
