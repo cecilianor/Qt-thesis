@@ -151,7 +151,13 @@ QString TileURL::readKey(QString filePath) {
 
     return in.readAll().trimmed();
 }
-
+/*!
+ * \brief TileURL::loadStyleSheetFromWeb loads a style sheet from the MapTiler API.
+ * \param mapTilerKey is the personal key to the MapTiler API. This must be placed in a file
+ * called 'key.txt' and stored in the same folder as the executable.
+ * \param styleSheetType is the type of style sheet to load.
+ * \return
+ */
 QByteArray TileURL::loadStyleSheetFromWeb(const QString &mapTilerKey, TileURL::styleSheetType &styleSheetType)
 {
 
