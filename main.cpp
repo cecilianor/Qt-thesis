@@ -8,25 +8,6 @@
 
 #include "TileURL.h"
 
-
-QString getPbfLinkTemplate(TileURL &tileUrl, const QByteArray &styleSheetBytes)
-{
-    // Parse the stylesheet
-    QJsonParseError parseError;
-    QJsonDocument styleSheetJson = QJsonDocument::fromJson(styleSheetBytes, &parseError);
-    if (parseError.error != QJsonParseError::NoError) {
-        qWarning() << "Parse error at" << parseError.offset << ":" << parseError.errorString();
-        return 0;
-    }
-
-    // Grab link to tiles.json format link
-    std::pair<QString, TileURL::ErrorCode> tilesLinkResult = tileUrl.getTilesLink(styleSheetJson, "maptiler_planet");
-
-    // Grab link to the XYZ PBF tile format based on the tiles.json link
-    std::pair<QString, TileURL::ErrorCode> pbfLink = tileUrl.getPBFLink(tilesLinkResult.first);
-    return pbfLink.first;
-}
-
 QString getPbfLink(const TileCoord &tileCoord, const QString &pbfLinkTemplate)
 {
     // Exchange the {x, y z} in link
@@ -59,7 +40,7 @@ int main(int argc, char *argv[])
     auto styleSheetBytes = tileUrl.loadStyleSheetFromWeb(mapTilerKey, styleSheetType);
 
     // Gets the link template where we have to switch out x, y,z in the link.
-    auto pbfLinkTemplate = getPbfLinkTemplate(tileUrl, styleSheetBytes);
+    auto pbfLinkTemplate = tileUrl.getPbfLinkTemplate(styleSheetBytes, "maptiler_planet");
 
     // Creates the Widget that displays the map.
     MapWidget mapWidget;

@@ -170,3 +170,27 @@ QByteArray TileURL::loadStyleSheetFromWeb(const QString &mapTilerKey, TileURL::s
     }
     return styleSheetResult.first;
 }
+
+/*!
+ * \brief TileURL::getPbfLinkTemplate templatises the PBF link used to get MapTiler vector tiles.
+ * \param styleSheetBytes is the style sheet as a byte array.
+ * \param sourceType is the source type used by MapTiler. This is currently passed as a string.
+ * \return the PBF template.
+ */
+QString TileURL::getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType)
+{
+    // Parse the stylesheet
+    QJsonParseError parseError;
+    QJsonDocument styleSheetJson = QJsonDocument::fromJson(styleSheetBytes, &parseError);
+    if (parseError.error != QJsonParseError::NoError) {
+        qWarning() << "Parse error at" << parseError.offset << ":" << parseError.errorString();
+        return 0;
+    }
+
+    // Grab link to tiles.json format link
+    std::pair<QString, TileURL::ErrorCode> tilesLinkResult = getTilesLink(styleSheetJson, sourceType);
+
+    // Grab link to the XYZ PBF tile format based on the tiles.json link
+    std::pair<QString, TileURL::ErrorCode> pbfLink = getPBFLink(tilesLinkResult.first);
+    return pbfLink.first;
+}

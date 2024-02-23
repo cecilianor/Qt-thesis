@@ -64,7 +64,7 @@ public:
     std::pair<QString, ErrorCode> getPBFLink (const QString & tileSheetUrl);                          // Implemented. Get PBF link based on dynamic or static url.
 
     QByteArray loadStyleSheetFromWeb(const QString &mapTilerKey, styleSheetType &styleSheetType);
-
+    QString getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType);
     // Key reader
     QString readKey(QString tilePath);
 
