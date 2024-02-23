@@ -2,6 +2,16 @@
 #include <QRegularExpression>
 #include <QtMath>
 
+/* Create a QColor obecject from an hsl color string.
+     *The string is expected to be in one of the following formats:
+     *"hsl(hue, stauration%, lightness%)"
+     *"hsla(hue, stauration%, lightness%, alpha)"
+     *
+     * Parameters:
+     *      colorString expects a QString containing the color.
+     *
+     * Returns a QColor object.
+     */
 static QColor getColorFromString(QString colorString)
 {
     colorString.remove(" ");
@@ -28,16 +38,32 @@ static QColor getColorFromString(QString colorString)
 }
 
 
-
+/* Perform a linear interpolation of a numerical value based on QPair inputs.
+     *
+     * Parameters:
+     *      stop1 expects a QPair<int, T> wich is the first stop in the interpolation.
+     *      stop2 expects a QPair<int, T> wich is the second stop in the interpolation.
+     *      currentZoom expects an integer to be used as the interpolation input.
+     *
+     * Returns the output of the interpolation as type T.
+     */
 template <class T>
-float interpolate(QPair<int, T> stop1, QPair<int, T> stop2, int currentZoom)
+T interpolate(QPair<int, T> stop1, QPair<int, T> stop2, int currentZoom)
 {
     T lerpedValue = stop1.second + (currentZoom - stop1.first)*(stop2.second - stop1.second)/(stop2.first - stop1.first);
     return lerpedValue;
 }
 
 
-
+/* Perform a linear interpolation of a QColor value based on QPair inputs.
+     *
+     * Parameters:
+     *      stop1 expects a QPair<int, QColor> wich is the first stop in the interpolation.
+     *      stop2 expects a QPair<int, QColor> wich is the second stop in the interpolation.
+     *      currentZoom expects an integer to be used as the interpolation input.
+     *
+     * Returns the output of the interpolation as a QColor object.
+     */
 static QColor interpolateColor(QPair<int, QColor> stop1, QPair<int, QColor> stop2, int currentZoom)
 {
     if (stop1.second.hue() == stop2.second.hue()) {
@@ -67,7 +93,15 @@ static QColor interpolateColor(QPair<int, QColor> stop1, QPair<int, QColor> stop
 }
 
 
-
+/* Determines which two interpolation stops are apropritate to use for a given zoom
+     *value from a QList of QPairs.
+     *
+     * Parameters:
+     *     list expects a QList of QPairs conatining all the stops.
+     *     currentZoom expect an integer which is the input value to be used in the interpolation.
+     *
+     * Returns the return value from the interpolation function of type T.
+     */
 template <class T>
 T getLerpedValue(QList<QPair<int, T>> list, int currentZoom)
 {
@@ -87,7 +121,15 @@ T getLerpedValue(QList<QPair<int, T>> list, int currentZoom)
     }
 }
 
-
+/* Determines which two interpolation stops are apropritate to use for a given zoom
+     *value from a QList of QPairs. This function is specific for color interpolation.
+     *
+     * Parameters:
+     *     list expects a QList of QPairs conatining all the stops.
+     *     currentZoom expect an integer which is the input value to be used in the interpolation.
+     *
+     * Returns the return value from the interpolation function of type QColor.
+     */
 static QColor getLerpedColorValue(QList<QPair<int, QColor>> list, int currentZoom)
 {
     if(list.length() == 1 || currentZoom <= list.begin()->first){
@@ -111,6 +153,13 @@ static QColor getLerpedColorValue(QList<QPair<int, QColor>> list, int currentZoo
  * ----------------------------------------------------------------------------
  */
 
+/*Parses the data from a QJsonObject containing styling properties of a layer of type background.
+     *
+     * Parameters:
+     *     json expects a refrence to the json object containing the data.
+     *
+     * Returns a pointer of type BackgroundStyle to the newly created layer with the parsed properties.
+     */
 BackgroundStyle *BackgroundStyle::fromJson(const QJsonObject &json)
 {
     BackgroundStyle* returnLayer = new BackgroundStyle();
@@ -153,6 +202,7 @@ BackgroundStyle *BackgroundStyle::fromJson(const QJsonObject &json)
     return returnLayer;
 }
 
+//The following functions are getters and setters for the different background layer properties.
 QColor BackgroundStyle::getColorAtZoom(int zoomLevel) const
 {
     return getLerpedColorValue(m_backgroundColor, zoomLevel);
@@ -176,7 +226,13 @@ void BackgroundStyle::addBackgroundOpacityStop(int zoomLevel, float opacity)
  * ----------------------------------------------------------------------------
  */
 
-
+/*Parses the data from a QJsonObject containing styling properties of a layer of type fill.
+     *
+     * Parameters:
+     *     json expects a refrence to the json object containing the data.
+     *
+     * Returns a pointer of type FillLayerStyle to the newly created layer with the parsed properties.
+     */
 FillLayerStyle *FillLayerStyle::fromJson(const QJsonObject &json)
 {
     FillLayerStyle* returnLayer = new FillLayerStyle();
@@ -229,6 +285,7 @@ FillLayerStyle *FillLayerStyle::fromJson(const QJsonObject &json)
     return returnLayer;
 }
 
+//The following functions are getters and setters for the different background layer properties.
 QColor FillLayerStyle::getFillColorAtZoom(int zoomLevel) const
 {
     return getLerpedColorValue(m_fillColor, zoomLevel);
@@ -263,7 +320,13 @@ void FillLayerStyle::addFillOutlineColorStop(int zoomLevel, QString hslColor)
  * ----------------------------------------------------------------------------
  */
 
-
+/*Parses the data from a QJsonObject containing styling properties of a layer of type line.
+     *
+     * Parameters:
+     *     json expects a refrence to the json object containing the data.
+     *
+     * Returns a pointer of type LineLayerStyle to the newly created layer with the parsed properties.
+     */
 LineLayerStyle *LineLayerStyle::fromJson(const QJsonObject &json)
 {
 
@@ -329,6 +392,7 @@ LineLayerStyle *LineLayerStyle::fromJson(const QJsonObject &json)
     return returnLayer;
 }
 
+//The following functions are getters and setters for the different background layer properties.
 QColor LineLayerStyle::getLineColorAtZoom(int zoomLevel) const
 {
     return getLerpedColorValue(m_lineColor, zoomLevel);
@@ -373,7 +437,13 @@ void LineLayerStyle::addLinewidthStop(int zoomLevel, int width)
  * ----------------------------------------------------------------------------
  */
 
-
+/*Parses the data from a QJsonObject containing styling properties of a layer of type symbol.
+     *
+     * Parameters:
+     *     json expects a refrence to the json object containing the data.
+     *
+     * Returns a pointer of type SymbolLayerStyle to the newly created layer with the parsed properties.
+     */
 SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
 {
 
@@ -422,6 +492,8 @@ SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
     return returnLayer;
 }
 
+
+//The following functions are getters and setters for the different background layer properties.
 int SymbolLayerStyle::getTextSizeAtZoom(int zoomLevel) const
 {
     return getLerpedValue(m_textSize, zoomLevel);
@@ -455,7 +527,13 @@ void SymbolLayerStyle::addTextPacity(int zoomLevel, float opacity)
 /*
  * ----------------------------------------------------------------------------
  */
-
+/*Parses basic properties of layerstyles that are not background, fill, line, or symbol.
+     *
+     * Parameters:
+     *     json expects a refrence to the json object containing the data.
+     *
+     * Returns a pointer of type NotImplementedStyle to the newly created layer with the parsed properties.
+     */
 NotImplementedStyle* NotImplementedStyle::fromJson(const QJsonObject &json)
 {
     NotImplementedStyle* returnLayer = new NotImplementedStyle();
@@ -472,7 +550,13 @@ NotImplementedStyle* NotImplementedStyle::fromJson(const QJsonObject &json)
  */
 
 
-
+/*Passes the json object to the apropriate function to be parsed into a layerStyle object.
+     *
+     * Parameters:
+     *     json expects a refrence to the json object containing the data.
+     *
+     * Returns a pointer of type AbstractLayereStyle to the newly created layer with the parsed properties.
+     */
 AbstractLayereStyle* AbstractLayereStyle::fromJson(const QJsonObject &json)
 {
     QString layerType = json.value("type").toString();
@@ -494,7 +578,7 @@ AbstractLayereStyle* AbstractLayereStyle::fromJson(const QJsonObject &json)
  * ----------------------------------------------------------------------------
  */
 
-
+//Destructor for the StyleSheet class.
 StyleSheet::~StyleSheet()
 {
     for(auto layer : m_layerStyles) {
@@ -502,6 +586,15 @@ StyleSheet::~StyleSheet()
     }
 }
 
+/*Parce a json document by iterating throught the layers and parsing the styling properties
+     *of the different layer types.
+     *The function populates the m_layers list of the StyleSheet bject with pointers to
+     *AbstractLayerStyle objects containing the styling information.
+     *
+     * Parameters:
+     *     styleSheet expects a refrence to the json document containing the style sheet.
+     *
+     */
 void StyleSheet::parseSheet(const QJsonDocument &styleSheet)
 {
     QJsonObject styleSheetObject = styleSheet.object();
