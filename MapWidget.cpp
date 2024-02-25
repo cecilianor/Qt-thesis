@@ -2,42 +2,38 @@
 
 #include "Rendering.h"
 
-#include <QPainter>
-#include <QKeyEvent>
 #include <QtMath>
+#include <QCoreApplication>
+#include <QKeyEvent>
+#include <QPainter>
 
-MapWidget::MapWidget(QWidget *parent)
-    : QWidget(parent)
+MapWidget::MapWidget(QWidget *parent) : QWidget(parent)
 {
-    setWindowTitle("Map Test Widget");
-    resize(800, 800);
+    // Establish and install our keypress filter.
+    this->keyPressFilter = std::make_unique<KeyPressFilter>(this);
+    QCoreApplication::instance()->installEventFilter(this->keyPressFilter.get());
 }
 
-MapWidget::~MapWidget() {
-
+MapWidget::~MapWidget()
+{
+    // Remember to remove our keypress filter.
+    QCoreApplication::instance()->removeEventFilter(this->keyPressFilter.get());
 }
 
 void MapWidget::keyPressEvent(QKeyEvent* event)
 {
-    auto amount = 0.1 / pow(2, getViewportZoomLevel());
     if (event->key() == Qt::Key::Key_Up) {
-        this->y -= amount;
-        this->update();
+        panUp();
     } else if (event->key() == Qt::Key::Key_Down) {
-        this->y += amount;
-        this->update();
+        panDown();
     } else if (event->key() == Qt::Key::Key_Left) {
-        this->x -= amount;
-        this->update();
+        panLeft();
     } else if (event->key() == Qt::Key::Key_Right) {
-        this->x += amount;
-        this->update();
+        panRight();
     } else if (event->key() == Qt::Key::Key_W) {
-        this->viewportZoomLevel += 0.1;
-        this->update();
+        zoomIn();
     } else if (event->key() == Qt::Key::Key_S) {
-        this->viewportZoomLevel -= 0.1;
-        this->update();
+        zoomOut();
     } else {
         QWidget::keyPressEvent(event);
     }
@@ -63,6 +59,8 @@ double MapWidget::getViewportZoomLevel() const
 
 int MapWidget::getMapZoomLevel() const
 {
+    // Calculate the map zoom level based on the viewport,
+    // or just return the overriden value.
     if (overrideMapZoom) {
         return overrideMapZoomLevel;
     } else {
@@ -73,7 +71,7 @@ int MapWidget::getMapZoomLevel() const
     }
 }
 
-QVector<TileCoord> MapWidget::CalcVisibleTiles() const
+QVector<TileCoord> MapWidget::calcVisibleTiles() const
 {
     return Bach::calcVisibleTiles(
         x,
@@ -81,4 +79,81 @@ QVector<TileCoord> MapWidget::CalcVisibleTiles() const
         (double)width() / height(),
         getViewportZoomLevel(),
         getMapZoomLevel());
+}
+
+double MapWidget::getPanStepAmount() const
+{
+    return 0.1 / pow(2, getViewportZoomLevel());
+}
+
+void MapWidget::genericZoom(bool magnify)
+{
+    if (magnify)
+        viewportZoomLevel += 0.1;
+    else
+        viewportZoomLevel -= 0.1;
+    this->update();
+}
+
+void MapWidget::zoomIn()
+{
+    genericZoom(true);
+}
+
+void MapWidget::zoomOut()
+{
+    genericZoom(false);
+}
+
+void MapWidget::panUp()
+{
+    auto amount = getPanStepAmount();
+    this->y -= amount;
+    this->update();
+}
+
+void MapWidget::panDown()
+{
+    auto amount = getPanStepAmount();
+    this->y += amount;
+    this->update();
+}
+
+void MapWidget::panLeft()
+{
+    auto amount = getPanStepAmount();
+    this->x -= amount;
+    this->update();
+}
+
+void MapWidget::panRight()
+{
+    auto amount = getPanStepAmount();
+    this->x += amount;
+    this->update();
+}
+
+bool MapWidget::KeyPressFilter::eventFilter(QObject *obj, QEvent *event)
+{
+    //if (!mapWidget->hasFocus())
+        //return QObject::eventFilter(obj, event);
+
+    // Only intercept keypress events.
+    if (event->type() == QEvent::KeyPress) {
+        auto keyEvent = static_cast<QKeyEvent*>(event);
+        switch (keyEvent->key()) {
+        case Qt::Key_Left:
+        case Qt::Key_Right:
+        case Qt::Key_Up:
+        case Qt::Key_Down:
+            mapWidget->keyPressEvent(keyEvent);
+            // Mark event as handled
+            return true;
+        default:
+             // Do not intercept other key presses
+            break;
+        }
+    }
+    // Pass the event on to the parent class for default processing
+    return QObject::eventFilter(obj, event);
 }

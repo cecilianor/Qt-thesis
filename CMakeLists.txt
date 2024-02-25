@@ -65,11 +65,17 @@ target_link_libraries(maplib PUBLIC Qt6::Widgets Qt6::Protobuf Qt6::Network)
 set(PROJECT_SOURCES
     main.cpp
     MapWidget.h
-    MapWidget.cpp)
+    MapWidget.cpp
+    MapZoomControlWidget.h
+    MapZoomControlWidget.cpp
+    MapPanControlWidget.h
+    MapPanControlWidget.cpp
+    MainWindow.h
+    MainWindow.cpp)
 qt_add_executable(maptest
     MANUAL_FINALIZATION
     ${PROJECT_SOURCES}
-)
+    )
 
 # Link our app to our library target.
 target_link_libraries(maptest PUBLIC maplib)

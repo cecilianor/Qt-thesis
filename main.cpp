@@ -1,12 +1,7 @@
 #include <QApplication>
-#include <QFile>
-#include <QImage>
-#include <QPainter>
-#include <QMap>
 #include <QMessageBox>
 
-#include "MapWidget.h"
-
+#include "MainWindow.h"
 #include "TileURL.h"
 
 int main(int argc, char *argv[])
@@ -21,6 +16,7 @@ int main(int argc, char *argv[])
      // Read key from file.
     QString mapTilerKey = tileUrl.readKey("key.txt");
     if(mapTilerKey == "") {
+        // If we couldn't load the key, display an error box.
         QMessageBox::critical(
             nullptr,
             "Critical failure",
@@ -36,19 +32,19 @@ int main(int argc, char *argv[])
     auto pbfLinkTemplate = tileUrl.getPbfLinkTemplate(styleSheetBytes, "maptiler_planet");
 
     // Creates the Widget that displays the map.
-    MapWidget mapWidget;
-    auto &styleSheet = mapWidget.styleSheet;
-    auto &tileStorage = mapWidget.tileStorage;
+    auto *mapWidget = new MapWidget();
+    auto &styleSheet = mapWidget->styleSheet;
+    auto &tileStorage = mapWidget->tileStorage;
 
     // Parses the bytes that form the stylesheet into a json-document object.
     QJsonParseError parseError;
-    QJsonDocument doc = QJsonDocument::fromJson(styleSheetBytes, &parseError);
+    auto styleSheetJsonDoc = QJsonDocument::fromJson(styleSheetBytes, &parseError);
     if (parseError.error != QJsonParseError::NoError) {
         qWarning() << "Parse error at" << parseError.offset << ":" << parseError.errorString();
         return 0;
     }
     // Then finally parse the JSonDocument into our StyleSheet.
-    styleSheet.parseSheet(doc);
+    styleSheet.parseSheet(styleSheetJsonDoc);
 
     // Download tiles, or load them from disk, then insert into the tile-storage map.
     auto tile000 = Bach::tileFromByteArray(tileUrl.downloadTile(
@@ -86,7 +82,9 @@ int main(int argc, char *argv[])
     }
     */
 
-    mapWidget.show();
+    // Main window setup
+    auto app = Bach::MainWindow(mapWidget);
+    app.show();
 
     return a.exec();
 }
