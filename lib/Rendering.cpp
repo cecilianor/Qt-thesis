@@ -1,5 +1,41 @@
 #include "Rendering.h"
 
+QPair<double, double> Bach::lonLatToWorldNormCoord(double lon, double lat)
+{
+    constexpr double webMercatorPhiCutoff = 1.4844222297;
+
+    // Function to normalize a value from its original range to [0, 1]
+    auto normalize = [](double value, double min, double max) {
+        return (value - min) / (max - min);
+    };
+
+    // Convert longitude and latitude to radians
+    auto lambda = lon;
+    auto phi = lat;
+
+    // Convert to Web Mercator
+    auto x = lambda;
+    auto y = std::log(std::tan(M_PI / 4.0 + phi / 2.0));
+
+    // Normalize x and y to [0, 1]
+    // Assuming the Web Mercator x range is [-π, π] and y range is calculated from latitude range
+    auto xNormalized = normalize(x, -M_PI, M_PI);
+    auto yNormalized = normalize(
+        y,
+        std::log(std::tan(M_PI / 4.0 + -webMercatorPhiCutoff / 2.0)),
+        std::log(std::tan(M_PI / 4.0 + webMercatorPhiCutoff / 2.0)));
+
+    return { xNormalized, yNormalized };
+}
+
+QPair<double, double> Bach::lonLatToWorldNormCoordDegrees(double lon, double lat)
+{
+    auto degToRad = [](double deg) {
+        return deg * M_PI / 180.0;
+    };
+    return lonLatToWorldNormCoord(degToRad(lon), degToRad(lat));
+}
+
 int Bach::calcMapZoomLevelForTileSizePixels(
     int vpWidth,
     int vpHeight,

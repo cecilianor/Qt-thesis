@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
     auto pbfLinkTemplate = tileUrl.getPbfLinkTemplate(styleSheetBytes, "maptiler_planet");
 
     // Creates the Widget that displays the map.
-    auto *mapWidget = new MapWidget();
+    auto *mapWidget = new MapWidget;
     auto &styleSheet = mapWidget->styleSheet;
     auto &tileStorage = mapWidget->tileStorage;
 

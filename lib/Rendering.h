@@ -11,6 +11,7 @@
 
 namespace Bach {
     constexpr int maxZoomLevel = 16;
+
     /* Controls the default value for how big tiles should appear on-screen.
      * Smaller values mean each individual tile will appear smaller on screen and provide more detail,
      * larger means each it will appear larger.
@@ -18,6 +19,18 @@ namespace Bach {
      * Expressed in pixels.
      */
     const int defaultDesiredTileSizePixels = 512;
+
+    /* Converts longitude and latitude to world-normalized coordinates.
+     * Takes radians.
+     *
+     * The math formula employed is described by the figure in the report with the caption
+     * "Converting longitude and latitude to world-normalized coordinates"
+     */
+    QPair<double, double> lonLatToWorldNormCoord(double lon, double lat);
+    /* Converts longitude and latitude to world-normalized coordinates.
+     * Takes degrees.
+     */
+    QPair<double, double> lonLatToWorldNormCoordDegrees(double lon, double lat);
 
     /* Calculates the width and height of the viewport in world-normalized coordinates.
      * This means the size expressed as a fraction of the world map. For example,
