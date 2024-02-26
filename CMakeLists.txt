@@ -57,10 +57,6 @@ target_include_directories(maplib PUBLIC "lib")
 # Link our library to the Qt6 components.
 target_link_libraries(maplib PUBLIC Qt6::Widgets Qt6::Protobuf Qt6::Network)
 
-
-
-
-
 # Setup the primary QWidgets application
 set(PROJECT_SOURCES
     main.cpp
@@ -70,6 +66,8 @@ set(PROJECT_SOURCES
     MapZoomControlWidget.cpp
     MapPanControlWidget.h
     MapPanControlWidget.cpp
+    MapCoordControlWidget.h
+    MapCoordControlWidget.cpp
     MainWindow.h
     MainWindow.cpp)
 qt_add_executable(maptest

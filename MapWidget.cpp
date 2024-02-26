@@ -92,7 +92,7 @@ void MapWidget::genericZoom(bool magnify)
         viewportZoomLevel += 0.1;
     else
         viewportZoomLevel -= 0.1;
-    this->update();
+    update();
 }
 
 void MapWidget::zoomIn()
@@ -108,29 +108,42 @@ void MapWidget::zoomOut()
 void MapWidget::panUp()
 {
     auto amount = getPanStepAmount();
-    this->y -= amount;
-    this->update();
+    y -= amount;
+    update();
 }
 
 void MapWidget::panDown()
 {
     auto amount = getPanStepAmount();
-    this->y += amount;
-    this->update();
+    y += amount;
+    update();
 }
 
 void MapWidget::panLeft()
 {
     auto amount = getPanStepAmount();
-    this->x -= amount;
-    this->update();
+    x -= amount;
+    update();
 }
 
 void MapWidget::panRight()
 {
     auto amount = getPanStepAmount();
-    this->x += amount;
-    this->update();
+    x += amount;
+    update();
+}
+
+void MapWidget::setViewport(double xIn, double yIn, double zoomIn)
+{
+    bool change = false;
+    if (x != xIn || y != yIn || viewportZoomLevel != zoomIn)
+        change = true;
+    x = xIn;
+    y = yIn;
+    viewportZoomLevel = zoomIn;
+    if (change) {
+        update();
+    }
 }
 
 bool MapWidget::KeyPressFilter::eventFilter(QObject *obj, QEvent *event)

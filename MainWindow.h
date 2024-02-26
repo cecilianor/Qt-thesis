@@ -3,6 +3,7 @@
 
 #include <QMainWindow>
 #include <QKeyEvent>
+#include <QLineEdit>
 
 #include "MapWidget.h"
 
@@ -12,6 +13,8 @@ namespace Bach {
      * Constructor sets up the smaller Widgets when necessary.
      */
     class MainWindow : public QMainWindow {
+        Q_OBJECT
+
     public:
         /* We're calling many of the parent type methods from inside
          * override methods in this class.
@@ -37,6 +40,7 @@ namespace Bach {
         MapWidget* mapWidget = nullptr;
         QWidget* zoomControls = nullptr;
         QWidget* panControls = nullptr;
+
     };
 }
 #endif // MAINWINDOW_H

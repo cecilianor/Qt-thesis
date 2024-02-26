@@ -101,6 +101,8 @@ public:
     public:
         KeyPressFilter(MapWidget *mapWidget) : mapWidget{ mapWidget } {}
     protected:
+        /* This is the function that intercepts the events that go to the QApplication.
+         */
         bool eventFilter(QObject*, QEvent*) override;
     private:
         MapWidget *mapWidget = nullptr;
@@ -110,6 +112,10 @@ private:
     std::unique_ptr<KeyPressFilter> keyPressFilter = nullptr;
 
 public slots:
+    /* Updates the center coordinates and the zoom-level of the viewport.
+     */
+    void setViewport(double x, double y, double zoom);
+
     // Slot for zooming in a single step.
     void zoomIn();
     // Slot for zooming out a single step.

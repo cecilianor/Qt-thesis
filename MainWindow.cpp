@@ -5,6 +5,8 @@
 
 #include "MapPanControlWidget.h"
 #include "MapZoomControlWidget.h"
+#include "MapCoordControlWidget.h"
+
 
 using Bach::MainWindow;
 
@@ -12,8 +14,14 @@ MainWindow::MainWindow(MapWidget* mapWidgetIn) : mapWidget{ mapWidgetIn }  {
     resize(800, 800);
     setCentralWidget(mapWidget);
 
-    this->zoomControls = new MapZoomControlWidget(mapWidget);
-    this->panControls = new MapPanControlWidget(mapWidget);
+    // Establish the UI controls.
+    zoomControls = new MapZoomControlWidget(mapWidget);
+    panControls = new MapPanControlWidget(mapWidget);
+
+    // Setup the menu that lets us enter manual coordinates and hook it up to the
+    // map-widget.
+    auto coordControls = new MapCoordControlWidget(mapWidget);
+    QObject::connect(coordControls, &MapCoordControlWidget::submitNewCoords, mapWidget, &MapWidget::setViewport);
 
     mapWidget->focusWidget();
 
