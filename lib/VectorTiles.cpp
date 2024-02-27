@@ -214,9 +214,13 @@ VectorTile::VectorTile() {
 }
 
 VectorTile::~VectorTile() {
+    // Nils: This should ideally be using smart-pointers for cleanup. Can
+    // look into it later. Currently just removed it for prototyping.
+    /*
     for (QString key : m_layers.keys()) {
         delete m_layers[key];
     }
+    */
 }
 
 /* Deserialize and extracts all the layers in the tile protocol buffer,

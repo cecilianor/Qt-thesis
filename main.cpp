@@ -46,17 +46,21 @@ int main(int argc, char *argv[])
     // Then finally parse the JSonDocument into our StyleSheet.
     styleSheet.parseSheet(styleSheetJsonDoc);
 
+    auto downloadTile = [&](TileCoord tile) {
+        return Bach::tileFromByteArray(
+            tileUrl.downloadTile(
+                tileUrl.setPbfLink({0, 0, 0}, pbfLinkTemplate),
+            networkController));
+    };
+
     // Download tiles, or load them from disk, then insert into the tile-storage map.
-    auto tile000 = Bach::tileFromByteArray(tileUrl.downloadTile(
-        tileUrl.setPbfLink({0, 0, 0}, pbfLinkTemplate), networkController));
+    auto tile000 = downloadTile({0, 0, 0});
     tileStorage.insert({0, 0, 0}, &tile000);
-    auto tile100 = Bach::tileFromByteArray(tileUrl.downloadTile(
-        tileUrl.setPbfLink({1, 0, 0}, pbfLinkTemplate), networkController));
+    auto tile100 = downloadTile({1, 0, 0});
     tileStorage.insert({1, 0, 0}, &tile100);
     auto tile101 = Bach::tileFromFile(Bach::testDataDir + "z1x0y1.mvt");
     tileStorage.insert({1, 0, 1}, &tile101);
-    auto tile110 = Bach::tileFromByteArray(tileUrl.downloadTile(
-        tileUrl.setPbfLink({1, 1, 0}, pbfLinkTemplate), networkController));
+    auto tile110 = downloadTile({1, 0, 0});
     tileStorage.insert({1, 1, 0}, &tile110);
     auto tile111 = Bach::tileFromFile(Bach::testDataDir + "z1x1y1.mvt");
     tileStorage.insert({1, 1, 1}, &tile111);

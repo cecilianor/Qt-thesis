@@ -2,8 +2,6 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <QKeyEvent>
-#include <QLineEdit>
 
 #include "MapWidget.h"
 
@@ -40,7 +38,6 @@ namespace Bach {
         MapWidget* mapWidget = nullptr;
         QWidget* zoomControls = nullptr;
         QWidget* panControls = nullptr;
-
     };
 }
 #endif // MAINWINDOW_H

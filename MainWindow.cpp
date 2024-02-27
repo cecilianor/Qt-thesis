@@ -7,10 +7,12 @@
 #include "MapZoomControlWidget.h"
 #include "MapCoordControlWidget.h"
 
-
 using Bach::MainWindow;
 
-MainWindow::MainWindow(MapWidget* mapWidgetIn) : mapWidget{ mapWidgetIn }  {
+MainWindow::MainWindow(
+    MapWidget* mapWidgetIn) :
+    mapWidget{ mapWidgetIn }
+{
     resize(800, 800);
     setCentralWidget(mapWidget);
 
