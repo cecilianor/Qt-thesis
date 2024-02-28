@@ -10,8 +10,10 @@
 using Bach::MainWindow;
 
 MainWindow::MainWindow(
-    MapWidget* mapWidgetIn) :
-    mapWidget{ mapWidgetIn }
+    MapWidget* mapWidgetIn,
+    std::function<VectorTile(TileCoord)>&& fn) :
+    mapWidget{ mapWidgetIn },
+    loadTileFn{ std::move(fn) }
 {
     resize(800, 800);
     setCentralWidget(mapWidget);

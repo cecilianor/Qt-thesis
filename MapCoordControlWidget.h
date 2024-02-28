@@ -26,6 +26,7 @@ namespace Bach {
          * a new valid viewport configuration.
          */
         void submitNewCoords(double x, double y, double zoom);
+        void loadNewTiles();
     };
 }
 

@@ -122,7 +122,9 @@ if (BUILD_TESTS)
     # This is our first test executable.
     qt_add_executable(
         unit_test
-        tests/unit-tests/unittesting.cpp
+        tests/unit-tests/unittesting.h
+        tests/unit-tests/unittesting_tileloader.cpp
+        tests/unit-tests/unittesting_rendering.cpp
     )
     target_link_libraries(unit_test PUBLIC maplib Qt6::Test)
 

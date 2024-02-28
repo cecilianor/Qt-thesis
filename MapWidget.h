@@ -3,6 +3,7 @@
 
 #include <QWidget>
 
+#include <functional>
 #include <memory>
 
 #include "VectorTiles.h"
@@ -51,6 +52,7 @@ public:
      */
     double getPanStepAmount() const;
 
+    void loadNewTiles(const std::function<VectorTile(TileCoord)> &fn);
 
     // Temporary. This probably does not belong here.
     QMap<TileCoord, const VectorTile*> tileStorage;

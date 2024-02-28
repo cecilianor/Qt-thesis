@@ -2,8 +2,13 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QKeyEvent>
+
+#include <functional>
 
 #include "MapWidget.h"
+#include "VectorTiles.h"
+#include "TileCoord.h"
 
 namespace Bach {
     /* Main window class for our application.
@@ -21,10 +26,17 @@ namespace Bach {
          */
         using ParentType = QMainWindow;
 
-        MainWindow(MapWidget*);
+        MainWindow(MapWidget*, std::function<VectorTile(TileCoord)>&&);
 
         void resizeEvent(QResizeEvent*) override;
         void showEvent(QShowEvent*) override;
+        void keyPressEvent(QKeyEvent *event) override {
+            if (event->key() == Qt::Key::Key_R) {
+                mapWidget->loadNewTiles(loadTileFn);
+                return;
+            }
+            ParentType::keyPressEvent(event);
+        }
 
         /* Updates the positions of the floating control widgets (zoom, panning...)
          *
@@ -38,6 +50,7 @@ namespace Bach {
         MapWidget* mapWidget = nullptr;
         QWidget* zoomControls = nullptr;
         QWidget* panControls = nullptr;
+        std::function<VectorTile(TileCoord)> loadTileFn = nullptr;
     };
 }
 #endif // MAINWINDOW_H

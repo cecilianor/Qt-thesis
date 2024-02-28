@@ -83,7 +83,6 @@ MapCoordControlWidget::MapCoordControlWidget(QWidget* parent)
         validator->setNotation(QDoubleValidator::StandardNotation);
         validator->setLocale(QLocale::English);
         zoomField->setValidator(validator);
-
     }
 
     // Setup the submit button at the end.
@@ -92,6 +91,14 @@ MapCoordControlWidget::MapCoordControlWidget(QWidget* parent)
         QObject::connect(btn, &QPushButton::clicked, this, &MapCoordControlWidget::buttonPressed);
         outerLayout->addWidget(btn);
     }
+
+    // Setup the load tiles button
+    {
+        auto btn = new QPushButton("Load tiles", this);
+        //QObject::connect(btn, &QPushButton::clicked, this, [this]() { emit loadNewTiles; });
+        outerLayout->addWidget(btn);
+    }
+
 }
 
 void MapCoordControlWidget::buttonPressed()

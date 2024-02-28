@@ -60,7 +60,7 @@ int main(int argc, char *argv[])
     tileStorage.insert({1, 0, 0}, &tile100);
     auto tile101 = Bach::tileFromFile(Bach::testDataDir + "z1x0y1.mvt");
     tileStorage.insert({1, 0, 1}, &tile101);
-    auto tile110 = downloadTile({1, 0, 0});
+    auto tile110 = downloadTile({1, 1, 0});
     tileStorage.insert({1, 1, 0}, &tile110);
     auto tile111 = Bach::tileFromFile(Bach::testDataDir + "z1x1y1.mvt");
     tileStorage.insert({1, 1, 1}, &tile111);
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
     */
 
     // Main window setup
-    auto app = Bach::MainWindow(mapWidget);
+    auto app = Bach::MainWindow(mapWidget, downloadTile);
     app.show();
 
     return a.exec();

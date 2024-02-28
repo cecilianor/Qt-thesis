@@ -42,6 +42,7 @@ void MapWidget::keyPressEvent(QKeyEvent* event)
 void MapWidget::paintEvent(QPaintEvent* event)
 {
     QPainter painter(this);
+    painter.setRenderHint(QPainter::Antialiasing);
     Bach::paintTiles(
         painter,
         x,
@@ -169,4 +170,16 @@ bool MapWidget::KeyPressFilter::eventFilter(QObject *obj, QEvent *event)
     }
     // Pass the event on to the parent class for default processing
     return QObject::eventFilter(obj, event);
+}
+
+void MapWidget::loadNewTiles(const std::function<VectorTile(TileCoord)> &fn) {
+    auto visibleTiles = calcVisibleTiles();
+
+    //tileStorage.clear();
+    for (auto tileCoord : visibleTiles) {
+        if (!tileStorage.contains(tileCoord)) {
+            tileStorage.insert(tileCoord, new VectorTile(fn(tileCoord)));
+        }
+    }
+    update();
 }
