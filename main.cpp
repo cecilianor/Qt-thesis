@@ -49,7 +49,7 @@ int main(int argc, char *argv[])
     auto downloadTile = [&](TileCoord tile) {
         return Bach::tileFromByteArray(
             tileUrl.downloadTile(
-                tileUrl.setPbfLink({0, 0, 0}, pbfLinkTemplate),
+                tileUrl.setPbfLink(tile, pbfLinkTemplate),
             networkController));
     };
 
