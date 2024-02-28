@@ -18,24 +18,24 @@ void UnitTesting::longLatToWorldNormCoordDegrees_returns_expected_basic_values()
         QPair<double, double> expectedOut;
     };
     TestItem items[] = {
-                        { {0, 0}, {0.5, 0.5} },
-                        { {-180, 0}, {0, 0.5} },
-                        { {-90, 0}, {0.25, 0.5} },
-                        { {90, 0}, {0.75, 0.5} },
-                        { {180, 0}, {1, 0.5} },
-                        };
+        { {0, 0}, {0.5, 0.5} },
+        { {-180, 0}, {0, 0.5} },
+        { {-90, 0}, {0.25, 0.5} },
+        { {90, 0}, {0.75, 0.5} },
+        { {180, 0}, {1, 0.5} },
+    };
 
     for (const auto &item : items) {
         auto out = Bach::lonLatToWorldNormCoordDegrees(item.input.first, item.input.second);
 
         auto descr = QString("Input (%1, %2) did not match expected output (%3, %4). Instead got (%5, %6).")
-                         .arg(item.input.first)
-                         .arg(item.input.second)
-                         .arg(item.expectedOut.first)
-                         .arg(item.expectedOut.second)
-                         .arg(out.first)
-                         .arg(out.second)
-                         .toUtf8();
+            .arg(item.input.first)
+            .arg(item.input.second)
+            .arg(item.expectedOut.first)
+            .arg(item.expectedOut.second)
+            .arg(out.first)
+            .arg(out.second)
+            .toUtf8();
 
         QVERIFY2(comparePair(out, item.expectedOut), descr.constData());
     }
@@ -112,7 +112,15 @@ void UnitTesting::calcVisibleTiles_returns_expected_basic_cases()
         {
             TestItem::Input{ 0.5, 0.5, 1.0, 2, 2 },
             generateRangeOfTiles(2, 1, 3, 1, 3)
-        }
+        },
+        {
+            TestItem::Input{ 0.25, 0.25, 1.0, 2, 2 },
+            generateRangeOfTiles(2, 0, 2, 0, 2)
+        },
+        {
+            TestItem::Input{ 0, 0, 1.0, 2, 2 },
+            generateRangeOfTiles(2, 0, 1, 0, 1)
+        },
     };
 
     for (int i = 0; i < testItems.size(); i++) {

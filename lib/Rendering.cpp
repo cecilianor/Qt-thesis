@@ -94,19 +94,27 @@ QVector<TileCoord> Bach::calcVisibleTiles(
 
     // Convert edges into the index-based grid coordinates, and apply a clamp operation
     // in case the viewport goes outside the map.
-    auto leftmostTileX = clampToGrid((int)floor(vpMinNormX * tileCount));
-    auto rightmostTileX = clampToGrid((int)ceil(vpMaxNormX * tileCount));
-    auto topmostTileY = clampToGrid((int)floor(vpMinNormY * tileCount));
-    auto bottommostTileY = clampToGrid((int)ceil(vpMaxNormY * tileCount));
+    auto leftTileX = clampToGrid((int)floor(vpMinNormX * tileCount));
+    auto rightTileX = clampToGrid((int)floor(vpMaxNormX * tileCount));
+    auto topTileY = clampToGrid((int)floor(vpMinNormY * tileCount));
+    auto botTileY = clampToGrid((int)floor(vpMaxNormY * tileCount));
 
     // Iterate over our two ranges to build our list.
-    QVector<TileCoord> visibleTiles;
-    for (int y = topmostTileY; y <= bottommostTileY; y++) {
-        for (int x = leftmostTileX; x <= rightmostTileX; x++) {
-            visibleTiles += { mapZoomLevel, x, y };
+
+    if (mapZoomLevel == 0 &&
+        rightTileX - leftTileX == 0 &&
+        botTileY - topTileY == 0)
+    {
+        return { { 0, 0, 0 } };
+    } else {
+        QVector<TileCoord> visibleTiles;
+        for (int y = topTileY; y <= botTileY; y++) {
+            for (int x = leftTileX; x <= rightTileX; x++) {
+                visibleTiles += { mapZoomLevel, x, y };
+            }
         }
+        return visibleTiles;
     }
-    return visibleTiles;
 }
 
 /* This is a helper function for visualizing the boundaries of each tile.
