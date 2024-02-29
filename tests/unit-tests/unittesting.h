@@ -18,6 +18,7 @@ private slots:
      */
     void longLatToWorldNormCoordDegrees_returns_expected_basic_values();
     void calcVisibleTiles_returns_expected_basic_cases();
+    void calcViewportSizeNorm_returns_expected_basic_cases();
 
 
     /* Layerstyle tests

@@ -2,6 +2,45 @@
 
 #include "Rendering.h"
 
+void UnitTesting::calcViewportSizeNorm_returns_expected_basic_cases()
+{
+    constexpr auto epsilon = 0.001;
+    auto compareFn = [](QPair<double, double> a, QPair<double, double> b) {
+        if (std::abs(a.first - b.first) > epsilon)
+            return false;
+        if (std::abs(a.second - b.second) > epsilon)
+            return false;
+        return true;
+    };
+
+    struct TestItem {
+        double inputViewportZoom;
+        double inputAspect;
+        QPair<double, double> expectedOut;
+    };
+    QVector<TestItem> testItems = {
+        { 0, 1.0, {1, 1 } },
+        { 1, 1.0, {0.5, 0.5} },
+        { 2, 1.0, {0.25, 0.25} },
+        { 0, 0.5, {0.5, 1} },
+        { 0, 2, {1, 0.5} },
+        { 1, 0.5, {0.25, 0.5} },
+        { 1, 2, {0.5, 0.25} },
+    };
+
+    for (int i = 0; i < testItems.size(); i++) {
+        const auto &item = testItems[i];
+        auto result = Bach::calcViewportSizeNorm(item.inputViewportZoom, item.inputAspect);
+        auto errorMsg = QString("At item #%1. Expected (%2, %3), but result was (%4, %5).")
+                            .arg(i)
+                            .arg(item.expectedOut.first)
+                            .arg(item.expectedOut.second)
+                            .arg(result.first)
+                            .arg(result.second);
+        QVERIFY2(compareFn(item.expectedOut, result), errorMsg.toUtf8());
+    }
+}
+
 void UnitTesting::longLatToWorldNormCoordDegrees_returns_expected_basic_values()
 {
     constexpr double epsilon = 0.001;

@@ -61,8 +61,8 @@ QPair<double, double> Bach::calcViewportSizeNorm(double vpZoomLevel, double view
     // "Calculating viewport size as a factor of the world map"
     auto temp = 1 / pow(2, vpZoomLevel);
     return {
-        temp * qMin(1.0, 1.0 / viewportAspect),
-        temp * qMax(1.0, viewportAspect)
+        temp * qMin(1.0, viewportAspect),
+        temp * qMin(1.0, 1 / viewportAspect)
     };
 }
 
