@@ -222,4 +222,88 @@ public:
 
 };
 
+namespace Bach {
+    /* Perform a linear interpolation of a numerical value based on QPair inputs.
+         *
+         * Parameters:
+         *      stop1 expects a QPair<int, T> wich is the first stop in the interpolation.
+         *      stop2 expects a QPair<int, T> wich is the second stop in the interpolation.
+         *      currentZoom expects an integer to be used as the interpolation input.
+         *
+         * Returns the output of the interpolation as type T.
+         */
+    template <class T>
+    inline T interpolate(QPair<int, T> stop1, QPair<int, T> stop2, int currentZoom)
+    {
+        T lerpedValue = stop1.second + (currentZoom - stop1.first)*(stop2.second - stop1.second)/(stop2.first - stop1.first);
+        lerpedValue = std::clamp(lerpedValue, stop1.second, stop2.second);
+        return lerpedValue;
+    }
+
+
+    /* Perform a linear interpolation of a QColor value based on QPair inputs.
+         *
+         * Parameters:
+         *      stop1 expects a QPair<int, QColor> wich is the first stop in the interpolation.
+         *      stop2 expects a QPair<int, QColor> wich is the second stop in the interpolation.
+         *      currentZoom expects an integer to be used as the interpolation input.
+         *
+         * Returns the output of the interpolation as a QColor object.
+         */
+    inline QColor interpolateColor(QPair<int, QColor> stop1, QPair<int, QColor> stop2, int currentZoom)
+    {
+        if (stop1.second.hue() == stop2.second.hue()) {
+            return stop1.second;
+        }
+
+        int lerpedSaturation = stop1.second.hslSaturation() + (stop2.second.hslSaturation() - stop1.second.hslSaturation()) * (currentZoom - stop1.first)/(stop2.first - stop1.first);
+
+        int lerpedLightness = stop1.second.lightness() + (stop2.second.lightness() - stop1.second.lightness()) * (currentZoom - stop1.first)/(stop2.first - stop1.first);
+
+        int angularDistance = stop2.second.hslHue() - stop1.second.hslHue();
+
+        if(angularDistance > 180){
+            angularDistance = angularDistance - 360;
+        }else if(angularDistance < - 180){
+            angularDistance = angularDistance + 360;
+        }
+        int lerpedHue = stop1.second.hslHue() + angularDistance * (currentZoom - stop1.first)/(stop2.first - stop1.first);
+
+        float lerpedAlpha = stop1.second.alphaF() + (stop2.second.alphaF() - stop1.second.alphaF()) * (currentZoom - stop1.first)/(stop2.first - stop1.first);
+
+        QColor lerpedColor;
+        lerpedColor.setHslF(lerpedHue, lerpedSaturation, lerpedLightness, lerpedAlpha);
+        return lerpedColor;
+    }
+
+    /* Determines which two interpolation stops are apropritate to use for a given zoom
+     *value from a QList of QPairs.
+     *
+     * Parameters:
+     *     list expects a QList of QPairs conatining all the stops.
+     *     currentZoom expect an integer which is the input value to be used in the interpolation.
+     *
+     * Returns the return value from the interpolation function of type T.
+     */
+    template <class T>
+    inline T getLerpedValue(QList<QPair<int, T>> list, int currentZoom)
+    {
+        if(list.length() == 1 || currentZoom <= list.begin()->first){
+            return list.begin()->second;
+        }else{
+            if(currentZoom >= list.at(list.length() - 1).first){
+                return list.at(list.length() - 1).second;
+            }else{
+                int index = 0;
+                while(currentZoom > list.at(index).first)
+                {
+                    index++;
+                }
+                return interpolate(list.at(index), list.at(index + 1), currentZoom);
+            }
+        }
+    }
+
+}
+
 #endif // LAYERSTYLE_H

@@ -125,6 +125,7 @@ if (BUILD_TESTS)
         tests/unit-tests/unittesting.h
         tests/unit-tests/unittesting_tileloader.cpp
         tests/unit-tests/unittesting_rendering.cpp
+        tests/unit-tests/unittesting_layerstyle.cpp
     )
     target_link_libraries(unit_test PUBLIC maplib Qt6::Test)
 

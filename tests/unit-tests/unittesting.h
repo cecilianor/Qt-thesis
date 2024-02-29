@@ -18,4 +18,10 @@ private slots:
      */
     void longLatToWorldNormCoordDegrees_returns_expected_basic_values();
     void calcVisibleTiles_returns_expected_basic_cases();
+
+
+    /* Layerstyle tests
+     */
+    void interpolate_returns_basic_expected_values();
+    void getLerpedValue_returns_basic_expceted_value();
 };
