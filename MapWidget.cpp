@@ -50,7 +50,8 @@ void MapWidget::paintEvent(QPaintEvent* event)
         getViewportZoomLevel(),
         getMapZoomLevel(),
         tileStorage,
-        styleSheet);
+        styleSheet,
+        isShowingDebug());
 }
 
 double MapWidget::getViewportZoomLevel() const
