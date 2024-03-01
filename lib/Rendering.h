@@ -97,7 +97,8 @@ namespace Bach {
         double viewportZoomLevel,
         int mapZoomLevel,
         const QMap<TileCoord, const VectorTile*> &tileContainer,
-        const StyleSheet &styleSheet);
+        const StyleSheet &styleSheet,
+        bool drawDebug);
 }
 
 #endif // RENDERING_HPP

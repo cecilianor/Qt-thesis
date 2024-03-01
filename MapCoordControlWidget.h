@@ -4,6 +4,8 @@
 #include <QWidget>
 #include <QLineEdit>
 
+#include "MapWidget.h"
+
 namespace Bach {
     /* Contains the group of controls for manually entering coordinates.
      */
@@ -11,7 +13,7 @@ namespace Bach {
         Q_OBJECT
 
     public:
-        MapCoordControlWidget(QWidget* parent = nullptr);
+        MapCoordControlWidget(MapWidget* parent);
 
     private:
         QLineEdit* longitudeField = nullptr;
@@ -19,7 +21,7 @@ namespace Bach {
         QLineEdit* zoomField = nullptr;
 
     private slots:
-        void buttonPressed();
+        void submitButtonPressed();
 
     signals:
         /* Signal gets called when the coordinates wants to submit

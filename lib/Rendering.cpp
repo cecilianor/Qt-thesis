@@ -255,7 +255,8 @@ void Bach::paintTiles(
     double viewportZoomLevel,
     int mapZoomLevel,
     const QMap<TileCoord, const VectorTile*> &tileContainer,
-    const StyleSheet &styleSheet)
+    const StyleSheet &styleSheet,
+    bool drawDebug)
 {
     // Gather width and height of the viewport, in pixels..
     auto vpWidth = painter.window().width();
@@ -348,11 +349,13 @@ void Bach::paintTiles(
         }
 
         // Paint debug lines around the tile.
-        paintSingleTileDebug(
-            painter,
-            tileCoord,
-            { tilePixelPosX, tilePixelPosY },
-            vpMaxDim * tileSizeNorm);
+        if (drawDebug) {
+            paintSingleTileDebug(
+                painter,
+                tileCoord,
+                { tilePixelPosX, tilePixelPosY },
+                vpMaxDim * tileSizeNorm);
+        }
 
         painter.restore();
     }

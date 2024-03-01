@@ -41,6 +41,41 @@ void UnitTesting::calcViewportSizeNorm_returns_expected_basic_cases()
     }
 }
 
+void UnitTesting::calcMapZoomLevelForTileSizePixels_returns_expected_basic_values()
+{
+    struct TestItem {
+        struct Input {
+            int vpWidth;
+            int vpHeight;
+            double vpZoom;
+            int pixelSize;
+        };
+        Input input;
+        int expectedOut;
+    };
+    QVector<TestItem> testItems = {
+        {   { 512, 512, 0.0, 512},
+            0 },
+        {   { 1024, 1024, 0.0, 512},
+            1 },
+    };
+    for (int i = 0; i < testItems.size(); i++) {
+        const auto &item = testItems[i];
+        const auto &input = item.input;
+        auto result = Bach::calcMapZoomLevelForTileSizePixels(
+            input.vpWidth,
+            input.vpHeight,
+            input.vpZoom,
+            input.pixelSize);
+
+        auto descr = QString("At item %1: Expected %2, but got %3.")
+            .arg(i)
+            .arg(item.expectedOut)
+            .arg(result);
+        QVERIFY2(item.expectedOut == result, descr.toUtf8());
+    }
+}
+
 void UnitTesting::longLatToWorldNormCoordDegrees_returns_expected_basic_values()
 {
     constexpr double epsilon = 0.001;
@@ -134,32 +169,18 @@ void UnitTesting::calcVisibleTiles_returns_expected_basic_cases()
     };
 
     const QVector<TestItem> testItems = {
-        {
-            TestItem::Input{ 0.5, 0.5, 1.0, 0, 0 },
-            {
-                { 0, 0, 0 },
-            }
-        },
-        {
-            TestItem::Input{ 0.5, 0.5, 1.0, 1, 1 },
-            generateRangeOfTiles(1, 0, 2, 0, 2)
-        },
-        {
-            TestItem::Input{ 0.5, 0.5, 1.0, 0.25, 2 },
-            generateRangeOfTiles(2, 0, 4, 0, 4)
-        },
-        {
-            TestItem::Input{ 0.5, 0.5, 1.0, 2, 2 },
-            generateRangeOfTiles(2, 1, 3, 1, 3)
-        },
-        {
-            TestItem::Input{ 0.25, 0.25, 1.0, 2, 2 },
-            generateRangeOfTiles(2, 0, 2, 0, 2)
-        },
-        {
-            TestItem::Input{ 0, 0, 1.0, 2, 2 },
-            generateRangeOfTiles(2, 0, 1, 0, 1)
-        },
+        {   TestItem::Input{ 0.5, 0.5, 1.0, 0, 0 },
+            { { 0, 0, 0 }, } },
+        {   TestItem::Input{ 0.5, 0.5, 1.0, 1, 1 },
+            generateRangeOfTiles(1, 0, 2, 0, 2) },
+        {   TestItem::Input{ 0.5, 0.5, 1.0, 0.25, 2 },
+            generateRangeOfTiles(2, 0, 4, 0, 4) },
+        {   TestItem::Input{ 0.5, 0.5, 1.0, 2, 2 },
+            generateRangeOfTiles(2, 1, 3, 1, 3) },
+        {   TestItem::Input{ 0.25, 0.25, 1.0, 2, 2 },
+            generateRangeOfTiles(2, 0, 2, 0, 2) },
+        {   TestItem::Input{ 0, 0, 1.0, 2, 2 },
+            generateRangeOfTiles(2, 0, 1, 0, 1) },
     };
 
     for (int i = 0; i < testItems.size(); i++) {

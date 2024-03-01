@@ -10,11 +10,21 @@
 
 using Bach::MapCoordControlWidget;
 
-MapCoordControlWidget::MapCoordControlWidget(QWidget* parent)
+QString getShowingDebugBtnLabel(MapWidget* mapWidget) {
+    auto name = QString("Showing debug ");
+    if (mapWidget->isShowingDebug()) {
+        name += "on";
+    } else {
+        name += "off";
+    }
+    return name;
+}
+
+MapCoordControlWidget::MapCoordControlWidget(MapWidget* mapWidget)
 {
-    auto temp = new QWidget(parent);
+    auto temp = new QWidget(mapWidget);
     // Set a dark and transparent background.
-    temp->setStyleSheet("background-color: rgba(0, 0, 0, 127);");
+    //temp->setStyleSheet("background-color: rgba(0, 0, 0, 127);");
 
     /* From here on we establish a small layout.
      * The outer one is a VBoxLayout, inside are two elements: a grid and then the submit button.
@@ -88,20 +98,41 @@ MapCoordControlWidget::MapCoordControlWidget(QWidget* parent)
     // Setup the submit button at the end.
     {
         auto btn = new QPushButton("Go", this);
-        QObject::connect(btn, &QPushButton::clicked, this, &MapCoordControlWidget::buttonPressed);
+        QObject::connect(btn, &QPushButton::clicked, this, &MapCoordControlWidget::submitButtonPressed);
         outerLayout->addWidget(btn);
     }
 
     // Setup the load tiles button
     {
         auto btn = new QPushButton("Load tiles", this);
-        //QObject::connect(btn, &QPushButton::clicked, this, [this]() { emit loadNewTiles; });
+        QObject::connect(
+            btn,
+            &QPushButton::clicked,
+            this,
+            [this] { emit loadNewTiles(); });
         outerLayout->addWidget(btn);
     }
 
+    // Setup the debug lines toggle switch
+    {
+        auto name = getShowingDebugBtnLabel(mapWidget);
+        auto btn = new QPushButton(name, this);
+        QObject::connect(
+            btn,
+            &QPushButton::clicked,
+            this,
+            [=]() {
+                // Send signal to mapWidget?
+                mapWidget->toggleIsShowingDebug();
+                auto name = getShowingDebugBtnLabel(mapWidget);
+                btn->setText(name);
+            });
+
+        outerLayout->addWidget(btn);
+    }
 }
 
-void MapCoordControlWidget::buttonPressed()
+void MapCoordControlWidget::submitButtonPressed()
 {
     // Try to grab the new viewport values from our text fields.
     // If any of them are invalid, we don't submit.

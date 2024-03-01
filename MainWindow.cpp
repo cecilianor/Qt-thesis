@@ -26,6 +26,11 @@ MainWindow::MainWindow(
     // map-widget.
     auto coordControls = new MapCoordControlWidget(mapWidget);
     QObject::connect(coordControls, &MapCoordControlWidget::submitNewCoords, mapWidget, &MapWidget::setViewport);
+    QObject::connect(
+        coordControls,
+        &MapCoordControlWidget::loadNewTiles,
+        this,
+        [this]() { mapWidget->loadNewTiles(loadTileFn); });
 
     mapWidget->focusWidget();
 

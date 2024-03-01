@@ -183,3 +183,9 @@ void MapWidget::loadNewTiles(const std::function<VectorTile(TileCoord)> &fn) {
     }
     update();
 }
+
+void MapWidget::toggleIsShowingDebug()
+{
+    showDebug = !showDebug;
+    update();
+}

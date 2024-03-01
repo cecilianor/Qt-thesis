@@ -88,6 +88,13 @@ private:
     void genericZoom(bool magnify);
 
 
+    // Controls whether debug lines should be shown.
+    bool showDebug = true;
+public:
+    bool isShowingDebug() const { return showDebug; }
+public slots:
+    void toggleIsShowingDebug();
+
 public:
     /* We run into problems with UI keyboard navigation
      * when we want to use arrows for panning our MapWidget.
