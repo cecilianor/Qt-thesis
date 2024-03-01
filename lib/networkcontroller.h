@@ -7,9 +7,7 @@ class NetworkController : public QObject
 {
     Q_OBJECT
 private:
-    QString url;
-    QNetworkAccessManager *manager;
-    QNetworkRequest request;
+    QNetworkAccessManager manager;
 
 public:
     explicit NetworkController(QObject *parent = nullptr);

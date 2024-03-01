@@ -224,10 +224,11 @@ static void paintSingleTile(
 
             auto pen = painter.pen();
             auto lineColor = layerStyle.getLineColorAtZoom(mapZoomLevel);
-            //lineColor.setAlphaF(layerStyle.getLineOpacityAtZoom(mapZoomLevel));
             pen.setColor(lineColor);
-            pen.setWidth(layerStyle.getLineWidthAtZoom(mapZoomLevel));
-            //pen.setMiterLimit(layerStyle.getLineMitterLimitAtZoom(mapZoomLevel));
+            auto penWidth = layerStyle.getLineWidthAtZoom(mapZoomLevel);
+            // Temporary solution for when penWidth is set outside bounds.
+            penWidth = std::clamp(penWidth, 1, 30);
+            pen.setWidth(penWidth);
             painter.setPen(pen);
 
             painter.setBrush(Qt::NoBrush);

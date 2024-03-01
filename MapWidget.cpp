@@ -174,14 +174,27 @@ bool MapWidget::KeyPressFilter::eventFilter(QObject *obj, QEvent *event)
 }
 
 void MapWidget::loadNewTiles(const std::function<VectorTile(TileCoord)> &fn) {
+    qDebug() << "Loading new tiles...\n";
+
+
     auto visibleTiles = calcVisibleTiles();
 
     //tileStorage.clear();
+
+    int i = 0;
     for (auto tileCoord : visibleTiles) {
         if (!tileStorage.contains(tileCoord)) {
+
+
+            qDebug() << "Parsing iteration " << i << "\n";
             tileStorage.insert(tileCoord, new VectorTile(fn(tileCoord)));
+
         }
+
+
+        i++;
     }
+
     update();
 }
 

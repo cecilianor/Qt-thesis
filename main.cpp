@@ -47,10 +47,20 @@ int main(int argc, char *argv[])
     styleSheet.parseSheet(styleSheetJsonDoc);
 
     auto downloadTile = [&](TileCoord tile) {
+        qDebug() << "DownloadTile: Doing A...\n";
+        auto a = tileLoader.setPbfLink(tile, pbfLinkTemplate);
+        qDebug() << "DownloadTile: Doing B... A was: << " << a << "\n";
+        auto b = tileLoader.downloadTile(a, networkController);
+        qDebug() << "DownloadTile: Doing C...\n";
+        auto c = Bach::tileFromByteArray(b);
+        return c;
+
+        /*
         return Bach::tileFromByteArray(
             tileLoader.downloadTile(
                 tileLoader.setPbfLink(tile, pbfLinkTemplate),
             networkController));
+        */
     };
 
     // Download tiles, or load them from disk, then insert into the tile-storage map.

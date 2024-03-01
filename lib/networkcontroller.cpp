@@ -17,8 +17,6 @@
 NetworkController::NetworkController(QObject *parent)
     : QObject{parent}
 {
-    manager = new QNetworkAccessManager;
-    connect(manager, &QNetworkAccessManager::finished, this, &NetworkController::finished);
 }
 
 /**
@@ -29,7 +27,6 @@ NetworkController::NetworkController(QObject *parent)
  */
 NetworkController::~NetworkController()
 {
-    delete manager;
 }
 
 /**
@@ -39,11 +36,11 @@ NetworkController::~NetworkController()
  */
 QByteArray NetworkController::sendRequest(QString url)
 {
-    this->url = url;
+    QNetworkRequest request;
     request.setUrl(QUrl(url));
 
     // Perform the GET request
-    QNetworkReply *reply = manager->get(request);
+    QNetworkReply *reply = manager.get(request);
 
     // Create an event loop to wait for the request to finish
     QEventLoop loop;
