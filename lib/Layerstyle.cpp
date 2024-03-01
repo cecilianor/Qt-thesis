@@ -92,7 +92,6 @@ static QColor interpolateColor(QPair<int, QColor> stop1, QPair<int, QColor> stop
 
 }
 
-
 /* Determines which two interpolation stops are apropritate to use for a given zoom
      *value from a QList of QPairs.
      *
@@ -101,23 +100,59 @@ static QColor interpolateColor(QPair<int, QColor> stop1, QPair<int, QColor> stop
      *     currentZoom expect an integer which is the input value to be used in the interpolation.
      *
      * Returns the return value from the interpolation function of type T.
+     *
+     * This function assumes the stops are in sorted order, could be useful to check!
      */
 template <class T>
 T getLerpedValue(QList<QPair<int, T>> list, int currentZoom)
 {
-    if(list.length() == 1 || currentZoom <= list.begin()->first){
-        return list.begin()->second;
+    // We could use some error handling for the case where
+    // the list passed is empty.
+    if (list.length() == 0) {
+        qDebug() << "Major developer error!!\n";
+        std::abort();
+    }
+
+    /* If we only have one element in the list, there's nothing to lerp
+     * and we just return that data point.
+     *
+     * If our input value is below the lowest key in the dataset, then
+     * we also just return the first data point.
+     *
+     * If our input value is higher than the highest key in the dataset, then
+     * we return the data of the highest key.
+     *
+     * If these conditions are not met, we search for the two indices where our input value falls
+     * between and do the interpolating between these two indices.
+     */
+    if(list.length() == 1 || currentZoom <= list.first().first) {
+        return list.first().second;
+    } else if (currentZoom >= list.last().first) {
+        return list.last().second;
     }else{
-        if(currentZoom >= list.at(list.length() - 1).first){
-            return list.at(list.length() - 1).second;
-        }else{
-            int index = 0;
-            while(currentZoom > list.at(index).first)
-            {
-                index++;
+        // Find the first stop that has zoom-level >= to currentZoom.
+        bool indexFound = false;
+        int index = 0;
+        for (int i = 0; i < list.size(); i++) {
+            const auto &item = list[i];
+            if (currentZoom >= item.first) {
+                indexFound = true;
+                index = i;
+                break;
             }
-            return interpolate(list.at(index), list.at(index + 1), currentZoom);
         }
+        // Could use better error handling here. Check that the first index is always found.
+        if (!indexFound) {
+            qDebug() << "Major developer error!!\n";
+            std::abort();
+        }
+
+        // Check that the range is not outside bounds.
+        if (index + 1 >= list.size()) {
+            qDebug() << "Major developer error!!\n";
+            std::abort();
+        }
+        return interpolate(list.at(index), list.at(index + 1), currentZoom);
     }
 }
 
@@ -139,7 +174,7 @@ static QColor getLerpedColorValue(QList<QPair<int, QColor>> list, int currentZoo
             return list.at(list.length() - 1).second;
         }else{
             int index = 0;
-            while(currentZoom > list.at(index).first)
+            while(currentZoom < list.at(index).first)
             {
                 index++;
             }

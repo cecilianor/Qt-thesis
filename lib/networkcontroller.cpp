@@ -7,6 +7,8 @@
 #include <QEventLoop>
 #include <QDebug>
 
+#include <QScopedPointer>
+
 /**
  * Network Controller class.
  *
@@ -34,32 +36,39 @@ NetworkController::~NetworkController()
  * @param url The url to make a get request to (as a QString).
  * @return The response from a the get request (sent as a QString url).
  */
-QByteArray NetworkController::sendRequest(QString url)
+std::optional<QByteArray> NetworkController::sendRequest(QString url)
 {
     QNetworkRequest request;
     request.setUrl(QUrl(url));
 
     // Perform the GET request
-    QNetworkReply *reply = manager.get(request);
+    // This will call the appropriate destroy functions
+    // on the reply object when the function ends.
+    auto reply = QScopedPointer(manager.get(request));
+    if (reply == nullptr) {
+        return std::nullopt;
+    }
 
     // Create an event loop to wait for the request to finish
     QEventLoop loop;
-    QObject::connect(reply, &QNetworkReply::finished, &loop, &QEventLoop::quit);
+    QObject::connect(
+        reply.get(),
+        &QNetworkReply::finished,
+        &loop,
+        &QEventLoop::quit);
     loop.exec();
 
     // Check for errors
     if (reply->error() != QNetworkReply::NoError) {
         qDebug() << "Error:" << reply->errorString();
-        reply->deleteLater();
-        return QByteArray("Error parsing request.");
+        return std::nullopt;
     }
 
     // Process the response
     QByteArray responseData = reply->readAll();
-    //qDebug() << "Response: " << responseData; Used for debugging
-
-    // Clean up
-    reply->deleteLater();
+    if (responseData.length() == 0) {
+        return std::nullopt;
+    }
 
     // Return response data
     return responseData;

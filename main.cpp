@@ -26,10 +26,10 @@ int main(int argc, char *argv[])
 
     // Picks stylesheet to load and loads it.
     auto styleSheetType = TileLoader::styleSheetType::basic_v2;
-    auto styleSheetBytes = tileLoader.loadStyleSheetFromWeb(mapTilerKey, styleSheetType);
+    auto styleSheetBytes = tileLoader.loadStyleSheetFromWeb(mapTilerKey, styleSheetType, networkController);
 
     // Gets the link template where we have to switch out x, y,z in the link.
-    auto pbfLinkTemplate = tileLoader.getPbfLinkTemplate(styleSheetBytes, "maptiler_planet");
+    auto pbfLinkTemplate = tileLoader.getPbfLinkTemplate(styleSheetBytes, "maptiler_planet", networkController);
 
     // Creates the Widget that displays the map.
     auto *mapWidget = new MapWidget;
@@ -47,20 +47,10 @@ int main(int argc, char *argv[])
     styleSheet.parseSheet(styleSheetJsonDoc);
 
     auto downloadTile = [&](TileCoord tile) {
-        qDebug() << "DownloadTile: Doing A...\n";
-        auto a = tileLoader.setPbfLink(tile, pbfLinkTemplate);
-        qDebug() << "DownloadTile: Doing B... A was: << " << a << "\n";
-        auto b = tileLoader.downloadTile(a, networkController);
-        qDebug() << "DownloadTile: Doing C...\n";
-        auto c = Bach::tileFromByteArray(b);
-        return c;
-
-        /*
         return Bach::tileFromByteArray(
             tileLoader.downloadTile(
-                tileLoader.setPbfLink(tile, pbfLinkTemplate),
+                Bach::setPbfLink(tile, pbfLinkTemplate),
             networkController));
-        */
     };
 
     // Download tiles, or load them from disk, then insert into the tile-storage map.

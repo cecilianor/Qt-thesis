@@ -60,12 +60,12 @@ public:
     TileLoader();                                  // Not implemented
 
     // Functionality making different requests
-    std::pair<QByteArray, ErrorCode> getStylesheet(styleSheetType type, QString key); // Implemented
+    std::pair<QByteArray, ErrorCode> getStylesheet(styleSheetType type, QString key, NetworkController &networkController); // Implemented
     std::pair<QString, ErrorCode> getTilesLink(const QJsonDocument & styleSheet, QString sourceType);// Implemented Gets dynamic url as a string based on source type!
-    std::pair<QString, ErrorCode> getPBFLink (const QString & tileSheetUrl);                          // Implemented. Get PBF link based on dynamic or static url.
+    std::pair<QString, ErrorCode> getPBFLink (const QString & tileSheetUrl, NetworkController &networkController);                          // Implemented. Get PBF link based on dynamic or static url.
 
-    QByteArray loadStyleSheetFromWeb(const QString &mapTilerKey, styleSheetType &styleSheetType);
-    QString getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType);
+    QByteArray loadStyleSheetFromWeb(const QString &mapTilerKey, styleSheetType &styleSheetType, NetworkController &networkController);
+    QString getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType, NetworkController &networkController);
     QString setPbfLink(const TileCoord &tileCoord, const QString &pbfLinkTemplate);
     QByteArray downloadTile(const QString &pbfLink, NetworkController &controller);
     // Key reader
@@ -76,6 +76,10 @@ public:
 
     ~TileLoader(){};
 };
+
+namespace Bach {
+    QString setPbfLink(const TileCoord &tileCoord, const QString &pbfLinkTemplate);
+}
 
 
 #endif // GETTILEURL_H

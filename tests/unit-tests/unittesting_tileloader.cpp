@@ -35,11 +35,13 @@ void UnitTesting::readKey_returns_failure_when_invalid_key() {
 // Get a supported stylesheet
 // Note that this specific test will fail if an illegal key is provided
 void UnitTesting::getStyleSheet_returns_success_on_supported_stylesheet() {
+    NetworkController networkController;
+
     TileLoader tileLoader;
     QString key = tileLoader.readKey("key.txt");
 
     std::pair<QByteArray, TileLoader::ErrorCode> styleSheetURL =
-        tileLoader.getStylesheet(TileLoader::styleSheetType::basic_v2, key);
+        tileLoader.getStylesheet(TileLoader::styleSheetType::basic_v2, key, networkController);
 
     QVERIFY(styleSheetURL.second == TileLoader::ErrorCode::success);
 }
@@ -47,11 +49,12 @@ void UnitTesting::getStyleSheet_returns_success_on_supported_stylesheet() {
 // Get a non-supported stylesheet
 // Note that this specific test will fail if an illegal key is provided
 void UnitTesting::getStyleSheet_returns_failure_on_unsupported_stylesheet() {
+    NetworkController networkController;
     TileLoader tileLoader;
     QString key = tileLoader.readKey("key.txt");
 
     std::pair<QByteArray, TileLoader::ErrorCode> styleSheetURL =
-        tileLoader.getStylesheet(TileLoader::styleSheetType::bright_v2, key);
+        tileLoader.getStylesheet(TileLoader::styleSheetType::bright_v2, key, networkController);
 
     QVERIFY(styleSheetURL.second == TileLoader::ErrorCode::unknownError);
 }
