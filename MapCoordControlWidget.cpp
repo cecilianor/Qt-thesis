@@ -50,7 +50,7 @@ MapCoordControlWidget::MapCoordControlWidget(MapWidget* mapWidget)
         // Set up the text field to be limited to doubles in a specific range.
         double minValue = -180;
         double maxValue = 180;
-        int decimalPlaces = 2;
+        int decimalPlaces = 4;
         auto* validator = new QDoubleValidator(minValue, maxValue, decimalPlaces, longitudeField);
         validator->setNotation(QDoubleValidator::StandardNotation);
         validator->setLocale(QLocale::English);
@@ -69,7 +69,7 @@ MapCoordControlWidget::MapCoordControlWidget(MapWidget* mapWidget)
         // Set up the text field to be limited to doubles in a specific range.
         double minValue = -85;
         double maxValue = 85;
-        int decimalPlaces = 2;
+        int decimalPlaces = 4;
         auto* validator = new QDoubleValidator(minValue, maxValue, decimalPlaces, latitudeField);
         validator->setNotation(QDoubleValidator::StandardNotation);
         validator->setLocale(QLocale::English);

@@ -20,10 +20,13 @@ QPair<double, double> Bach::lonLatToWorldNormCoord(double lon, double lat)
     // Normalize x and y to [0, 1]
     // Assuming the Web Mercator x range is [-π, π] and y range is calculated from latitude range
     auto xNormalized = normalize(x, -M_PI, M_PI);
+    // We have to flip the sign of Y, because Mercator has positive Y moving up,
+    // while the world-normalized coordinate space has Y moving down.
     auto yNormalized = normalize(
-        y,
+        -y,
         std::log(std::tan(M_PI / 4.0 + -webMercatorPhiCutoff / 2.0)),
         std::log(std::tan(M_PI / 4.0 + webMercatorPhiCutoff / 2.0)));
+
 
     return { xNormalized, yNormalized };
 }

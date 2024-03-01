@@ -10,7 +10,7 @@
 #include "Layerstyle.h"
 
 namespace Bach {
-    constexpr int maxZoomLevel = 16;
+    constexpr int maxZoomLevel = 15;
 
     /* Controls the default value for how big tiles should appear on-screen.
      * Smaller values mean each individual tile will appear smaller on screen and provide more detail,
