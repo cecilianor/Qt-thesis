@@ -11,7 +11,6 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-
 # We need to look for packages that are hard requirements for the code to run.
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Protobuf Network)
 qt_standard_project_setup()
@@ -48,6 +47,13 @@ qt_add_library(maplib STATIC
     lib/TileLoader.cpp
     lib/networkcontroller.h
     lib/networkcontroller.cpp)
+
+# Qt containers by default don't include asserts (i.e out of bounds checks) in their containers
+# under the RelWithDebInfo config. We enforce that they do to help us catch bugs.
+if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo" OR CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+    target_compile_definitions(maplib PUBLIC QT_FORCE_ASSERTS)
+endif()
+
 qt_add_protobuf(maplib
     PROTO_FILES
         lib/vector_tile.proto
