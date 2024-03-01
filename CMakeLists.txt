@@ -65,27 +65,27 @@ target_link_libraries(maplib PUBLIC Qt6::Widgets Qt6::Protobuf Qt6::Network)
 
 # Setup the primary QWidgets application
 set(PROJECT_SOURCES
-    main.cpp
-    MapWidget.h
-    MapWidget.cpp
-    MapZoomControlWidget.h
-    MapZoomControlWidget.cpp
-    MapPanControlWidget.h
-    MapPanControlWidget.cpp
-    MapCoordControlWidget.h
-    MapCoordControlWidget.cpp
-    MainWindow.h
-    MainWindow.cpp)
-qt_add_executable(maptest
+    app/main.cpp
+    app/MapWidget.h
+    app/MapWidget.cpp
+    app/MapZoomControlWidget.h
+    app/MapZoomControlWidget.cpp
+    app/MapPanControlWidget.h
+    app/MapPanControlWidget.cpp
+    app/MapCoordControlWidget.h
+    app/MapCoordControlWidget.cpp
+    app/MainWindow.h
+    app/MainWindow.cpp)
+qt_add_executable(application
     MANUAL_FINALIZATION
     ${PROJECT_SOURCES}
     )
 
 # Link our app to our library target.
-target_link_libraries(maptest PUBLIC maplib)
+target_link_libraries(application PUBLIC maplib)
 
 # Nils: Not sure how relevant these particular commands are.
-set_target_properties(maptest PROPERTIES
+set_target_properties(application PROPERTIES
     ${BUNDLE_ID_OPTION}
     MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
     MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
@@ -95,22 +95,22 @@ set_target_properties(maptest PROPERTIES
 
 # Nils: Might not be necessary for our project.
 include(GNUInstallDirs)
-install(TARGETS maptest
+install(TARGETS application
     BUNDLE DESTINATION .
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-qt_finalize_executable(maptest)
+qt_finalize_executable(application)
 # Apply the windows deployment process to our executable.
-win32_deploy(maptest)
+win32_deploy(application)
 
 # Set up function that applies copy directory command to executable,
 # to copy the contents of our "testdata" folder into where the executable lives.
 add_custom_command(
-    TARGET maptest POST_BUILD
+    TARGET application POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_SOURCE_DIR}/testdata $<TARGET_FILE_DIR:maptest>/testdata
+    ${CMAKE_SOURCE_DIR}/testdata $<TARGET_FILE_DIR:application>/testdata
 )
 
 # Create the example command line utility example.
