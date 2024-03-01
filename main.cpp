@@ -2,7 +2,7 @@
 #include <QMessageBox>
 
 #include "MainWindow.h"
-#include "TileURL.h"
+#include "TileLoader.h"
 
 int main(int argc, char *argv[])
 {
@@ -11,10 +11,10 @@ int main(int argc, char *argv[])
     NetworkController networkController;
 
     // Gets different URLs to download PBF tiles.
-    TileURL tileUrl;
+    TileLoader tileLoader;
 
      // Read key from file.
-    QString mapTilerKey = tileUrl.readKey("key.txt");
+    QString mapTilerKey = tileLoader.readKey("key.txt");
     if(mapTilerKey == "") {
         // If we couldn't load the key, display an error box.
         QMessageBox::critical(
@@ -25,11 +25,11 @@ int main(int argc, char *argv[])
     }
 
     // Picks stylesheet to load and loads it.
-    auto styleSheetType = TileURL::styleSheetType::basic_v2;
-    auto styleSheetBytes = tileUrl.loadStyleSheetFromWeb(mapTilerKey, styleSheetType);
+    auto styleSheetType = TileLoader::styleSheetType::basic_v2;
+    auto styleSheetBytes = tileLoader.loadStyleSheetFromWeb(mapTilerKey, styleSheetType);
 
     // Gets the link template where we have to switch out x, y,z in the link.
-    auto pbfLinkTemplate = tileUrl.getPbfLinkTemplate(styleSheetBytes, "maptiler_planet");
+    auto pbfLinkTemplate = tileLoader.getPbfLinkTemplate(styleSheetBytes, "maptiler_planet");
 
     // Creates the Widget that displays the map.
     auto *mapWidget = new MapWidget;
@@ -48,8 +48,8 @@ int main(int argc, char *argv[])
 
     auto downloadTile = [&](TileCoord tile) {
         return Bach::tileFromByteArray(
-            tileUrl.downloadTile(
-                tileUrl.setPbfLink(tile, pbfLinkTemplate),
+            tileLoader.downloadTile(
+                tileLoader.setPbfLink(tile, pbfLinkTemplate),
             networkController));
     };
 

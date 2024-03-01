@@ -2,7 +2,7 @@
 
 #include "unittesting.h"
 
-#include "TileURL.h"
+#include "TileLoader.h"
 
 #include <QObject>
 
@@ -13,9 +13,9 @@ QTEST_MAIN(UnitTesting)
 
 // Try to get a key that's correct
 void UnitTesting::readKey_returns_success_when_valid_key() {
-    TileURL tileURL;
+    TileLoader tileLoader;
 
-    QString keyFromFile = tileURL.readKey("testkey.txt");
+    QString keyFromFile = tileLoader.readKey("testkey.txt");
     QString keyString ="123*+abcDEF<>";
 
     QVERIFY(keyFromFile==keyString);
@@ -23,9 +23,9 @@ void UnitTesting::readKey_returns_success_when_valid_key() {
 
 // Try to get a key that's wrong
 void UnitTesting::readKey_returns_failure_when_invalid_key() {
-    TileURL tileURL;
+    TileLoader tileLoader;
 
-    QString keyFromFile = tileURL.readKey("testkey.txt");
+    QString keyFromFile = tileLoader.readKey("testkey.txt");
     QString wrongKey ="IAmWrong";       //correct key = 123*+abcDEF<>
 
     QVERIFY(keyFromFile!=wrongKey);
@@ -35,23 +35,23 @@ void UnitTesting::readKey_returns_failure_when_invalid_key() {
 // Get a supported stylesheet
 // Note that this specific test will fail if an illegal key is provided
 void UnitTesting::getStyleSheet_returns_success_on_supported_stylesheet() {
-    TileURL tileURL;
-    QString key = tileURL.readKey("key.txt");
+    TileLoader tileLoader;
+    QString key = tileLoader.readKey("key.txt");
 
-    std::pair<QByteArray, TileURL::ErrorCode> styleSheetURL =
-        tileURL.getStylesheet(TileURL::styleSheetType::basic_v2, key);
+    std::pair<QByteArray, TileLoader::ErrorCode> styleSheetURL =
+        tileLoader.getStylesheet(TileLoader::styleSheetType::basic_v2, key);
 
-    QVERIFY(styleSheetURL.second == TileURL::ErrorCode::success);
+    QVERIFY(styleSheetURL.second == TileLoader::ErrorCode::success);
 }
 
 // Get a non-supported stylesheet
 // Note that this specific test will fail if an illegal key is provided
 void UnitTesting::getStyleSheet_returns_failure_on_unsupported_stylesheet() {
-    TileURL tileURL;
-    QString key = tileURL.readKey("key.txt");
+    TileLoader tileLoader;
+    QString key = tileLoader.readKey("key.txt");
 
-    std::pair<QByteArray, TileURL::ErrorCode> styleSheetURL =
-        tileURL.getStylesheet(TileURL::styleSheetType::bright_v2, key);
+    std::pair<QByteArray, TileLoader::ErrorCode> styleSheetURL =
+        tileLoader.getStylesheet(TileLoader::styleSheetType::bright_v2, key);
 
-    QVERIFY(styleSheetURL.second == TileURL::ErrorCode::unknownError);
+    QVERIFY(styleSheetURL.second == TileLoader::ErrorCode::unknownError);
 }

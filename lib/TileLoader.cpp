@@ -3,12 +3,12 @@
 #include <QJsonDocument>
 #include <QFile>
 
-#include "TileURL.h"
+#include "TileLoader.h"
 #include "TileCoord.h"
 #include "networkcontroller.h"
 #include "qjsonarray.h"
 
-TileURL::TileURL() {};
+TileLoader::TileLoader() {};
 
 /*!
  * @brief TileURL::getStylesheet gets a stylesheet from MapTiler
@@ -16,13 +16,13 @@ TileURL::TileURL() {};
  * @param key The MapTiler key.
  * @return The response from MapTiler.
  */
-std::pair<QByteArray, TileURL::ErrorCode> TileURL::getStylesheet(styleSheetType type, QString key) {
+std::pair<QByteArray, TileLoader::ErrorCode> TileLoader::getStylesheet(styleSheetType type, QString key) {
     NetworkController networkController;
     QByteArray response="";
     QString url;
 
     switch(type) {
-    case (TileURL::styleSheetType::basic_v2) : {
+    case (TileLoader::styleSheetType::basic_v2) : {
         url = "https://api.maptiler.com/maps/basic-v2/style.json?key=" + key;
         response = networkController.sendRequest(QString(url));
         break;
@@ -42,7 +42,7 @@ std::pair<QByteArray, TileURL::ErrorCode> TileURL::getStylesheet(styleSheetType 
  * @param sourceType is the map source type passed as a QString
  * @return link as a string
  */
-std::pair<QString, TileURL::ErrorCode> TileURL::getTilesLink(const QJsonDocument & styleSheet, QString sourceType)
+std::pair<QString, TileLoader::ErrorCode> TileLoader::getTilesLink(const QJsonDocument & styleSheet, QString sourceType)
 {
     //Pair <QString, errorCode>
     //  Make an errorCode enum
@@ -93,7 +93,7 @@ std::pair<QString, TileURL::ErrorCode> TileURL::getTilesLink(const QJsonDocument
  * @param tileSheetUrl the link/url to the stylesheet.
  * @return The link to PBF tiles.
  */
-std::pair<QString, TileURL::ErrorCode> TileURL::getPBFLink (const QString & tileSheetUrl) {
+std::pair<QString, TileLoader::ErrorCode> TileLoader::getPBFLink (const QString & tileSheetUrl) {
     NetworkController networkController;
     QJsonDocument tilesSheet;
     QJsonParseError parseError;
@@ -143,7 +143,7 @@ std::pair<QString, TileURL::ErrorCode> TileURL::getPBFLink (const QString & tile
  * @param filePath is the relative path + filename that's storing the key.
  * @return The key if successfully read from file.
  */
-QString TileURL::readKey(QString filePath) {
+QString TileLoader::readKey(QString filePath) {
 
     QFile file(filePath);
 
@@ -162,11 +162,11 @@ QString TileURL::readKey(QString filePath) {
  * \param styleSheetType is the type of style sheet to load.
  * \return
  */
-QByteArray TileURL::loadStyleSheetFromWeb(const QString &mapTilerKey, TileURL::styleSheetType &styleSheetType)
+QByteArray TileLoader::loadStyleSheetFromWeb(const QString &mapTilerKey, TileLoader::styleSheetType &styleSheetType)
 {
 
-    std::pair<QByteArray, TileURL::ErrorCode> styleSheetResult = getStylesheet(styleSheetType, mapTilerKey);
-    if (styleSheetResult.second != TileURL::ErrorCode::success) {
+    std::pair<QByteArray, TileLoader::ErrorCode> styleSheetResult = getStylesheet(styleSheetType, mapTilerKey);
+    if (styleSheetResult.second != TileLoader::ErrorCode::success) {
         qWarning() << "There was an error: " << styleSheetResult.first;
     }
     return styleSheetResult.first;
@@ -178,7 +178,7 @@ QByteArray TileURL::loadStyleSheetFromWeb(const QString &mapTilerKey, TileURL::s
  * \param sourceType is the source type used by MapTiler. This is currently passed as a string.
  * \return the PBF template.
  */
-QString TileURL::getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType)
+QString TileLoader::getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType)
 {
     // Parse the stylesheet
     QJsonParseError parseError;
@@ -189,10 +189,10 @@ QString TileURL::getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QSt
     }
 
     // Grab link to tiles.json format link
-    std::pair<QString, TileURL::ErrorCode> tilesLinkResult = getTilesLink(styleSheetJson, sourceType);
+    std::pair<QString, TileLoader::ErrorCode> tilesLinkResult = getTilesLink(styleSheetJson, sourceType);
 
     // Grab link to the XYZ PBF tile format based on the tiles.json link
-    std::pair<QString, TileURL::ErrorCode> pbfLink = getPBFLink(tilesLinkResult.first);
+    std::pair<QString, TileLoader::ErrorCode> pbfLink = getPBFLink(tilesLinkResult.first);
     return pbfLink.first;
 }
 
@@ -210,7 +210,7 @@ QString TileURL::getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QSt
  * \param pbfLinkTemplate is the templatized link.
  * \return The generated link to the requested PBF tile.
  */
-QString TileURL::setPbfLink(const TileCoord &tileCoord, const QString &pbfLinkTemplate)
+QString TileLoader::setPbfLink(const TileCoord &tileCoord, const QString &pbfLinkTemplate)
 {
     // Exchange the {x, y z} in link
     auto copy = pbfLinkTemplate;
@@ -226,7 +226,7 @@ QString TileURL::setPbfLink(const TileCoord &tileCoord, const QString &pbfLinkTe
  * \param controller is the network controller making the request.
  * \return the response from the GET request.
  */
-QByteArray TileURL::downloadTile(const QString &pbfLink, NetworkController &controller)
+QByteArray TileLoader::downloadTile(const QString &pbfLink, NetworkController &controller)
 {
     return controller.sendRequest(pbfLink);
 }

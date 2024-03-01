@@ -9,7 +9,7 @@
 #include "TileCoord.h"
 #include "networkcontroller.h"
 
-class TileURL
+class TileLoader
 {
 private:
     QByteArray styleSheet;
@@ -57,7 +57,7 @@ public:
     };
 
     // Constructor and destructor
-    TileURL();                                  // Not implemented
+    TileLoader();                                  // Not implemented
 
     // Functionality making different requests
     std::pair<QByteArray, ErrorCode> getStylesheet(styleSheetType type, QString key); // Implemented
@@ -74,7 +74,7 @@ public:
     // Set the tile URL
     void setTileURL();                          // Not implemented
 
-    ~TileURL(){};
+    ~TileLoader(){};
 };
 
 

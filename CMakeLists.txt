@@ -44,8 +44,8 @@ qt_add_library(maplib STATIC
     lib/TileCoord.cpp
     lib/Layerstyle.h
     lib/Layerstyle.cpp
-    lib/TileURL.h
-    lib/TileURL.cpp
+    lib/TileLoader.h
+    lib/TileLoader.cpp
     lib/networkcontroller.h
     lib/networkcontroller.cpp)
 qt_add_protobuf(maplib
