@@ -138,7 +138,6 @@ QVector<TileCoord> Bach::calcVisibleTiles(
 static void paintSingleTileDebug(
     QPainter &painter,
     const TileCoord &tileCoord,
-    QPoint pixelPos,
     double scale)
 {
     painter.setPen(Qt::green);
@@ -558,7 +557,6 @@ void Bach::paintTiles(
             paintSingleTileDebug(
                 painter,
                 tileCoord,
-                { tilePixelPosX, tilePixelPosY },
                 vpMaxDim * tileSizeNorm);
         }
 
