@@ -1,5 +1,7 @@
 #include "Rendering.h"
 
+#include "Evaluator.h"
+
 QPair<double, double> Bach::lonLatToWorldNormCoord(double lon, double lat)
 {
     constexpr double webMercatorPhiCutoff = 1.4844222297;
@@ -180,39 +182,90 @@ static void paintSingleTile(
     const QTransform &transformIn)
 {
     for (auto const& abstractLayerStyle : styleSheet.m_layerStyles) {
+        auto hideLayer = abstractLayerStyle->m_visibility == "none" ||
+                         abstractLayerStyle->m_maxZoom < mapZoomLevel ||
+                         abstractLayerStyle->m_minZoom > mapZoomLevel;
+        if (hideLayer)
+            continue;
 
         // Background is a special case and has no associated layer.
         if (abstractLayerStyle->type() == AbstractLayereStyle::LayerType::background) {
             // Fill the entire tile with a single color
             auto const& layerStyle = *static_cast<BackgroundStyle const*>(abstractLayerStyle);
-            auto backgroundColor = layerStyle.getColorAtZoom(mapZoomLevel);
+
+            auto backgroundColor = layerStyle.getColorAtZoom(mapZoomLevel).value<QColor>();
             painter.fillRect(transformIn.mapRect(QRect(0, 0, 1, 1)), backgroundColor);
             continue;
         }
 
-        auto layerExists = tileData.m_layers.contains(abstractLayerStyle->m_sourceLayer);
-        if (!layerExists) {
+        auto sourceLayer = abstractLayerStyle->m_sourceLayer;
+        auto layerIt = tileData.m_layers.find(sourceLayer);
+        if (layerIt == tileData.m_layers.end()) {
             continue;
         }
-        auto const& layer = *tileData.m_layers[abstractLayerStyle->m_sourceLayer];
+        auto const& layer = **layerIt;
 
         if (abstractLayerStyle->type() == AbstractLayereStyle::LayerType::fill) {
             auto const& layerStyle = *static_cast<FillLayerStyle const*>(abstractLayerStyle);
 
-            painter.setBrush(layerStyle.getFillColorAtZoom(mapZoomLevel));
-
             for (auto const& abstractFeature : layer.m_features) {
+
+                auto layerId = abstractLayerStyle->m_id;
+                auto metaDatas = abstractFeature->fetureMetaData;
+
+                // Tests whether the feature should be rendered at all.
+                auto featureIsNotFiltered = Evaluator::resolveExpression(
+                    layerStyle.m_filter,
+                    abstractFeature,
+                    mapZoomLevel,
+                    viewportZoomLevel);
+                if (!featureIsNotFiltered.toBool())
+                    continue;
+
                 if (abstractFeature->type() == AbstractLayerFeature::featureType::polygon) {
                     auto const& feature = *static_cast<PolygonFeature const*>(abstractFeature);
+
+                    painter.save();
+
+                    QVariant brushColorVariant = layerStyle.getFillColorAtZoom(mapZoomLevel);
+                    QColor brushColor;
+                    if(brushColorVariant.typeId() == QMetaType::Type::QJsonArray){
+                        brushColor = Evaluator::resolveExpression(
+                            brushColorVariant.toJsonArray(),
+                            &feature,
+                            mapZoomLevel,
+                            viewportZoomLevel).value<QColor>();
+                    } else {
+                        brushColor = brushColorVariant.value<QColor>();
+                    }
+                    float colorOpacity = brushColor.alphaF();
+
+                    QVariant fillOpacityVariant = layerStyle.getFillOpacityAtZoom(mapZoomLevel);
+                    float fillOpacity;
+                    if (fillOpacityVariant.typeId() == QMetaType::Type::QJsonArray){
+                        fillOpacity = Evaluator::resolveExpression(
+                            fillOpacityVariant.toJsonArray(),
+                            &feature,
+                            mapZoomLevel,
+                            viewportZoomLevel).value<float>();
+                    } else {
+                        fillOpacity = fillOpacityVariant.value<float>();
+                    }
+
+                    brushColor.setAlphaF(fillOpacity * colorOpacity);
+                    painter.setBrush(brushColor);
+
+                    painter.setRenderHints(QPainter::Antialiasing, layerStyle.m_antialias);
+
+                    painter.setPen(Qt::NoPen);
                     auto const& path = feature.polygon();
 
                     QTransform transform = transformIn;
                     transform.scale(1 / 4096.0, 1 / 4096.0);
                     auto newPath = transform.map(path);
 
-                    painter.save();
-                    painter.setPen(Qt::NoPen);
                     painter.drawPath(newPath);
+
                     painter.restore();
                 }
             }
@@ -220,34 +273,73 @@ static void paintSingleTile(
         else if (abstractLayerStyle->type() == AbstractLayereStyle::LayerType::line) {
             auto const& layerStyle = *static_cast<LineLayerStyle const*>(abstractLayerStyle);
 
-            painter.save();
-
-            auto pen = painter.pen();
-            auto lineColor = layerStyle.getLineColorAtZoom(mapZoomLevel);
-            pen.setColor(lineColor);
-            auto penWidth = layerStyle.getLineWidthAtZoom(mapZoomLevel);
-            // Temporary solution for when penWidth is set outside bounds.
-            penWidth = std::clamp(penWidth, 1, 30);
-            pen.setWidth(penWidth);
-            painter.setPen(pen);
-
-            painter.setBrush(Qt::NoBrush);
-
             for (auto const& abstractFeature : layer.m_features) {
+                // Tests whether the feature should be rendered at all.
+                auto featureIsNotFiltered = Evaluator::resolveExpression(
+                    layerStyle.m_filter,
+                    abstractFeature,
+                    mapZoomLevel,
+                    viewportZoomLevel);
+                if (!featureIsNotFiltered.toBool())
+                    continue;
+
+
+
                 if (abstractFeature->type() == AbstractLayerFeature::featureType::line) {
-                    auto& feature = *static_cast<LineFeature const*>(abstractFeature);
+
+                    painter.save();
+
+                    const LineFeature& feature = *static_cast<const LineFeature*>(abstractFeature);
+                    QPen pen;
+
+                    QVariant lineColor = layerStyle.getLineColorAtZoom(mapZoomLevel);
+                    if(lineColor.typeId() == QMetaType::Type::QJsonArray){
+                        lineColor = Evaluator::resolveExpression(
+                            lineColor.toJsonArray(),
+                            &feature,
+                            mapZoomLevel,
+                            viewportZoomLevel);
+                    }
+                    pen.setColor(lineColor.value<QColor>());
+
+                    QVariant lineOpacity = layerStyle.getLineOpacityAtZoom(mapZoomLevel);
+                    if(lineOpacity.typeId() == QMetaType::Type::QJsonArray){
+                        lineOpacity = Evaluator::resolveExpression(
+                            lineOpacity.toJsonArray(),
+                            &feature,
+                            mapZoomLevel,
+                            viewportZoomLevel);
+                    }
+                    painter.setOpacity(lineOpacity.toFloat());
+
+                    QVariant lineWidth = layerStyle.getLineWidthAtZoom(mapZoomLevel);
+                    if(lineWidth.typeId() == QMetaType::Type::QJsonArray){
+                        lineWidth = Evaluator::resolveExpression(
+                            lineWidth.toJsonArray(),
+                            &feature,
+                            mapZoomLevel,
+                            viewportZoomLevel);
+                    }
+                    pen.setWidth(lineWidth.toInt());
+
+                    pen.setCapStyle(layerStyle.getCapStyle());
+
+                    pen.setJoinStyle(layerStyle.getJoinStyle());
+
+                    painter.setPen(pen);
+
+                    painter.setBrush(Qt::NoBrush);
+
                     auto const& path = feature.line();
                     QTransform transform = transformIn;
                     transform.scale(1 / 4096.0, 1 / 4096.0);
                     auto newPath = transform.map(path);
 
-                    painter.save();
                     painter.drawPath(newPath);
+
                     painter.restore();
                 }
             }
-
-            painter.restore();
         }
     }
 }

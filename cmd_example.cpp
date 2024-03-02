@@ -7,6 +7,8 @@
 int main(int argc, char *argv[]) {
     QApplication a(argc, argv);
 
+    /*
+
     auto tile000 = Bach::tileFromFile(Bach::testDataDir + "z0x0y0.mvt");
 
     QMap<TileCoord, VectorTile const*> tileStorage;
@@ -29,9 +31,9 @@ int main(int argc, char *argv[]) {
         0,
         tileStorage,
         layerColors);
-*/
 
     image.save("output.png");
+    */
 
     return 0;
 }

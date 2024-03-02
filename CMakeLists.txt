@@ -46,7 +46,9 @@ qt_add_library(maplib STATIC
     lib/TileLoader.h
     lib/TileLoader.cpp
     lib/networkcontroller.h
-    lib/networkcontroller.cpp)
+    lib/networkcontroller.cpp
+    lib/Evaluator.h
+    lib/Evaluator.cpp)
 
 # Qt containers by default don't include asserts (i.e out of bounds checks) in their containers
 # under the RelWithDebInfo config. We enforce that they do to help us catch bugs.

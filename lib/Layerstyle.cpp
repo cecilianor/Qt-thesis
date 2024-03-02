@@ -2,16 +2,6 @@
 #include <QRegularExpression>
 #include <QtMath>
 
-/* Create a QColor obecject from an hsl color string.
-     *The string is expected to be in one of the following formats:
-     *"hsl(hue, stauration%, lightness%)"
-     *"hsla(hue, stauration%, lightness%, alpha)"
-     *
-     * Parameters:
-     *      colorString expects a QString containing the color.
-     *
-     * Returns a QColor object.
-     */
 static QColor getColorFromString(QString colorString)
 {
     colorString.remove(" ");
@@ -38,388 +28,279 @@ static QColor getColorFromString(QString colorString)
 }
 
 
-/* Perform a linear interpolation of a numerical value based on QPair inputs.
-     *
-     * Parameters:
-     *      stop1 expects a QPair<int, T> wich is the first stop in the interpolation.
-     *      stop2 expects a QPair<int, T> wich is the second stop in the interpolation.
-     *      currentZoom expects an integer to be used as the interpolation input.
-     *
-     * Returns the output of the interpolation as type T.
-     */
+
+
+
 template <class T>
-T interpolate(QPair<int, T> stop1, QPair<int, T> stop2, int currentZoom)
+T getStopOutput(QList<QPair<int, T>> list, int currentZoom)
 {
-    T lerpedValue = stop1.second + (currentZoom - stop1.first)*(stop2.second - stop1.second)/(stop2.first - stop1.first);
-    return lerpedValue;
-}
-
-
-/* Perform a linear interpolation of a QColor value based on QPair inputs.
-     *
-     * Parameters:
-     *      stop1 expects a QPair<int, QColor> wich is the first stop in the interpolation.
-     *      stop2 expects a QPair<int, QColor> wich is the second stop in the interpolation.
-     *      currentZoom expects an integer to be used as the interpolation input.
-     *
-     * Returns the output of the interpolation as a QColor object.
-     */
-static QColor interpolateColor(QPair<int, QColor> stop1, QPair<int, QColor> stop2, int currentZoom)
-{
-    if (stop1.second.hue() == stop2.second.hue()) {
-        return stop1.second;
-    }
-
-    int lerpedSaturation = stop1.second.hslSaturation() + (stop2.second.hslSaturation() - stop1.second.hslSaturation()) * (currentZoom - stop1.first)/(stop2.first - stop1.first);
-
-    int lerpedLightness = stop1.second.lightness() + (stop2.second.lightness() - stop1.second.lightness()) * (currentZoom - stop1.first)/(stop2.first - stop1.first);
-
-    int angularDistance = stop2.second.hslHue() - stop1.second.hslHue();
-
-    if(angularDistance > 180){
-        angularDistance = angularDistance - 360;
-    }else if(angularDistance < - 180){
-        angularDistance = angularDistance + 360;
-    }
-    int lerpedHue = stop1.second.hslHue() + angularDistance * (currentZoom - stop1.first)/(stop2.first - stop1.first);
-
-    float lerpedAlpha = stop1.second.alphaF() + (stop2.second.alphaF() - stop1.second.alphaF()) * (currentZoom - stop1.first)/(stop2.first - stop1.first);
-
-    QColor lerpedColor;
-    lerpedColor.setHslF(lerpedHue, lerpedSaturation, lerpedLightness, lerpedAlpha);
-    return lerpedColor;
-
-
-}
-
-/* Determines which two interpolation stops are apropritate to use for a given zoom
-     *value from a QList of QPairs.
-     *
-     * Parameters:
-     *     list expects a QList of QPairs conatining all the stops.
-     *     currentZoom expect an integer which is the input value to be used in the interpolation.
-     *
-     * Returns the return value from the interpolation function of type T.
-     *
-     * This function assumes the stops are in sorted order, could be useful to check!
-     */
-template <class T>
-T getLerpedValue(QList<QPair<int, T>> list, int currentZoom)
-{
-    // We could use some error handling for the case where
-    // the list passed is empty.
-    if (list.length() == 0) {
-        qDebug() << "Major developer error!!\n";
-        std::abort();
-    }
-
-    /* If we only have one element in the list, there's nothing to lerp
-     * and we just return that data point.
-     *
-     * If our input value is below the lowest key in the dataset, then
-     * we also just return the first data point.
-     *
-     * If our input value is higher than the highest key in the dataset, then
-     * we return the data of the highest key.
-     *
-     * If these conditions are not met, we search for the two indices where our input value falls
-     * between and do the interpolating between these two indices.
-     */
-    if(list.length() == 1 || currentZoom <= list.first().first) {
-        return list.first().second;
-    } else if (currentZoom >= list.last().first) {
-        return list.last().second;
-    }else{
-        // Find the first stop that has zoom-level >= to currentZoom.
-        bool indexFound = false;
-        int index = 0;
-        for (int i = 0; i < list.size(); i++) {
-            const auto &item = list[i];
-            if (currentZoom >= item.first) {
-                indexFound = true;
-                index = i;
-                break;
-            }
-        }
-        // Could use better error handling here. Check that the first index is always found.
-        if (!indexFound) {
-            qDebug() << "Major developer error!!\n";
-            std::abort();
-        }
-
-        // Check that the range is not outside bounds.
-        if (index + 1 >= list.size()) {
-            qDebug() << "Major developer error!!\n";
-            std::abort();
-        }
-        return interpolate(list.at(index), list.at(index + 1), currentZoom);
-    }
-}
-
-/* Determines which two interpolation stops are apropritate to use for a given zoom
-     *value from a QList of QPairs. This function is specific for color interpolation.
-     *
-     * Parameters:
-     *     list expects a QList of QPairs conatining all the stops.
-     *     currentZoom expect an integer which is the input value to be used in the interpolation.
-     *
-     * Returns the return value from the interpolation function of type QColor.
-     */
-static QColor getLerpedColorValue(QList<QPair<int, QColor>> list, int currentZoom)
-{
-    if(list.length() == 1 || currentZoom <= list.begin()->first){
-        return list.begin()->second;
-    }else{
-        if(currentZoom >= list.at(list.length() - 1).first){
-            return list.at(list.length() - 1).second;
-        }else{
-            int index = 0;
-            while(currentZoom < list.at(index).first)
-            {
-                index++;
-            }
-
-            return interpolateColor(list.at(index), list.at(index), currentZoom);
+    for(const auto stop : list)
+    {
+        if(currentZoom < stop.first){
+            return stop.second;
         }
     }
+    return list.last().second;
 }
-
 /*
  * ----------------------------------------------------------------------------
  */
 
-/*Parses the data from a QJsonObject containing styling properties of a layer of type background.
-     *
-     * Parameters:
-     *     json expects a refrence to the json object containing the data.
-     *
-     * Returns a pointer of type BackgroundStyle to the newly created layer with the parsed properties.
-     */
 BackgroundStyle *BackgroundStyle::fromJson(const QJsonObject &json)
 {
     BackgroundStyle* returnLayer = new BackgroundStyle();
-    returnLayer->m_id = json.value("id").toString();
-    returnLayer->m_source = json.value("source").toString();
-    returnLayer->m_sourceLayer = json.value("source-layer").toString();
-    returnLayer->m_maxZoom =  json.contains("maxzoom") ? json.value("maxzoom").toInt() : 24;
-    returnLayer->m_minZoom =  json.contains("minzoom") ? json.value("minzoom").toInt() : 0;
-
     //parsing layout properties
     QJsonObject layout = json.value("layout").toObject();
-    returnLayer->m_visibility = layout.contains("visibility") ? layout.value("visibility").toString() : QString("visible");
+    //visibility property is parsed in AbstractLayereStyle* AbstractLayereStyle::fromJson(const QJsonObject &json)
 
     //parsing paint properties
     QJsonObject paint = json.value("paint").toObject();
     if(paint.contains("background-color"))
     {
-        if(paint.value("background-color").isObject()) {
-            for(const auto &stop : paint.value("background-color").toObject().value("stops").toArray())
+        QJsonValue backgroundColor = paint.value("background-color");
+        if(backgroundColor.isObject()) {
+            QList<QPair<int, QColor>> stops;
+            for(const auto &stop : backgroundColor.toObject().value("stops").toArray())
             {
-                returnLayer->addBackgroundColorStop(stop.toArray().first().toInt(), stop.toArray().last().toString());
+                int zoomStop = stop.toArray().first().toInt();
+                QColor colorStop = getColorFromString(stop.toArray().last().toString());
+                stops.append(QPair<int, QColor>(zoomStop, colorStop));
             }
+            returnLayer->m_backgroundColor.setValue(stops);
+        }else if(backgroundColor.isArray()){
+            returnLayer->m_backgroundColor.setValue(backgroundColor.toArray());
         }else{
-            returnLayer->addBackgroundColorStop(-1, paint.value("background-color").toString());
+            returnLayer->m_backgroundColor.setValue(getColorFromString(backgroundColor.toString()));
         }
 
     }
 
     if(paint.contains("background-opacity")){
-        if(paint.value("background-opacity").isObject()) {
-            for(const auto &stop : paint.value("background-opacity").toObject().value("stops").toArray())
+        QJsonValue backgroundOpacity= paint.value("background-opacity");
+        if(backgroundOpacity.isObject()) {
+            QList<QPair<int, float>> stops;
+            for(const auto &stop : backgroundOpacity.toObject().value("stops").toArray())
             {
-                returnLayer->addBackgroundOpacityStop(stop.toArray().first().toInt(), stop.toArray().last().toDouble());
+                int zoomStop = stop.toArray().first().toInt();
+                float opacityStop = stop.toArray().last().toDouble();
+                stops.append(QPair<int, float>(zoomStop, opacityStop));
             }
+             returnLayer->m_backgroundOpacity.setValue(stops);
+        }else if(backgroundOpacity.isArray()){
+            returnLayer->m_backgroundOpacity.setValue(backgroundOpacity.toArray());
         }else{
-            returnLayer->addBackgroundOpacityStop(-1, paint.value("background-opacity").toDouble());
+            returnLayer->m_backgroundOpacity.setValue(backgroundOpacity.toDouble());
         }
     }
 
     return returnLayer;
 }
 
-//The following functions are getters and setters for the different background layer properties.
-QColor BackgroundStyle::getColorAtZoom(int zoomLevel) const
+QVariant BackgroundStyle::getColorAtZoom(int zoomLevel) const
 {
-    return getLerpedColorValue(m_backgroundColor, zoomLevel);
+    if(m_backgroundColor.isNull()){
+        return QColor(Qt::GlobalColor::black);
+    }else if(m_backgroundColor.typeId() != QMetaType::Type::QColor && m_backgroundColor.typeId() != QMetaType::Type::QJsonArray){
+        QList<QPair<int, QColor>> stops = m_backgroundColor.value<QList<QPair<int, QColor>>>();
+        return QVariant(getStopOutput(stops, zoomLevel));
+    }else{
+        return m_backgroundColor;
+    }
 }
 
-float BackgroundStyle::getOpacityAtZoom(int zoomLevel) const
+QVariant BackgroundStyle::getOpacityAtZoom(int zoomLevel) const
 {
-    return getLerpedValue(m_backgroundOpacity, zoomLevel);
-}
-
-void BackgroundStyle::addBackgroundColorStop(int zoomLevel, QString hslColor)
-{
-    m_backgroundColor.append(QPair<int, QColor>(zoomLevel, getColorFromString(hslColor)));
-}
-
-void BackgroundStyle::addBackgroundOpacityStop(int zoomLevel, float opacity)
-{
-    m_backgroundOpacity.append(QPair<int, float>(zoomLevel, opacity));
+    if(m_backgroundOpacity.isNull()){
+        return QVariant(1);
+    }else if(m_backgroundOpacity.typeId() != QMetaType::Type::Double && m_backgroundOpacity.typeId() != QMetaType::Type::QJsonArray){
+        QList<QPair<int, float>> stops = m_backgroundOpacity.value<QList<QPair<int, float>>>();
+        return QVariant(getStopOutput(stops, zoomLevel));
+    }else{
+        return m_backgroundColor;
+    }
 }
 /*
  * ----------------------------------------------------------------------------
  */
 
-/*Parses the data from a QJsonObject containing styling properties of a layer of type fill.
-     *
-     * Parameters:
-     *     json expects a refrence to the json object containing the data.
-     *
-     * Returns a pointer of type FillLayerStyle to the newly created layer with the parsed properties.
-     */
+
 FillLayerStyle *FillLayerStyle::fromJson(const QJsonObject &json)
 {
     FillLayerStyle* returnLayer = new FillLayerStyle();
-    returnLayer->m_id = json.value("id").toString();
-    returnLayer->m_source = json.value("source").toString();
-    returnLayer->m_sourceLayer = json.value("source-layer").toString();
-    returnLayer->m_maxZoom =  json.contains("maxzoom") ? json.value("maxzoom").toInt() : 24;
-    returnLayer->m_minZoom =  json.contains("minzoom") ? json.value("minzoom").toInt() : 0;
 
     //parsing layout properties
     QJsonObject layout = json.value("layout").toObject();
-    returnLayer->m_visibility = layout.contains("visibility") ? layout.value("visibility").toString() : QString("visible");
+    //visibility property is parsed in AbstractLayereStyle* AbstractLayereStyle::fromJson(const QJsonObject &json)
 
     //parsing paint properties
     QJsonObject paint = json.value("paint").toObject();
     returnLayer->m_antialias = paint.contains("fill-antialias") ? paint.value("fill-antialias").toBool() : true;
     if(paint.contains("fill-color")){
-        if(paint.value("fill-color").isObject())
+        QJsonValue fillColor = paint.value("fill-color");
+        if(fillColor.isObject())
         {
-            for(const auto &stop : paint.value("fill-color").toObject().value("stops").toArray()){
-                returnLayer->addFillColorStop(stop.toArray().first().toInt(), stop.toArray().last().toString());
+            QList<QPair<int, QColor>> stops;
+            for(const auto &stop : fillColor.toObject().value("stops").toArray()){
+                int zoomStop = stop.toArray().first().toInt();
+                QColor colorStop = getColorFromString(stop.toArray().last().toString());
+                stops.append(QPair<int, QColor>(zoomStop, colorStop));
             }
+            returnLayer->m_fillColor.setValue(stops);
+        }else if(fillColor.isArray()){
+            returnLayer->m_fillColor.setValue(fillColor.toArray());
         }else{
-            returnLayer->addFillColorStop(-1, paint.value("fill-color").toString());
+            returnLayer->m_fillColor.setValue(getColorFromString(fillColor.toString()));
         }
     }
 
     if(paint.contains("fill-opacity")){
-        if(paint.value("fill-opacity").isObject())
+        QJsonValue fillOpacity = paint.value("fill-opacity");
+        if(fillOpacity.isObject())
         {
-            for(const auto &stop : paint.value("fill-opacity").toObject().value("stops").toArray()){
-                returnLayer->addFillOpacityStop(stop.toArray().first().toInt(), stop.toArray().last().toDouble());
+            QList<QPair<int, float>> stops;
+            for(const auto &stop : fillOpacity.toObject().value("stops").toArray()){
+                int zoomSopt = stop.toArray().first().toInt();
+                float opacityStop = stop.toArray().last().toDouble();
+                stops.append(QPair<int, float>(zoomSopt, opacityStop));
             }
+            returnLayer->m_fillOpacity.setValue(stops);
+        }else if(fillOpacity.isArray()){
+            returnLayer->m_fillOpacity.setValue(fillOpacity.toArray());
         }else{
-            returnLayer->addFillOpacityStop(-1, paint.value("fill-opacity").toDouble());
+            returnLayer->m_fillOpacity.setValue(fillOpacity.toDouble());
         }
     }
 
     if(paint.contains("fill-outline-color")){
-        if(paint.value("fill-outline-color").isObject())
+        QJsonValue fillOutlineColor = paint.value("fill-outline-color");
+        if(fillOutlineColor.isObject())
         {
-            for(const auto &stop : paint.value("fill-outline-color").toObject().value("stops").toArray()){
-                returnLayer->addFillOutlineColorStop(stop.toArray().first().toInt(), stop.toArray().last().toString());
+            QList<QPair<int, QColor>> stops;
+            for(const auto &stop : fillOutlineColor.toObject().value("stops").toArray()){
+                int zoomStop = stop.toArray().first().toInt();
+                QColor colorStop = getColorFromString(stop.toArray().last().toString());
             }
+            returnLayer->m_fillOutlineColor.setValue(stops);
+        }else if(fillOutlineColor.isArray()){
+            returnLayer->m_fillOutlineColor.setValue(fillOutlineColor.toArray());
         }else{
-            returnLayer->addFillOutlineColorStop(-1, paint.value("fill-outline-color").toString());
+            returnLayer->m_fillOutlineColor.setValue(getColorFromString(fillOutlineColor.toString()));
         }
     }
 
     return returnLayer;
 }
 
-//The following functions are getters and setters for the different background layer properties.
-QColor FillLayerStyle::getFillColorAtZoom(int zoomLevel) const
+QVariant FillLayerStyle::getFillColorAtZoom(int zoomLevel) const
 {
-    return getLerpedColorValue(m_fillColor, zoomLevel);
+    if(m_fillColor.isNull()){
+        return QColor(Qt::GlobalColor::black);
+    }else if(m_fillColor.typeId() != QMetaType::Type::QColor && m_fillColor.typeId() != QMetaType::Type::QJsonArray){
+        QList<QPair<int, QColor>> stops = m_fillColor.value<QList<QPair<int, QColor>>>();
+        return QVariant(getStopOutput(stops, zoomLevel));
+    } else {
+        return m_fillColor;
+    }
 }
 
-float FillLayerStyle::getFillOpacityAtZoom(int zoomLevel) const
+QVariant FillLayerStyle::getFillOpacityAtZoom(int zoomLevel) const
 {
-    return getLerpedValue(m_fillOpacity, zoomLevel);
+    if(m_fillOpacity.isNull()){
+        return QVariant(1);
+    }else if(m_fillOpacity.typeId() != QMetaType::Type::QColor && m_fillOpacity.typeId() != QMetaType::Type::QJsonArray){
+        QList<QPair<int, float>> stops = m_fillOpacity.value<QList<QPair<int, float>>>();
+        return QVariant(getStopOutput(stops, zoomLevel));
+    }else{
+        return m_fillOpacity;
+    }
 }
 
-QColor FillLayerStyle::getFillOutLineColorAtZoom(int zoomLevel) const
+QVariant FillLayerStyle::getFillOutLineColorAtZoom(int zoomLevel) const
 {
-    return getLerpedColorValue(m_fillOutlineColor, zoomLevel);
+    if(m_antialias == false) return QVariant();
+    if(m_fillOutlineColor.isNull()){
+        return QVariant();
+    }
+    if(m_fillOutlineColor.typeId() != QMetaType::Type::QColor && m_fillOutlineColor.typeId() != QMetaType::Type::QJsonArray){
+        QList<QPair<int, QColor>> stops = m_fillOutlineColor.value<QList<QPair<int, QColor>>>();
+        return QVariant(getStopOutput(stops, zoomLevel));
+    }else{
+        return m_fillOutlineColor;
+    }
 }
 
-void FillLayerStyle::addFillColorStop(int zoomLevel, QString hslColor)
-{
-    m_fillColor.append(QPair<int, QColor>(zoomLevel, getColorFromString(hslColor)));
-}
-
-void FillLayerStyle::addFillOpacityStop(int zoomLevel, float opacity)
-{
-    m_fillOpacity.append(QPair<int, float>(zoomLevel, opacity));
-}
-
-void FillLayerStyle::addFillOutlineColorStop(int zoomLevel, QString hslColor)
-{
-    m_fillOutlineColor.append(QPair<int, QColor>(zoomLevel, getColorFromString(hslColor)));
-}
 
 /*
  * ----------------------------------------------------------------------------
  */
 
-/*Parses the data from a QJsonObject containing styling properties of a layer of type line.
-     *
-     * Parameters:
-     *     json expects a refrence to the json object containing the data.
-     *
-     * Returns a pointer of type LineLayerStyle to the newly created layer with the parsed properties.
-     */
+
 LineLayerStyle *LineLayerStyle::fromJson(const QJsonObject &json)
 {
 
     LineLayerStyle* returnLayer = new LineLayerStyle();
-    returnLayer->m_id = json.value("id").toString();
-    returnLayer->m_source = json.value("source").toString();
-    returnLayer->m_sourceLayer = json.value("source-layer").toString();
-    returnLayer->m_maxZoom =  json.contains("maxzoom") ? json.value("maxzoom").toInt() : 24;
-    returnLayer->m_minZoom =  json.contains("minzoom") ? json.value("minzoom").toInt() : 0;
+
     //parsing layout properties
+    //visibility property is parsed in AbstractLayereStyle* AbstractLayereStyle::fromJson(const QJsonObject &json)
     QJsonObject layout = json.value("layout").toObject();
-    returnLayer->m_visibility = layout.contains("visibility") ? layout.value("visibility").toString() : QString("visible");
     returnLayer->m_lineCap = layout.contains("line-cap") ? layout.value("line-cap").toString() : QString("butt");
     returnLayer->m_lineJoin = layout.contains("line-join") ? layout.value("line-join").toString() : QString("miter");
-    if(layout.contains("line-miter-limit")){
-        if(layout.value("line-miter-limit").isObject()){
-            for(const auto &stop : layout.value("line-miter-limit").toObject().value("stops").toArray()){
-                returnLayer->addLineMitterLimitStop(stop.toArray().first().toInt(), stop.toArray().last().toDouble());
-            }
-        }else{
-            returnLayer->addLineMitterLimitStop(-1, layout.value("line-miter-limit").toDouble());
-        }
-    }
     //parsing paint properties
     QJsonObject paint = json.value("paint").toObject();
-    if(paint.contains("line-color")){
-        if(paint.value("line-color").isObject()){
-            for(const auto &stop : paint.value("line-color").toObject().value("stops").toArray()){
-                returnLayer->addLineColorStop(stop.toArray().first().toInt(), stop.toArray().last().toString());
-            }
-        }else{
-            returnLayer->addLineColorStop(-1, paint.value("line-color").toString());
-        }
-    }
-
     if(paint.contains("line-dasharray")){
         for(const auto &length: paint.value("line-dasharray").toArray()){
             returnLayer->m_lineDashArray.append(length.toInt());
         }
     }
 
-    if(paint.contains("line-opacity")){
-        if(paint.value("line-opacity").isObject()){
-            for(const auto &stop : paint.value("line-opacity").toObject().value("stops").toArray()){
-                returnLayer->addLineOpacityStop(stop.toArray().first().toInt(), stop.toArray().last().toDouble());
+    if(paint.contains("line-color")){
+        QJsonValue lineColor = paint.value("line-color");
+        if(lineColor.isObject()){
+            QList<QPair<int, QColor>> stops;
+            for(const auto &stop : lineColor.toObject().value("stops").toArray()){
+                int zoomStop = stop.toArray().first().toInt();
+                QColor colorStop = getColorFromString(stop.toArray().last().toString());
+                stops.append(QPair<int , QColor>(zoomStop, colorStop));
             }
+            returnLayer->m_lineColor.setValue(stops);
+        }else if(lineColor.isArray()){
+            returnLayer->m_lineColor.setValue(lineColor.toArray());
         }else{
-            returnLayer->addLineColorStop(-1, paint.value("line-opacity").toString());
+            returnLayer->m_lineColor.setValue(getColorFromString(lineColor.toString()));
+        }
+    }
+
+    if(paint.contains("line-opacity")){
+        QJsonValue lineOpacity = paint.value("line-opacity");
+        if(lineOpacity.isObject()){
+            QList<QPair<int, float>> stops;
+            for(const auto &stop : lineOpacity.toObject().value("stops").toArray()){
+                int zoomStop = stop.toArray().first().toInt();
+                float opacityStop = stop.toArray().last().toDouble();
+                stops.append(QPair<int , float>(zoomStop, opacityStop));
+            }
+            returnLayer->m_lineOpacity.setValue(stops);
+        }else if(lineOpacity.isArray()){
+            returnLayer->m_lineOpacity.setValue(lineOpacity.toArray());
+        }else{
+            returnLayer->m_lineOpacity.setValue(lineOpacity.toDouble());
         }
     }
 
     if(paint.contains("line-width")){
-        if(paint.value("line-width").isObject()){
-            for(const auto &stop : paint.value("line-width").toObject().value("stops").toArray()){
-                returnLayer->addLinewidthStop(stop.toArray().first().toInt(), stop.toArray().last().toInt());
+        QJsonValue lineWidth = paint.value("line-width");
+        if(lineWidth.isObject()){
+            QList<QPair<int, int>> stops;
+            for(const auto &stop : lineWidth.toObject().value("stops").toArray()){
+                int zoomStop = stop.toArray().first().toInt();
+                int widthStop = stop.toArray().last().toInt();
+                stops.append(QPair<int, int>(zoomStop, widthStop));
             }
+            returnLayer->m_lineWidth.setValue(stops);
+        }else if(lineWidth.isArray()){
+            returnLayer->m_lineWidth.setValue(lineWidth.toArray());
         }else{
-            returnLayer->addLinewidthStop(-1, paint.value("line-width").toInt());
+            returnLayer->m_lineWidth.setValue(lineWidth.toInt());
         }
     }
 
@@ -427,100 +308,141 @@ LineLayerStyle *LineLayerStyle::fromJson(const QJsonObject &json)
     return returnLayer;
 }
 
-//The following functions are getters and setters for the different background layer properties.
-QColor LineLayerStyle::getLineColorAtZoom(int zoomLevel) const
+
+QVariant LineLayerStyle::getLineColorAtZoom(int zoomLevel) const
 {
-    return getLerpedColorValue(m_lineColor, zoomLevel);
+    if(m_lineColor.isNull()){
+        return QVariant(QColor(Qt::GlobalColor::black));
+    }else if(m_lineColor.typeId() != QMetaType::Type::QColor && m_lineColor.typeId() != QMetaType::Type::QJsonArray){
+        QList<QPair<int, QColor>> stops = m_lineColor.value<QList<QPair<int, QColor>>>();
+        return QVariant(getStopOutput(stops, zoomLevel));
+    }else{
+        return m_lineColor;
+    }
 }
 
-float LineLayerStyle::getLineOpacityAtZoom(int zoomLevel) const
+
+QVariant LineLayerStyle::getLineOpacityAtZoom(int zoomLevel) const
 {
-    return getLerpedValue(m_lineOpacity, zoomLevel);
+    if(m_lineOpacity.isNull()){
+        return QVariant(1);
+    }else if(m_lineOpacity.typeId() != QMetaType::Type::Double && m_lineOpacity.typeId() != QMetaType::Type::QJsonArray){
+        QList<QPair<int, float>> stops = m_lineOpacity.value<QList<QPair<int, float>>>();
+        return QVariant(getStopOutput(stops, zoomLevel));
+    }else{
+        return m_lineOpacity;
+    }
 }
 
-float LineLayerStyle::getLineMitterLimitAtZoom(int zoomLevel) const
+
+QVariant LineLayerStyle::getLineWidthAtZoom(int zoomLevel) const
 {
-    return getLerpedValue(m_lineMiterLimit, zoomLevel);
+    if(m_lineWidth.isNull()){
+        return QVariant(1);
+    }else if(m_lineWidth.typeId() != QMetaType::Type::Int && m_lineWidth.typeId() != QMetaType::Type::QJsonArray){
+        QList<QPair<int, int>> stops = m_lineWidth.value<QList<QPair<int, int>>>();
+        return QVariant(getStopOutput(stops, zoomLevel));
+    }else{
+        return m_lineWidth;
+    }
 }
 
-int LineLayerStyle::getLineWidthAtZoom(int zoomLevel) const
+Qt::PenJoinStyle LineLayerStyle::getJoinStyle() const
 {
-    return getLerpedValue(m_lineWidth, zoomLevel);
+    if(m_lineJoin == "bevel"){
+        return Qt::PenJoinStyle::BevelJoin;
+    }else if(m_lineJoin == "miter"){
+        return Qt::PenJoinStyle::MiterJoin;
+    }else{
+        return Qt::PenJoinStyle::RoundJoin;
+    }
 }
 
-void LineLayerStyle::addLineColorStop(int zoomLevel, QString hslColor)
+Qt::PenCapStyle LineLayerStyle::getCapStyle() const
 {
-    m_lineColor.append(QPair<int, QColor>(zoomLevel, getColorFromString(hslColor)));
-}
-
-void LineLayerStyle::addLineOpacityStop(int zoomLevel, float opacity)
-{
-    m_lineOpacity.append(QPair<int, float>(zoomLevel, opacity));
-}
-
-void LineLayerStyle::addLineMitterLimitStop(int zoomLevel, float limit)
-{
-    m_lineMiterLimit.append(QPair<int, float>(zoomLevel, limit));
-}
-
-void LineLayerStyle::addLinewidthStop(int zoomLevel, int width)
-{
-    m_lineWidth.append(QPair<int, int>(zoomLevel, width));
+    if(m_lineCap == "butt"){
+        return Qt::PenCapStyle::FlatCap;
+    }else if(m_lineCap == "round"){
+        return Qt::PenCapStyle::RoundCap;
+    }else{
+        return Qt::PenCapStyle::SquareCap;
+    }
 }
 
 /*
  * ----------------------------------------------------------------------------
  */
 
-/*Parses the data from a QJsonObject containing styling properties of a layer of type symbol.
-     *
-     * Parameters:
-     *     json expects a refrence to the json object containing the data.
-     *
-     * Returns a pointer of type SymbolLayerStyle to the newly created layer with the parsed properties.
-     */
+
 SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
 {
 
     SymbolLayerStyle* returnLayer = new SymbolLayerStyle();
-    returnLayer->m_id = json.value("id").toString();
-    returnLayer->m_source = json.value("source").toString();
-    returnLayer->m_sourceLayer = json.value("source-layerr").toString();
-    returnLayer->m_maxZoom =  json.contains("maxzoom") ? json.value("maxzoom").toInt() : 24;
-    returnLayer->m_minZoom =  json.contains("minzoom") ? json.value("minzoom").toInt() : 0;
+
     //parsing layout properties
     QJsonObject layout = json.value("layout").toObject();
-    returnLayer->m_visibility = layout.contains("visibility") ? layout.value("visibility").toString() : QString("visible");
+    //visibility property is parsed in AbstractLayereStyle* AbstractLayereStyle::fromJson(const QJsonObject &json)
 
     if(layout.contains("text-size")){
-        if(layout.value("text-size").isObject()){
-            for(const auto &stop : layout.value("text-size").toObject().value("stops").toArray()){
-                returnLayer->addTextSizeStop(stop.toArray().first().toInt(), stop.toArray().last().toInt());
+        QJsonValue textSize = layout.value("text-size");
+        if(textSize.isObject()){
+            QList<QPair<int, int>> stops;
+            for(const auto &stop : textSize.toObject().value("stops").toArray()){
+                int zoomStop = stop.toArray().first().toInt();
+                int sizeStop = stop.toArray().last().toInt();
+                stops.append(QPair<int, int>(zoomStop, sizeStop));
             }
+            returnLayer->m_textSize.setValue(stops);
+        }else if(textSize.isArray()){
+            returnLayer->m_textSize.setValue(textSize.toArray());
         }else{
-            returnLayer->addTextSizeStop(-1, layout.value("text-size").toInt());
+            returnLayer->m_textSize.setValue(textSize.toInt());
         }
     }
 
+    if(layout.contains("text-font")){
+
+        returnLayer->m_textFont = QFont(layout.value("text-font").toVariant().toStringList());
+    }else{
+        returnLayer->m_textFont = QFont({"Open Sans Regular","Arial Unicode MS Regular"});
+    }
+
+    if(layout.contains("text-field")){
+        returnLayer->m_textField = QVariant(layout.value("text-field").toArray());
+    }
     //parsing paint properties
     QJsonObject paint = json.value("paint").toObject();
     if(paint.contains("text-color")){
-        if(paint.value("text-color").isObject()){
-            for(const auto &stop : paint.value("text-color").toObject().value("stops").toArray()){
-                returnLayer->addTextColorStop(stop.toArray().first().toInt(), stop.toArray().last().toString());
+        QJsonValue textColor = paint.value("text-color");
+        if(textColor.isObject()){
+            QList<QPair<int, QColor>> stops;
+            for(const auto &stop : textColor.toObject().value("stops").toArray()){
+                int zoomStop = stop.toArray().first().toInt();
+                QColor colorStop = getColorFromString(stop.toArray().last().toString());
+                stops.append(QPair<int, QColor>(zoomStop, colorStop));
             }
+            returnLayer->m_textColor.setValue(stops);
+        }else if(textColor.isArray()){
+            returnLayer->m_textColor.setValue(textColor.toArray());
         }else{
-            returnLayer->addTextColorStop(-1, paint.value("text-color").toString());
+            returnLayer->m_textColor.setValue(getColorFromString(textColor.toString()));
         }
     }
 
     if(paint.contains("text-opacity")){
-        if(paint.value("text-opacity").isObject()){
-            for(const auto &stop : paint.value("text-opacity").toObject().value("stops").toArray()){
-                returnLayer->addTextPacity(stop.toArray().first().toInt(), stop.toArray().last().toDouble());
+        QJsonValue textOpacity = paint.value("text-opacity");
+        if(textOpacity.isObject()){
+            QList<QPair<int, float>> stops;
+            for(const auto &stop : textOpacity.toObject().value("stops").toArray()){
+                int zoomStop = stop.toArray().first().toInt();
+                float opacityStop = stop.toArray().last().toDouble();
+                stops.append(QPair<int, float>(zoomStop, opacityStop));
             }
+            returnLayer->m_textOpacity.setValue(stops);
+        }else if(textOpacity.isArray()){
+            returnLayer->m_textOpacity.setValue(textOpacity.toArray());
         }else{
-            returnLayer->addTextPacity(-1, paint.value("text-opacity").toDouble());
+            returnLayer->m_textOpacity.setValue(textOpacity.toDouble());
         }
     }
 
@@ -528,53 +450,50 @@ SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
 }
 
 
-//The following functions are getters and setters for the different background layer properties.
-int SymbolLayerStyle::getTextSizeAtZoom(int zoomLevel) const
+QVariant SymbolLayerStyle::getTextSizeAtZoom(int zoomLevel) const
 {
-    return getLerpedValue(m_textSize, zoomLevel);
+
+    if(m_textSize.isNull()){
+        return QVariant(16);
+    }else if(m_textSize.typeId() != QMetaType::Type::Double && m_textSize.typeId() != QMetaType::Type::QJsonArray){
+        QList<QPair<int, int>> stops = m_textSize.value<QList<QPair<int, int>>>();
+        return QVariant(getStopOutput(stops, zoomLevel));
+    }else{
+        return QVariant(m_textSize);
+    }
 }
 
-QColor SymbolLayerStyle::getTextColorAtZoom(int zoomLevel) const
+QVariant SymbolLayerStyle::getTextColorAtZoom(int zoomLevel) const
 {
-    return getLerpedColorValue(m_textColor, zoomLevel);
+    if(m_textColor.isNull()){
+        return QVariant(QColor(Qt::GlobalColor::black));
+    }else if(m_textColor.typeId() != QMetaType::Type::QColor && m_textColor.typeId() != QMetaType::Type::QJsonArray){
+        QList<QPair<int, QColor>> stops = m_textColor.value<QList<QPair<int, QColor>>>();
+        return QVariant(getStopOutput(stops, zoomLevel));
+    }else{
+        return QVariant(m_textColor);
+    }
 }
 
-float SymbolLayerStyle::getTextOpacityAtZoom(int zoomLevel) const
+QVariant SymbolLayerStyle::getTextOpacityAtZoom(int zoomLevel) const
 {
-    return getLerpedValue(m_textOpacity, zoomLevel);
-}
-
-void SymbolLayerStyle::addTextSizeStop(int zoomLevel, int size)
-{
-    m_textSize.append(QPair<int, float>(zoomLevel, size));
-}
-
-void SymbolLayerStyle::addTextColorStop(int zoomLevel, QString hslColor)
-{
-    m_textColor.append(QPair<int, QColor>(zoomLevel, getColorFromString(hslColor)));
-}
-
-void SymbolLayerStyle::addTextPacity(int zoomLevel, float opacity)
-{
-    m_textOpacity.append(QPair<int, float>(zoomLevel, opacity));
+    if(m_textOpacity.isNull()){
+        return QVariant(1);
+    }else if(m_textOpacity.typeId() != QMetaType::Type::Double && m_textOpacity.typeId() != QMetaType::Type::QJsonArray){
+        QList<QPair<int, float>> stops = m_textOpacity.value<QList<QPair<int, float>>>();
+        return QVariant(getStopOutput(stops, zoomLevel));
+    }else{
+        return QVariant(m_textOpacity);
+    }
 }
 
 /*
  * ----------------------------------------------------------------------------
  */
-/*Parses basic properties of layerstyles that are not background, fill, line, or symbol.
-     *
-     * Parameters:
-     *     json expects a refrence to the json object containing the data.
-     *
-     * Returns a pointer of type NotImplementedStyle to the newly created layer with the parsed properties.
-     */
+
 NotImplementedStyle* NotImplementedStyle::fromJson(const QJsonObject &json)
 {
     NotImplementedStyle* returnLayer = new NotImplementedStyle();
-    returnLayer->m_id = json.value("id").toString();
-    returnLayer->m_source = json.value("source").toString();
-    returnLayer->m_sourceLayer = json.value("source-layer").toString();
     return returnLayer;
 }
 
@@ -585,27 +504,39 @@ NotImplementedStyle* NotImplementedStyle::fromJson(const QJsonObject &json)
  */
 
 
-/*Passes the json object to the apropriate function to be parsed into a layerStyle object.
-     *
-     * Parameters:
-     *     json expects a refrence to the json object containing the data.
-     *
-     * Returns a pointer of type AbstractLayereStyle to the newly created layer with the parsed properties.
-     */
+
 AbstractLayereStyle* AbstractLayereStyle::fromJson(const QJsonObject &json)
 {
     QString layerType = json.value("type").toString();
+    AbstractLayereStyle *newLayer = nullptr;
     if(layerType == "background"){
-        return BackgroundStyle::fromJson(json);
+        newLayer = BackgroundStyle::fromJson(json);
     }else if( layerType == "fill"){
-        return FillLayerStyle::fromJson(json);
+        newLayer = FillLayerStyle::fromJson(json);
     }else if(layerType == "line"){
-        return LineLayerStyle::fromJson(json);
+        newLayer =  LineLayerStyle::fromJson(json);
     }else if(layerType == "symbol"){
-        return SymbolLayerStyle::fromJson(json);
+        newLayer = SymbolLayerStyle::fromJson(json);
     }else{
-        return NotImplementedStyle::fromJson(json);
+        newLayer = NotImplementedStyle::fromJson(json);
     }
+
+    newLayer->m_id = json.value("id").toString();
+    newLayer->m_source = json.value("source").toString();
+    newLayer->m_sourceLayer = json.value("source-layer").toString();
+    newLayer->m_minZoom = json.value("minzoom").toInt(0);
+    newLayer->m_maxZoom = json.value("maxzoom").toInt(24);
+    QJsonValue layout = json.value("layout");
+    if(layout != QJsonValue::Undefined){
+        newLayer->m_visibility = (layout.toObject().contains("visibility")) ? layout.toObject().value("visibility").toString() : "none";
+    }else{
+        newLayer->m_visibility = QString("none");
+    }
+
+    if(json.contains("filter")){
+        newLayer->m_filter = json.value("filter").toArray();
+    }
+    return newLayer;
 }
 
 
@@ -613,7 +544,7 @@ AbstractLayereStyle* AbstractLayereStyle::fromJson(const QJsonObject &json)
  * ----------------------------------------------------------------------------
  */
 
-//Destructor for the StyleSheet class.
+
 StyleSheet::~StyleSheet()
 {
     for(auto layer : m_layerStyles) {
@@ -621,15 +552,6 @@ StyleSheet::~StyleSheet()
     }
 }
 
-/*Parce a json document by iterating throught the layers and parsing the styling properties
-     *of the different layer types.
-     *The function populates the m_layers list of the StyleSheet bject with pointers to
-     *AbstractLayerStyle objects containing the styling information.
-     *
-     * Parameters:
-     *     styleSheet expects a refrence to the json document containing the style sheet.
-     *
-     */
 void StyleSheet::parseSheet(const QJsonDocument &styleSheet)
 {
     QJsonObject styleSheetObject = styleSheet.object();
@@ -642,3 +564,4 @@ void StyleSheet::parseSheet(const QJsonDocument &styleSheet)
         m_layerStyles.append(AbstractLayereStyle::fromJson(layer.toObject()));
     }
 }
+

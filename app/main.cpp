@@ -51,45 +51,20 @@ int main(int argc, char *argv[])
     // Then finally parse the JSonDocument into our StyleSheet.
     styleSheet.parseSheet(styleSheetJsonDoc);
 
-    auto downloadTile = [&](TileCoord tile) {
-        return Bach::tileFromByteArray(
+    auto downloadTile = [&](TileCoord tile) -> VectorTile {
+        auto result = Bach::tileFromByteArray(
             tileLoader.downloadTile(
                 Bach::setPbfLink(tile, pbfLinkTemplate),
             networkController));
+        if (!result.has_value()) {
+            std::abort();
+        }
+        return result.value();
     };
 
     // Download tiles, or load them from disk, then insert into the tile-storage map.
     auto tile000 = downloadTile({0, 0, 0});
     tileStorage.insert({0, 0, 0}, &tile000);
-    auto tile100 = downloadTile({1, 0, 0});
-    tileStorage.insert({1, 0, 0}, &tile100);
-    auto tile101 = Bach::tileFromFile(Bach::testDataDir + "z1x0y1.mvt");
-    tileStorage.insert({1, 0, 1}, &tile101);
-    auto tile110 = downloadTile({1, 1, 0});
-    tileStorage.insert({1, 1, 0}, &tile110);
-    auto tile111 = Bach::tileFromFile(Bach::testDataDir + "z1x1y1.mvt");
-    tileStorage.insert({1, 1, 1}, &tile111);
-
-    // This can download entire zoom levels and insert them
-    // Temporarily commented out, can be used for testing.
-    /*
-    auto tileCount = 1 << 2;
-    for (int x = 0; x < tileCount; x++) {
-        for (int y = 0; y < tileCount; y++) {
-            auto temp = new VectorTile(Bach::tileFromByteArray(download({2, x, y})));
-            tileStorage.insert({2, x, y}, temp);
-        }
-    }
-    {
-        auto tileCount = 1 << 3;
-        for (int x = 0; x < tileCount; x++) {
-            for (int y = 0; y < tileCount; y++) {
-                auto temp = new VectorTile(Bach::tileFromByteArray(download({3, x, y})));
-                tileStorage.insert({3, x, y}, temp);
-            }
-        }
-    }
-    */
 
     // Main window setup
     auto app = Bach::MainWindow(mapWidget, downloadTile);

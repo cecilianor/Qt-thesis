@@ -61,9 +61,6 @@ TileLayer::TileLayer(int version, QString name, int extent)
 }
 
 TileLayer::~TileLayer() {
-    for (auto feature : m_features) {
-        delete feature;
-    }
 }
 
 int TileLayer::version() const
@@ -85,13 +82,7 @@ int TileLayer::extent() const
  * ----------------------------------------------------------------------------
  */
 
-/* Decode the geometry of a polygon feature from the desrialized protocol buffer.
-     *
-     * Parameters:
-     *      feature expects a refrence to the deserialized protocol buffer
-     *
-     * Returns a pointer of type PolygonFeature conatininf the decoded geometry as a QPainterPath.
-     */
+
 PolygonFeature* polygonFeatureFromProto(const vector_tile::Tile::Feature &feature)
 {
     PolygonFeature *newFeature = new PolygonFeature();
@@ -99,15 +90,9 @@ PolygonFeature* polygonFeatureFromProto(const vector_tile::Tile::Feature &featur
     qint32 x = 0;
     qint32 y = 0;
 
-    //iterate through the geometry commands and parameters.
     for(int i = 0; i < feature.geometry().size(); ) {
         quint32 point = feature.geometry().at(i);
-        //the command type is encoded as the 3 LSBs of the command integer.
-        //With: command 1 = MoveTo; command 2 = LineTo; command 7 = ClosePAth (takes not parameters);
         quint32 commandId = point & 0x7;
-        //the command count is encoded as the remaining 29 bits, and represents how many
-        //times the command should be repeated (for command 1 and 2 the number of arguments
-        //should be equal to 2 * commandCount).
         quint32 count = point >> 3;
         i++;
         if (commandId == 7) {
@@ -116,7 +101,6 @@ PolygonFeature* polygonFeatureFromProto(const vector_tile::Tile::Feature &featur
         }
         while(count > 0 && i < feature.geometry().size() - 1) {
             point = feature.geometry().at(i);
-            //this is the formula for decoding the command parameters.
             x += ((point >> 1) ^ (-(point & 1)));
             i++;
             point = feature.geometry().at(i);
@@ -134,13 +118,7 @@ PolygonFeature* polygonFeatureFromProto(const vector_tile::Tile::Feature &featur
     return newFeature;
 }
 
-/* Decode the geometry of a line feature from the desrialized protocol buffer.
-     *
-     * Parameters:
-     *      feature expects a refrence to the deserialized protocol buffer
-     *
-     * Returns a pointer of type LineFeature conatininf the decoded geometry as a QPainterPath.
-     */
+
 LineFeature* lineFeatureFromProto(const vector_tile::Tile::Feature &feature)
 {
     LineFeature *newFeature = new LineFeature();
@@ -173,13 +151,7 @@ LineFeature* lineFeatureFromProto(const vector_tile::Tile::Feature &feature)
     return newFeature;
 }
 
-/* Decode the geometry of a point feature from the desrialized protocol buffer.
-     *
-     * Parameters:
-     *      feature expects a refrence to the deserialized protocol buffer
-     *
-     * Returns a pointer of type PointFeature conatininf the decoded geometry as a QList<QPoint>.
-     */
+
 PointFeature* pointFeatureFromProto(const vector_tile::Tile::Feature &feature)
 {
     PointFeature *newFeature = new PointFeature();
@@ -205,6 +177,33 @@ PointFeature* pointFeatureFromProto(const vector_tile::Tile::Feature &feature)
     return newFeature;
 }
 
+void populateFeatureMetaData(AbstractLayerFeature* feature, QList<QString> &keys, QList<vector_tile::Tile_QtProtobufNested::Value> &values)
+{
+
+    if(!feature || feature->tags.length() < 2) return;
+    for(int i = 0; i <= feature->tags.length() - 2; i += 2){
+        int keyIndex = feature->tags.at(i);
+        int valueIndex = feature->tags.at(i + 1);
+        QString key = keys.at(keyIndex);
+        auto value = values.at(valueIndex);
+        if(value.hasStringValue()){
+            feature->fetureMetaData.insert(key, QVariant(value.stringValue()));
+        }else if(value.hasFloatValue()){
+            feature->fetureMetaData.insert(key, QVariant(value.floatValue()));
+        }else if(value.hasDoubleValue()){
+            feature->fetureMetaData.insert(key, QVariant(value.doubleValue()));
+        }else if(value.hasIntValue()){
+            feature->fetureMetaData.insert(key, QVariant(value.intValue()));
+        }else if(value.hasUintValue()){
+            feature->fetureMetaData.insert(key, QVariant(value.uintValue()));
+        }else if(value.hasSintValue()){
+            feature->fetureMetaData.insert(key, QVariant(value.sintValue()));
+        }else if(value.hasBoolValue()){
+            feature->fetureMetaData.insert(key, QVariant(value.boolValue()));
+        }
+    }
+}
+
 /*
  * ----------------------------------------------------------------------------
  */
@@ -214,24 +213,9 @@ VectorTile::VectorTile() {
 }
 
 VectorTile::~VectorTile() {
-    // Nils: This should ideally be using smart-pointers for cleanup. Can
-    // look into it later. Currently just removed it for prototyping.
-    /*
-    for (QString key : m_layers.keys()) {
-        delete m_layers[key];
-    }
-    */
 }
 
-/* Deserialize and extracts all the layers in the tile protocol buffer,
-     * then iterates therough each layer's features and
-     * calls the apropriate function to decode the feature's geometry.
-     *
-     * Parameters:
-     *      data expects a QByteArray containing the raw protocol buffer.
-     *
-     */
-void VectorTile::DeserializeMessage(QByteArray data)
+bool VectorTile::DeserializeMessage(QByteArray data)
 {
     QProtobufSerializer serializer;
 
@@ -241,36 +225,101 @@ void VectorTile::DeserializeMessage(QByteArray data)
     if (serializer.deserializationError()!= QAbstractProtobufSerializer::NoError) {
         qWarning().nospace() << "Unable to deserialize tile: "
                              << serializer.deserializationErrorString();
-        return;
+        return false;
     }
-    //iterate through the layers of the tile and parse the layer details into a TileLayer pointer.
+
     for (auto layer : tile.layers()) {
         qDebug() << "Parsing layer" << layer.name();
         qDebug() << " layer version: " << layer.version();
         qDebug() << " layer extent: " << layer.extent();
         TileLayer *newLayer = new TileLayer(layer.version(), layer.name(), layer.extent());
-        m_layers.insert(QString::fromStdString(layer.name().toStdString()), newLayer);
-
-        //iterate throught the layer's features and call the apropriate decoding function on the feature.
+        m_layers.insert(layer.name(), newLayer);
+        AbstractLayerFeature* newFeature = nullptr;
+        QList<QString> layerKeys = layer.keys().toList();
+        auto lyerValues = layer.values().toList();
         for(const auto &feature : layer.features()) {
             switch (feature.type()) {
             case vector_tile::Tile::GeomType::POLYGON:
-                newLayer->m_features.append(polygonFeatureFromProto(feature));
+                newFeature = polygonFeatureFromProto(feature);
+                newFeature->tags = feature.tags().toList();
+                populateFeatureMetaData(newFeature, layerKeys, lyerValues);
+                newLayer->m_features.append(newFeature);
                 break;
             case vector_tile::Tile::GeomType::LINESTRING:
-                newLayer->m_features.append(lineFeatureFromProto(feature));
+                newFeature = lineFeatureFromProto(feature);
+                newFeature->tags = feature.tags().toList();
+                populateFeatureMetaData(newFeature, layerKeys, lyerValues);
+                newLayer->m_features.append(newFeature);
                 break;
             case vector_tile::Tile::GeomType::POINT:
-                newLayer->m_features.append(pointFeatureFromProto(feature));
+                newFeature = pointFeatureFromProto(feature);
+                newFeature->tags = feature.tags().toList();
+                populateFeatureMetaData(newFeature, layerKeys, lyerValues);
+                newLayer->m_features.append(newFeature);
                 break;
             case vector_tile::Tile::GeomType::UNKNOWN:
                 break;
             }
         }
     }
+
+    return true;
 }
 
+std::optional<VectorTile> Bach::tileFromByteArray(QByteArray bytes)
+{
+    QProtobufSerializer serializer;
 
+    vector_tile::Tile tile;
+    tile.deserialize(&serializer, bytes);
+
+    if (serializer.deserializationError()!= QAbstractProtobufSerializer::NoError) {
+        /*
+        qError().nospace() << "Unable to deserialize tile: "
+                             << serializer.deserializationErrorString();
+        */
+        return std::nullopt;
+    }
+
+    VectorTile output;
+
+    for (auto layer : tile.layers()) {
+        qDebug() << "Parsing layer" << layer.name();
+        qDebug() << " layer version: " << layer.version();
+        qDebug() << " layer extent: " << layer.extent();
+        TileLayer *newLayer = new TileLayer(layer.version(), layer.name(), layer.extent());
+        output.m_layers.insert(layer.name(), newLayer);
+        AbstractLayerFeature* newFeature = nullptr;
+        QList<QString> layerKeys = layer.keys().toList();
+        auto lyerValues = layer.values().toList();
+        for(const auto &feature : layer.features()) {
+            switch (feature.type()) {
+            case vector_tile::Tile::GeomType::POLYGON:
+                newFeature = polygonFeatureFromProto(feature);
+                newFeature->tags = feature.tags().toList();
+                populateFeatureMetaData(newFeature, layerKeys, lyerValues);
+                newLayer->m_features.append(newFeature);
+                break;
+            case vector_tile::Tile::GeomType::LINESTRING:
+                newFeature = lineFeatureFromProto(feature);
+                newFeature->tags = feature.tags().toList();
+                populateFeatureMetaData(newFeature, layerKeys, lyerValues);
+                newLayer->m_features.append(newFeature);
+                break;
+            case vector_tile::Tile::GeomType::POINT:
+                newFeature = pointFeatureFromProto(feature);
+                newFeature->tags = feature.tags().toList();
+                populateFeatureMetaData(newFeature, layerKeys, lyerValues);
+                newLayer->m_features.append(newFeature);
+                break;
+            case vector_tile::Tile::GeomType::UNKNOWN:
+                break;
+            }
+        }
+    }
+
+    return output;
+}
 
 
 

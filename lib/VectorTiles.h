@@ -8,6 +8,8 @@
 #include <QList>
 #include <QPainterPath>
 
+#include <optional>
+
 /*
  * This abstract class is the base for all the classes representing different layer features.
  */
@@ -15,6 +17,7 @@ class AbstractLayerFeature {
 
 public:
     AbstractLayerFeature() {}
+    virtual ~AbstractLayerFeature() {};
 
     enum class featureType : int8_t {
         polygon,
@@ -24,6 +27,8 @@ public:
     };
 
     virtual featureType type() const = 0;
+    QVector<unsigned int> tags;
+    QMap<QString, QVariant> fetureMetaData;
 private:
     int m_id;
 };
@@ -119,26 +124,14 @@ public:
     VectorTile();
     ~VectorTile();
 
-    void DeserializeMessage(QByteArray data);
+    bool DeserializeMessage(QByteArray data);
     QMap<QString, TileLayer*> m_layers;
 };
 
 namespace Bach {
     inline QString testDataDir = "testdata/";
 
-    inline VectorTile tileFromByteArray(QByteArray bytes) {
-        VectorTile tile;
-        tile.DeserializeMessage(bytes);
-        return tile;
-    }
-
-    inline VectorTile tileFromFile(QString string) {
-        auto file = QFile(string);
-        file.open(QIODevice::ReadOnly);
-        VectorTile tile;
-        tile.DeserializeMessage(file.readAll());
-        return tile;
-    }
+    std::optional<VectorTile> tileFromByteArray(QByteArray bytes);
 }
 
 #endif // VECTORTILES_H
