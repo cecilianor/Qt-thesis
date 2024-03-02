@@ -18,7 +18,7 @@ namespace Bach {
      *
      * Expressed in pixels.
      */
-    const int defaultDesiredTileSizePixels = 1024;
+    const int defaultDesiredTileSizePixels = 512;
 
     /* Converts longitude and latitude to world-normalized coordinates.
      * Takes radians.

@@ -170,175 +170,284 @@ static void paintSingleTileDebug(
     }
 }
 
+/* Finds the fill color of given feature at the given zoom level.
+ *
+ * This function also takes opacity into account.
+ */
+static QColor getFillColor(
+    const FillLayerStyle &layerStyle,
+    const AbstractLayerFeature &feature,
+    int mapZoom,
+    double vpZoom)
+{
+    QVariant colorVariant = layerStyle.getFillColorAtZoom(mapZoom);
+    QColor color;
+    // The layer style might return an expression, we need to resolve it.
+    if(colorVariant.typeId() == QMetaType::Type::QJsonArray){
+        color = Evaluator::resolveExpression(
+            colorVariant.toJsonArray(),
+            &feature,
+            mapZoom,
+            vpZoom).value<QColor>();
+    } else {
+        color = colorVariant.value<QColor>();
+    }
+
+    QVariant fillOpacityVariant = layerStyle.getFillOpacityAtZoom(mapZoom);
+    float fillOpacity;
+    // The layer style might return an expression, we need to resolve it.
+    if (fillOpacityVariant.typeId() == QMetaType::Type::QJsonArray){
+        fillOpacity = Evaluator::resolveExpression(
+          fillOpacityVariant.toJsonArray(),
+          &feature,
+          mapZoom,
+          vpZoom).value<float>();
+    } else {
+        fillOpacity = fillOpacityVariant.value<float>();
+    }
+
+    color.setAlphaF(fillOpacity * color.alphaF());
+    return color;
+}
+
+/* Render a single feature of a tile, where the feature is of type polygon.
+ *
+ * Assumes the painter's position has been moved to the origin of the tile.
+ *
+ */
+static void paintSingleTileFeature_Fill_Polygon(
+    QPainter &painter,
+    const PolygonFeature &feature,
+    const FillLayerStyle &layerStyle,
+    int mapZoom,
+    double vpZoom,
+    const QTransform &transformIn)
+{
+    auto brushColor = getFillColor(layerStyle, feature, mapZoom, vpZoom);
+
+    painter.setBrush(brushColor);
+    painter.setRenderHints(QPainter::Antialiasing, layerStyle.m_antialias);
+    painter.setPen(Qt::NoPen);
+
+    auto const& path = feature.polygon();
+
+    QTransform transform = transformIn;
+    transform.scale(1 / 4096.0, 1 / 4096.0);
+    auto newPath = transform.map(path);
+
+    painter.drawPath(newPath);
+}
+
+/* Finds the line color of given feature at the given zoom level.
+ */
+static QColor getLineColor(
+    const LineLayerStyle &layerStyle,
+    const LineFeature &feature,
+    int mapZoom,
+    double vpZoom)
+{
+    QVariant color = layerStyle.getLineColorAtZoom(mapZoom);
+    // The layer style might return an expression, we need to resolve it.
+    if(color.typeId() == QMetaType::Type::QJsonArray){
+        color = Evaluator::resolveExpression(
+            color.toJsonArray(),
+            &feature,
+            mapZoom,
+            vpZoom);
+    }
+    return color.value<QColor>();
+}
+
+/* Finds the line opacity of given feature at the given zoom level.
+ */
+static float getLineOpacity(
+    const LineLayerStyle &layerStyle,
+    const LineFeature &feature,
+    int mapZoom,
+    double vpZoom)
+{
+    QVariant lineOpacity = layerStyle.getLineOpacityAtZoom(mapZoom);
+    // The layer style might return an expression, we need to resolve it.
+    if(lineOpacity.typeId() == QMetaType::Type::QJsonArray){
+        lineOpacity = Evaluator::resolveExpression(
+            lineOpacity.toJsonArray(),
+            &feature,
+            mapZoom,
+            vpZoom);
+    }
+    return lineOpacity.value<float>();
+}
+
+/* Finds the line width of this feature at given zoom level.
+ */
+static int getLineWidth(
+    const LineLayerStyle &layerStyle,
+    const LineFeature &feature,
+    int mapZoom,
+    double vpZoom)
+{
+    QVariant lineWidth = layerStyle.getLineWidthAtZoom(mapZoom);
+    // The layer style might return an expression, we need to resolve it.
+    if(lineWidth.typeId() == QMetaType::Type::QJsonArray){
+        lineWidth = Evaluator::resolveExpression(
+            lineWidth.toJsonArray(),
+            &feature,
+            mapZoom,
+            vpZoom);
+    }
+    return lineWidth.value<int>();
+}
+
+
+/* Paints a single Line feature within a tile.
+ *
+ * Assumes the painters origin has moved to the tiles origin.
+ */
+static void paintSingleTileFeature_Line(
+    QPainter &painter,
+    const LineFeature &feature,
+    const LineLayerStyle &layerStyle,
+    int mapZoom,
+    double vpZoom,
+    const QTransform &transformIn)
+{
+    auto pen = painter.pen();
+
+    pen.setColor(getLineColor(layerStyle, feature, mapZoom, vpZoom));
+    // Not sure how to take opacity into account yet.
+    // There's some interaction happening with the color.
+    //painter.setOpacity(getLineOpacity(layerStyle, feature, mapZoom, vpZoom));
+
+    pen.setWidth(getLineWidth(layerStyle, feature, mapZoom, vpZoom));
+    pen.setCapStyle(layerStyle.getCapStyle());
+    pen.setJoinStyle(layerStyle.getJoinStyle());
+
+    painter.setPen(pen);
+    painter.setBrush(Qt::NoBrush);
+
+    // Not sure yet how to determine AA for lines.
+    painter.setRenderHints(QPainter::Antialiasing, false);
+
+    auto const& path = feature.line();
+    QTransform transform = transformIn;
+    transform.scale(1 / 4096.0, 1 / 4096.0);
+    auto newPath = transform.map(path);
+
+    painter.drawPath(newPath);
+}
+
+// Determines whether this layer is hidden.
+static bool isLayerHidden(const AbstractLayereStyle &layerStyle, int mapZoom)
+{
+    return
+        layerStyle.m_visibility == "none" ||
+        layerStyle.m_maxZoom < mapZoom ||
+        layerStyle.m_minZoom > mapZoom;
+}
+
+// Determines whether a feature should be included when rendering this layer-style.
+static bool includeFeature(
+    const AbstractLayereStyle &layerStyle,
+    const AbstractLayerFeature &feature,
+    int mapZoom,
+    double vpZoom)
+{
+    return !Evaluator::resolveExpression(
+        layerStyle.m_filter,
+        &feature,
+        mapZoom,
+        vpZoom).toBool();
+}
+
 /* This function takes care of rendering a single tile.
+ *
  * This is called repeatedly from the 'paintTiles' function.
+ *
+ * It assumes the painter object has had its origin moved to the tiles origin.
  */
 static void paintSingleTile(
     const VectorTile &tileData,
     QPainter &painter,
-    int mapZoomLevel,
-    double viewportZoomLevel,
+    int mapZoom,
+    double vpZoom,
     const StyleSheet &styleSheet,
     const QTransform &transformIn)
 {
+    // We start by iterating over each layer style, it determines the order
+    // at which we draw the elements of the map.
     for (auto const& abstractLayerStyle : styleSheet.m_layerStyles) {
-        auto hideLayer = abstractLayerStyle->m_visibility == "none" ||
-                         abstractLayerStyle->m_maxZoom < mapZoomLevel ||
-                         abstractLayerStyle->m_minZoom > mapZoomLevel;
-        if (hideLayer)
+        if (isLayerHidden(*abstractLayerStyle, mapZoom))
             continue;
 
         // Background is a special case and has no associated layer.
+        // We just draw it and move onto the next layer style.
         if (abstractLayerStyle->type() == AbstractLayereStyle::LayerType::background) {
             // Fill the entire tile with a single color
             auto const& layerStyle = *static_cast<BackgroundStyle const*>(abstractLayerStyle);
 
-            auto backgroundColor = layerStyle.getColorAtZoom(mapZoomLevel).value<QColor>();
+            auto backgroundColor = layerStyle.getColorAtZoom(mapZoom).value<QColor>();
             painter.fillRect(transformIn.mapRect(QRect(0, 0, 1, 1)), backgroundColor);
             continue;
         }
 
-        auto sourceLayer = abstractLayerStyle->m_sourceLayer;
-        auto layerIt = tileData.m_layers.find(sourceLayer);
+        // Check if this layer style has an associated layer in the tile.
+        auto layerIt = tileData.m_layers.find(abstractLayerStyle->m_sourceLayer);
         if (layerIt == tileData.m_layers.end()) {
             continue;
         }
+        // If we find it, we dereference it to access it's data.
         auto const& layer = **layerIt;
 
+        // We do different types of rendering based on whether the layer is a polygon
+        // or line.
         if (abstractLayerStyle->type() == AbstractLayereStyle::LayerType::fill) {
             auto const& layerStyle = *static_cast<FillLayerStyle const*>(abstractLayerStyle);
 
+            // Iterate over all the features, and filter out anything that is not fill.
             for (auto const& abstractFeature : layer.m_features) {
+                if (abstractFeature->type() != AbstractLayerFeature::featureType::polygon)
+                    continue;
+                const auto& feature = *static_cast<const PolygonFeature*>(abstractFeature);
 
-                auto layerId = abstractLayerStyle->m_id;
-                auto metaDatas = abstractFeature->fetureMetaData;
-
-                // Tests whether the feature should be rendered at all.
-                auto featureIsNotFiltered = Evaluator::resolveExpression(
-                    layerStyle.m_filter,
-                    abstractFeature,
-                    mapZoomLevel,
-                    viewportZoomLevel);
-                if (!featureIsNotFiltered.toBool())
+                // Tests whether the feature should be rendered at all based on possible expression.
+                if (includeFeature(layerStyle, feature, mapZoom, vpZoom))
                     continue;
 
-                if (abstractFeature->type() == AbstractLayerFeature::featureType::polygon) {
-                    auto const& feature = *static_cast<PolygonFeature const*>(abstractFeature);
-
-                    painter.save();
-
-                    QVariant brushColorVariant = layerStyle.getFillColorAtZoom(mapZoomLevel);
-                    QColor brushColor;
-                    if(brushColorVariant.typeId() == QMetaType::Type::QJsonArray){
-                        brushColor = Evaluator::resolveExpression(
-                            brushColorVariant.toJsonArray(),
-                            &feature,
-                            mapZoomLevel,
-                            viewportZoomLevel).value<QColor>();
-                    } else {
-                        brushColor = brushColorVariant.value<QColor>();
-                    }
-                    float colorOpacity = brushColor.alphaF();
-
-                    QVariant fillOpacityVariant = layerStyle.getFillOpacityAtZoom(mapZoomLevel);
-                    float fillOpacity;
-                    if (fillOpacityVariant.typeId() == QMetaType::Type::QJsonArray){
-                        fillOpacity = Evaluator::resolveExpression(
-                            fillOpacityVariant.toJsonArray(),
-                            &feature,
-                            mapZoomLevel,
-                            viewportZoomLevel).value<float>();
-                    } else {
-                        fillOpacity = fillOpacityVariant.value<float>();
-                    }
-
-                    brushColor.setAlphaF(fillOpacity * colorOpacity);
-                    painter.setBrush(brushColor);
-
-                    painter.setRenderHints(QPainter::Antialiasing, layerStyle.m_antialias);
-
-                    painter.setPen(Qt::NoPen);
-                    auto const& path = feature.polygon();
-
-                    QTransform transform = transformIn;
-                    transform.scale(1 / 4096.0, 1 / 4096.0);
-                    auto newPath = transform.map(path);
-
-                    painter.drawPath(newPath);
-
-                    painter.restore();
-                }
+                // Render the feature in question.
+                painter.save();
+                paintSingleTileFeature_Fill_Polygon(
+                    painter,
+                    feature,
+                    layerStyle,
+                    mapZoom,
+                    vpZoom,
+                    transformIn);
+                painter.restore();
             }
         }
         else if (abstractLayerStyle->type() == AbstractLayereStyle::LayerType::line) {
             auto const& layerStyle = *static_cast<LineLayerStyle const*>(abstractLayerStyle);
 
+            // Iterate over all the features, and filter out anything that is not fill.
             for (auto const& abstractFeature : layer.m_features) {
-                // Tests whether the feature should be rendered at all.
-                auto featureIsNotFiltered = Evaluator::resolveExpression(
-                    layerStyle.m_filter,
-                    abstractFeature,
-                    mapZoomLevel,
-                    viewportZoomLevel);
-                if (!featureIsNotFiltered.toBool())
+                if (abstractFeature->type() != AbstractLayerFeature::featureType::line)
+                    continue;
+                const auto &feature = *static_cast<const LineFeature*>(abstractFeature);
+
+                // Tests whether the feature should be rendered at all based on possible expression.
+                if (includeFeature(layerStyle, feature, mapZoom, vpZoom))
                     continue;
 
-
-
-                if (abstractFeature->type() == AbstractLayerFeature::featureType::line) {
-
-                    painter.save();
-
-                    const LineFeature& feature = *static_cast<const LineFeature*>(abstractFeature);
-                    QPen pen;
-
-                    QVariant lineColor = layerStyle.getLineColorAtZoom(mapZoomLevel);
-                    if(lineColor.typeId() == QMetaType::Type::QJsonArray){
-                        lineColor = Evaluator::resolveExpression(
-                            lineColor.toJsonArray(),
-                            &feature,
-                            mapZoomLevel,
-                            viewportZoomLevel);
-                    }
-                    pen.setColor(lineColor.value<QColor>());
-
-                    QVariant lineOpacity = layerStyle.getLineOpacityAtZoom(mapZoomLevel);
-                    if(lineOpacity.typeId() == QMetaType::Type::QJsonArray){
-                        lineOpacity = Evaluator::resolveExpression(
-                            lineOpacity.toJsonArray(),
-                            &feature,
-                            mapZoomLevel,
-                            viewportZoomLevel);
-                    }
-                    painter.setOpacity(lineOpacity.toFloat());
-
-                    QVariant lineWidth = layerStyle.getLineWidthAtZoom(mapZoomLevel);
-                    if(lineWidth.typeId() == QMetaType::Type::QJsonArray){
-                        lineWidth = Evaluator::resolveExpression(
-                            lineWidth.toJsonArray(),
-                            &feature,
-                            mapZoomLevel,
-                            viewportZoomLevel);
-                    }
-                    pen.setWidth(lineWidth.toInt());
-
-                    pen.setCapStyle(layerStyle.getCapStyle());
-
-                    pen.setJoinStyle(layerStyle.getJoinStyle());
-
-                    painter.setPen(pen);
-
-                    painter.setBrush(Qt::NoBrush);
-
-                    auto const& path = feature.line();
-                    QTransform transform = transformIn;
-                    transform.scale(1 / 4096.0, 1 / 4096.0);
-                    auto newPath = transform.map(path);
-
-                    painter.drawPath(newPath);
-
-                    painter.restore();
-                }
+                // Render the feature in question.
+                painter.save();
+                paintSingleTileFeature_Line(
+                    painter,
+                    feature,
+                    layerStyle,
+                    mapZoom,
+                    vpZoom,
+                    transformIn);
+                painter.restore();
             }
         }
     }
@@ -363,6 +472,10 @@ void Bach::paintTiles(
 
     // The longest length between vpWidth and vpHeight
     auto vpMaxDim = qMax(vpWidth, vpHeight);
+
+    // Helper function to turn coordinates that are expressed as fraction of the viewport,
+    // into pixel coordinates.
+    auto toPixelSpace = [&](double in) { return (int)round(in * vpMaxDim); };
 
     // Calculate the set of visible tiles that fit in the viewport.
     auto visibleTiles = calcVisibleTiles(
@@ -394,10 +507,6 @@ void Bach::paintTiles(
         // We use the tile index coords and the size of a tile to generate the offset.
         auto posNormX = (tileCoord.x * tileSizeNorm) - worldOriginX;
         auto posNormY = (tileCoord.y * tileSizeNorm) - worldOriginY;
-
-        // Helper functions to turn coordinates that are expressed as fraction of the viewport,
-        // into pixel coordinates.
-        auto toPixelSpace = [&](double in) { return (int)round(in * vpMaxDim); };
 
         // Convert tile position and size to pixels.
         auto tilePixelPosX = toPixelSpace(posNormX);
