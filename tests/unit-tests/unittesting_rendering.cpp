@@ -56,8 +56,14 @@ void UnitTesting::calcMapZoomLevelForTileSizePixels_returns_expected_basic_value
     QVector<TestItem> testItems = {
         {   { 512, 512, 0.0, 512},
             0 },
+        {   { 512, 512, 0.5, 512},
+            1 },
+        {   { 512, 512, 1.0, 512},
+            1 },
         {   { 1024, 1024, 0.0, 512},
             1 },
+        {   { 1024, 256, 0.0, 128},
+            3 },
     };
     for (int i = 0; i < testItems.size(); i++) {
         const auto &item = testItems[i];

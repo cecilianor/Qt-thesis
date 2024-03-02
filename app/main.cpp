@@ -40,8 +40,13 @@ int main(int argc, char *argv[])
     QJsonParseError parseError;
     auto styleSheetJsonDoc = QJsonDocument::fromJson(styleSheetBytes, &parseError);
     if (parseError.error != QJsonParseError::NoError) {
-        qWarning() << "Parse error at" << parseError.offset << ":" << parseError.errorString();
-        return 0;
+        QMessageBox::critical(
+            nullptr,
+            "Critical failure",
+            QString("Error when parsing stylesheet as JSON. Parse error at 1%: 2%")
+                .arg(parseError.offset)
+                .arg(parseError.errorString()));
+        return -1;
     }
     // Then finally parse the JSonDocument into our StyleSheet.
     styleSheet.parseSheet(styleSheetJsonDoc);
