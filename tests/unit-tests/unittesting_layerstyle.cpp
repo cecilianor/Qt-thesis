@@ -23,30 +23,34 @@ void UnitTesting::getStopOutput_returns_basic_values(){
 void testBackgroundLayerStyle(AbstractLayereStyle *layerStyle)
 {
     QString testError;
+    QString expectedId = "Background";
+    QString expectedVisibility = "visible";
+    int expectedMinZoom = 0;
+    int expectedMaxZoom = 24;
 
     testError = QString("The layer style is expected to be of type BackgroundLayerStyle");
     QVERIFY2(layerStyle->type() == AbstractLayereStyle::LayerType::background, testError.toUtf8());
     auto const& backgroundStyle = *static_cast<BackgroundStyle const*>(layerStyle);
 
     testError =  QString("The layerStyle id does not match, expected %1 but got %2")
-                    .arg("Background")
+                    .arg(expectedId)
                     .arg(backgroundStyle.m_id);
-    QVERIFY2(backgroundStyle.m_id == "Background", testError.toUtf8());
+    QVERIFY2(backgroundStyle.m_id == expectedId, testError.toUtf8());
 
     testError =  QString("The layerStyle visibility does not match, expected %1 but got %2")
-                    .arg("visible")
+                    .arg(expectedVisibility)
                     .arg(backgroundStyle.m_visibility);
-    QVERIFY2(backgroundStyle.m_visibility == "visible", testError.toUtf8());
+    QVERIFY2(backgroundStyle.m_visibility == expectedVisibility, testError.toUtf8());
 
     testError =  QString("The layerStyle minZoom does not match, expected %1 but got %2")
-                    .arg(0)
+                    .arg(expectedMinZoom)
                     .arg(backgroundStyle.m_minZoom);
-    QVERIFY2(backgroundStyle.m_minZoom == 0, testError.toUtf8());
+    QVERIFY2(backgroundStyle.m_minZoom == expectedMinZoom, testError.toUtf8());
 
     testError =  QString("The layerStyle maxZoom does not match, expected %1 but got %2")
-                    .arg(24)
+                    .arg(expectedMaxZoom)
                     .arg(backgroundStyle.m_maxZoom);
-    QVERIFY2(backgroundStyle.m_maxZoom == 24, testError.toUtf8());
+    QVERIFY2(backgroundStyle.m_maxZoom == expectedMaxZoom, testError.toUtf8());
 
 
     QColor expectedColorForStop1 = QColor::fromHslF(60/359.,20/100.,85/100.);
@@ -74,6 +78,77 @@ void testBackgroundLayerStyle(AbstractLayereStyle *layerStyle)
         alphaMatch = backgroundColor.alphaF() == expectedColorForStop2.alphaF();
         QVERIFY2(hueMatch && saturationMatch && lightnessMatch && alphaMatch == true, testError.toUtf8());
     }
+}
+
+
+void testFillLyerStyle(AbstractLayereStyle *layerStyle)
+{
+    QString testError;
+    QString expectedId = "Glacier";
+    QString expectedSource = "maptiler_planet";
+    QString expectedSourceLayer = "globallandcover";
+    QString expectedVisibility = "visible";
+    int expectedMinZoom = 0;
+    int expectedMaxZoom = 8;
+    bool expectedAntiAliasing = true;
+    QColor expectedColor = QColor::fromHslF(0/359.,0/100.,100/100., 0.7);
+    bool hueMatch;
+    bool saturationMatch;
+    bool lightnessMatch;
+    bool alphaMatch;
+
+    testError = QString("The layer style is expected to be of type FillLayerStyle");
+    QVERIFY2(layerStyle->type() == AbstractLayereStyle::LayerType::fill, testError.toUtf8());
+    auto const& filllayerStyle = *static_cast<FillLayerStyle const*>(layerStyle);
+
+    testError =  QString("The layerStyle id does not match, expected %1 but got %2")
+                    .arg(expectedId)
+                    .arg(filllayerStyle.m_id);
+    QVERIFY2(filllayerStyle.m_id == expectedId, testError.toUtf8());
+
+    testError =  QString("The layerStyle source does not match, expected %1 but got %2")
+                    .arg(expectedSource)
+                    .arg(filllayerStyle.m_source);
+    QVERIFY2(filllayerStyle.m_source == expectedSource, testError.toUtf8());
+
+    testError =  QString("The layerStyle source layer does not match, expected %1 but got %2")
+                    .arg(expectedSourceLayer)
+                    .arg(filllayerStyle.m_sourceLayer);
+    QVERIFY2(filllayerStyle.m_sourceLayer == expectedSourceLayer, testError.toUtf8());
+
+    testError =  QString("The layerStyle visibility does not match, expected %1 but got %2")
+                    .arg(expectedVisibility)
+                    .arg(filllayerStyle.m_visibility);
+    QVERIFY2(filllayerStyle.m_visibility == expectedVisibility, testError.toUtf8());
+
+    testError =  QString("The layerStyle minZoom does not match, expected %1 but got %2")
+                    .arg(expectedMinZoom)
+                    .arg(filllayerStyle.m_minZoom);
+    QVERIFY2(filllayerStyle.m_minZoom == expectedMinZoom, testError.toUtf8());
+
+    testError =  QString("The layerStyle maxZoom does not match, expected %1 but got %2")
+                    .arg(expectedMaxZoom)
+                    .arg(filllayerStyle.m_maxZoom);
+    QVERIFY2(filllayerStyle.m_maxZoom == expectedMaxZoom, testError.toUtf8());
+
+    testError =  QString("The layerStyle anti-aliasing property does not match, expected %1 but got %2")
+                    .arg(expectedAntiAliasing)
+                    .arg(filllayerStyle.m_antialias);
+    QVERIFY2(filllayerStyle.m_antialias == expectedAntiAliasing, testError.toUtf8());
+
+
+    testError =  QString("The fill color variable type is not correct at zoom %1").arg(1);
+    QVariant colorVariant = filllayerStyle.getFillColorAtZoom(1);
+    QVERIFY2(colorVariant.typeId() == QMetaType::Type::QColor, testError.toUtf8());
+
+
+    QColor backgroundColor = colorVariant.value<QColor>();
+    hueMatch = backgroundColor.hslHue() == expectedColor.hslHue();
+    saturationMatch = backgroundColor.hslSaturation() == expectedColor.hslSaturation();
+    lightnessMatch = backgroundColor.lightnessF() == expectedColor.lightnessF();
+    alphaMatch = backgroundColor.alphaF() == expectedColor.alphaF();
+    testError =  QString("The background-color does not match at zoom %1").arg(1);
+    QVERIFY2(hueMatch && saturationMatch && lightnessMatch && alphaMatch == true, testError.toUtf8());
 }
 
 void UnitTesting::parseSheet_returns_basic_values()
@@ -126,5 +201,6 @@ void UnitTesting::parseSheet_returns_basic_values()
     QVERIFY2(sheet.m_layerStyles.length() == expectedNumberOfLayers, testError.toUtf8());
 
     testBackgroundLayerStyle(sheet.m_layerStyles.at(0));
+    testFillLyerStyle(sheet.m_layerStyles.at(1));
 
 }
