@@ -30,8 +30,8 @@ void Evaluator::setupExpressionMap()
     m_expressionMap.insert("get", get);
     m_expressionMap.insert("has", has);
     m_expressionMap.insert("in", in);
-    m_expressionMap.insert("!=", notEqual);
-    m_expressionMap.insert("==", equal);
+    m_expressionMap.insert("!=", compare);
+    m_expressionMap.insert("==", compare);
     m_expressionMap.insert("<", greater);
     m_expressionMap.insert("all", all);
     m_expressionMap.insert("case", case_);
@@ -73,11 +73,11 @@ QVariant Evaluator::in(const QJsonArray &array, const AbstractLayerFeature *feat
     }else{
         return false;
     }
-    return {};
 }
 
-QVariant Evaluator::notEqual(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
+QVariant Evaluator::compare(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
 {
+
     QVariant operand1;
     QVariant operand2;
     if(array.at(1).isArray()){
@@ -98,7 +98,7 @@ QVariant Evaluator::notEqual(const QJsonArray &array, const AbstractLayerFeature
                 break;
             }
         }else{
-            operand1 = feature->fetureMetaData.contains(temp) ? QVariant(feature->fetureMetaData[temp]) : QVariant();
+            operand1 = feature->fetureMetaData.contains(temp) ? feature->fetureMetaData[temp] : QVariant();
         }
     }else{
         QString temp = array.at(1).toString();
@@ -117,61 +117,18 @@ QVariant Evaluator::notEqual(const QJsonArray &array, const AbstractLayerFeature
                 break;
             }
         }else{
-            operand1 = feature->fetureMetaData.contains(temp) ? QVariant(feature->fetureMetaData[temp]) : QVariant();
+            operand1 = feature->fetureMetaData.contains(temp) ? feature->fetureMetaData[temp] : QVariant();
         }
     }
 
 
     operand2 = array.at(2).toVariant();
-    return operand1 != operand2;
-}
-
-QVariant Evaluator::equal(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
-{
-    QVariant operand1;
-    QVariant operand2;
-    if(array.at(1).isArray()){
-        static QJsonArray operand1Arr = array.at(1).toArray();
-        QString temp = resolveExpression(operand1Arr, feature, mapZoomLevel, vpZoomeLevel).toString();
-        if(temp == "$type"){
-            switch(feature->type()){
-            case AbstractLayerFeature::featureType::polygon:
-                operand1 = QVariant(QString("Polygon"));
-                break;
-            case AbstractLayerFeature::featureType::line:
-                operand1 = QVariant(QString("LineString"));
-                break;
-            case AbstractLayerFeature::featureType::point:
-                operand1 = QVariant(QString("Point"));
-                break;
-            default:
-                break;
-            }
-        }else{
-            operand1 = feature->fetureMetaData.contains(temp) ? QVariant(feature->fetureMetaData[temp]) : QVariant();
-        }
+    if(array.at(0).toString() == "!="){
+        return operand1 != operand2;
     }else{
-        QString temp = array.at(1).toString();
-        if(temp == "$type"){
-            switch(feature->type()){
-            case AbstractLayerFeature::featureType::polygon:
-                operand1 = QVariant(QString("Polygon"));
-                break;
-            case AbstractLayerFeature::featureType::line:
-                operand1 = QVariant(QString("LineString"));
-                break;
-            case AbstractLayerFeature::featureType::point:
-                operand1 = QVariant(QString("Point"));
-                break;
-            default:
-                break;
-            }
-        }else{
-            operand1 = feature->fetureMetaData.contains(temp) ? QVariant(feature->fetureMetaData[temp]) : QVariant();
-        }
+        return operand1 == operand2;
     }
-    operand2 = array.at(2).toVariant();
-    return operand1 == operand2;
+
 }
 
 QVariant Evaluator::greater(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
@@ -196,7 +153,6 @@ QVariant Evaluator::greater(const QJsonArray &array, const AbstractLayerFeature 
     }else{
         return operand1.toDouble() > operand2.toDouble();
     }
-    return {};
 }
 
 QVariant Evaluator::all(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
@@ -269,7 +225,7 @@ QVariant Evaluator::interpolate(const QJsonArray &array, const AbstractLayerFeat
         }
     }else{
         int index = 3;
-        while(mapZoomLevel > array.at(index).toDouble()){
+        while(mapZoomLevel > array.at(index).toDouble() && index < array.size()){
             index += 2;
         }
         float stopInput1 = array.at(index-2).toDouble();

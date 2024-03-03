@@ -147,7 +147,7 @@ public:
     //bool m_textAllowOverlap = false;//Not used for first iteration
     //QString m_textAnchor = QString("center");//Not used for first iteration
     QVariant m_textField;
-    QFont m_textFont;
+    QStringList m_textFont;
     //bool m_textIgnorePlacement = false;//Not used for first iteration
     //QString m_textJustify = QString("center");//Not used for first iteration
     //bool m_textKeenUpright = true;//Not used for first iteration

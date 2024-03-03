@@ -402,13 +402,18 @@ SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
 
     if(layout.contains("text-font")){
 
-        returnLayer->m_textFont = QFont(layout.value("text-font").toVariant().toStringList());
+        returnLayer->m_textFont = layout.value("text-font").toVariant().toStringList();
     }else{
-        returnLayer->m_textFont = QFont({"Open Sans Regular","Arial Unicode MS Regular"});
+        returnLayer->m_textFont = {"Open Sans Regular","Arial Unicode MS Regular"};
     }
 
     if(layout.contains("text-field")){
-        returnLayer->m_textField = QVariant(layout.value("text-field").toArray());
+        if(layout.value("text-field").isArray()){
+            returnLayer->m_textField = QVariant(layout.value("text-field").toArray());
+        }else{
+            returnLayer->m_textField = QVariant(layout.value("text-field").toString());
+        }
+
     }
     //parsing paint properties
     QJsonObject paint = json.value("paint").toObject();
