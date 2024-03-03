@@ -38,6 +38,8 @@ int main(int argc, char *argv[])
     auto &styleSheet = mapWidget->styleSheet;
     auto &tileStorage = mapWidget->tileStorage;
 
+
+    /// REFACTOR HERE. Cecilia will discuss on an upcoming meeting how to handle this differently.
     // Parses the bytes that form the stylesheet into a json-document object.
     QJsonParseError parseError;
     auto styleSheetJsonDoc = QJsonDocument::fromJson(styleSheetBytes, &parseError);
@@ -52,6 +54,7 @@ int main(int argc, char *argv[])
     }
     // Then finally parse the JSonDocument into our StyleSheet.
     styleSheet.parseSheet(styleSheetJsonDoc);
+    /// REFACTOR END
 
     auto downloadTile = [&](TileCoord tile) -> VectorTile {
         auto result = Bach::tileFromByteArray(
