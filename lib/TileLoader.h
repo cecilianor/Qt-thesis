@@ -18,13 +18,13 @@ private:
 
 public:
     /**
-     * @brief The styleSheetType enum covers the basic style sheets provided by MapTiler.
+     * @brief The StyleSheetType enum covers the basic style sheets provided by MapTiler.
      *
      * Some of the style sheet types have _vX at the end. This matches the current map version
      * that the code is implemented against in case the MapTiler APIs are updated
      * in the future with new endpoints that include -v2, -v3 and so on.
      */
-    enum class styleSheetType {
+    enum class StyleSheetType {
         backdrop,
         basic_v2,
         bright_v2,
@@ -41,7 +41,7 @@ public:
     };
 
     // Some hardcoded map source types:
-    enum class sourceType {
+    enum class SourceType {
         maptiler_planet,
         land,
         ocean,
@@ -49,22 +49,22 @@ public:
     };
 
     // Error types
-    enum class ErrorCode {
-        success = 0,
-        mapTilerError = 1,
-        parseError = 2,
-        unknownError = 3,
+    enum class ResultType {
+        success,
+        mapTilerError,
+        parseError,
+        unknownError,
     };
 
     // Constructor and destructor
     TileLoader();                                  // Not implemented
 
     // Functionality making different requests
-    std::pair<QByteArray, ErrorCode> getStylesheet(styleSheetType type, QString key, NetworkController &networkController); // Implemented
-    std::pair<QString, ErrorCode> getTilesLink(const QJsonDocument & styleSheet, QString sourceType);// Implemented Gets dynamic url as a string based on source type!
-    std::pair<QString, ErrorCode> getPBFLink (const QString & tileSheetUrl, NetworkController &networkController);                          // Implemented. Get PBF link based on dynamic or static url.
+    std::pair<QByteArray, ResultType> getStylesheet(StyleSheetType type, QString key, NetworkController &networkController); // Implemented
+    std::pair<QString, ResultType> getTilesLink(const QJsonDocument & styleSheet, QString sourceType);// Implemented Gets dynamic url as a string based on source type!
+    std::pair<QString, ResultType> getPBFLink (const QString & tileSheetUrl, NetworkController &networkController);                          // Implemented. Get PBF link based on dynamic or static url.
 
-    QByteArray loadStyleSheetFromWeb(const QString &mapTilerKey, styleSheetType &styleSheetType, NetworkController &networkController);
+    QByteArray loadStyleSheetFromWeb(const QString &mapTilerKey, StyleSheetType &StyleSheetType, NetworkController &networkController);
     QString getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType, NetworkController &networkController);
     QString setPbfLink(const TileCoord &tileCoord, const QString &pbfLinkTemplate);
     QByteArray downloadTile(const QString &pbfLink, NetworkController &controller);

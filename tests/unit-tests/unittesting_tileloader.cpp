@@ -40,10 +40,10 @@ void UnitTesting::getStyleSheet_returns_success_on_supported_stylesheet() {
     TileLoader tileLoader;
     QString key = tileLoader.readKey("key.txt");
 
-    std::pair<QByteArray, TileLoader::ErrorCode> styleSheetURL =
-        tileLoader.getStylesheet(TileLoader::styleSheetType::basic_v2, key, networkController);
+    std::pair<QByteArray, TileLoader::ResultType> styleSheetURL =
+        tileLoader.getStylesheet(TileLoader::StyleSheetType::basic_v2, key, networkController);
 
-    QVERIFY(styleSheetURL.second == TileLoader::ErrorCode::success);
+    QVERIFY(styleSheetURL.second == TileLoader::ResultType::success);
 }
 
 // Get a non-supported stylesheet
@@ -53,8 +53,8 @@ void UnitTesting::getStyleSheet_returns_failure_on_unsupported_stylesheet() {
     TileLoader tileLoader;
     QString key = tileLoader.readKey("key.txt");
 
-    std::pair<QByteArray, TileLoader::ErrorCode> styleSheetURL =
-        tileLoader.getStylesheet(TileLoader::styleSheetType::bright_v2, key, networkController);
+    std::pair<QByteArray, TileLoader::ResultType> styleSheetURL =
+        tileLoader.getStylesheet(TileLoader::StyleSheetType::bright_v2, key, networkController);
 
-    QVERIFY(styleSheetURL.second == TileLoader::ErrorCode::unknownError);
+    QVERIFY(styleSheetURL.second == TileLoader::ResultType::unknownError);
 }

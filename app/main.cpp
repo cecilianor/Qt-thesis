@@ -25,8 +25,8 @@ int main(int argc, char *argv[])
     }
 
     // Picks stylesheet to load and loads it.
-    auto styleSheetType = TileLoader::styleSheetType::basic_v2;
-    auto styleSheetBytes = tileLoader.loadStyleSheetFromWeb(mapTilerKey, styleSheetType, networkController);
+    auto StyleSheetType = TileLoader::StyleSheetType::basic_v2;
+    auto styleSheetBytes = tileLoader.loadStyleSheetFromWeb(mapTilerKey, StyleSheetType, networkController);
 
     // Gets the link template where we have to switch out x, y,z in the link.
     auto pbfLinkTemplate = tileLoader.getPbfLinkTemplate(styleSheetBytes, "maptiler_planet", networkController);
