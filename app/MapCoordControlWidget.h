@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QLineEdit>
+#include <QBoxLayout>
 
 #include "MapWidget.h"
 
@@ -19,6 +20,8 @@ namespace Bach {
         QLineEdit* longitudeField = nullptr;
         QLineEdit* latitudeField = nullptr;
         QLineEdit* zoomField = nullptr;
+        void setupInputFields(QBoxLayout* outerLayout);
+        void setupButtons(QBoxLayout* outerLayout, MapWidget* mapWidget);
 
     private slots:
         void submitButtonPressed();

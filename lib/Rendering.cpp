@@ -363,6 +363,8 @@ static bool includeFeature(
  * This is called repeatedly from the 'paintTiles' function.
  *
  * It assumes the painter object has had its origin moved to the tiles origin.
+ *
+ * This does not handle background color.
  */
 static void paintSingleTile(
     const VectorTile &tileData,
@@ -377,17 +379,6 @@ static void paintSingleTile(
     for (auto const& abstractLayerStyle : styleSheet.m_layerStyles) {
         if (isLayerHidden(*abstractLayerStyle, mapZoom))
             continue;
-
-        // Background is a special case and has no associated layer.
-        // We just draw it and move onto the next layer style.
-        if (abstractLayerStyle->type() == AbstractLayereStyle::LayerType::background) {
-            // Fill the entire tile with a single color
-            auto const& layerStyle = *static_cast<BackgroundStyle const*>(abstractLayerStyle);
-
-            auto backgroundColor = layerStyle.getColorAtZoom(mapZoom).value<QColor>();
-            painter.fillRect(transformIn.mapRect(QRect(0, 0, 1, 1)), backgroundColor);
-            continue;
-        }
 
         // Check if this layer style has an associated layer in the tile.
         auto layerIt = tileData.m_layers.find(abstractLayerStyle->m_sourceLayer);
@@ -452,6 +443,42 @@ static void paintSingleTile(
     }
 }
 
+// Assumes the painter is unchanged.
+static void drawBackgroundColor(
+    QPainter &painter,
+    const StyleSheet &styleSheet,
+    int mapZoom)
+{
+    bool styleFound = false;
+    QColor color;
+
+    // We start by iterating over each layer style, it determines the order
+    // at which we draw the elements of the map.
+    for (auto const& abstractLayerStyle : styleSheet.m_layerStyles) {
+        // Background is a special case and has no associated layer.
+        // We just draw it and move onto the next layer style.
+        if (abstractLayerStyle->type() == AbstractLayereStyle::LayerType::background) {
+            // Fill the entire tile with a single color
+            const auto& layerStyle = *static_cast<const BackgroundStyle*>(abstractLayerStyle);
+
+            color = layerStyle.getColorAtZoom(mapZoom).value<QColor>();
+            styleFound = true;
+            break;
+        }
+    }
+
+    if (styleFound) {
+        painter.fillRect(
+            0,
+            0,
+            painter.window().width(),
+            painter.window().height(),
+            color);
+    } else {
+        qWarning() << "No background color found while drawing. Possible bug.\n";
+    }
+}
+
 void Bach::paintTiles(
     QPainter &painter,
     double vpX,
@@ -462,6 +489,10 @@ void Bach::paintTiles(
     const StyleSheet &styleSheet,
     bool drawDebug)
 {
+    // Start by drawing the background color on the entire canvas.
+    drawBackgroundColor(painter, styleSheet, mapZoomLevel);
+
+
     // Gather width and height of the viewport, in pixels..
     auto vpWidth = painter.window().width();
     auto vpHeight = painter.window().height();

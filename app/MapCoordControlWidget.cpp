@@ -20,20 +20,8 @@ QString getShowingDebugBtnLabel(MapWidget* mapWidget) {
     return name;
 }
 
-MapCoordControlWidget::MapCoordControlWidget(MapWidget* mapWidget)
+void MapCoordControlWidget::setupInputFields(QBoxLayout* outerLayout)
 {
-    auto temp = new QWidget(mapWidget);
-    // Set a dark and transparent background.
-    //temp->setStyleSheet("background-color: rgba(0, 0, 0, 127);");
-
-    /* From here on we establish a small layout.
-     * The outer one is a VBoxLayout, inside are two elements: a grid and then the submit button.
-     *
-     * The grid contains the labels and the text fields.
-     */
-    auto outerLayout = new QVBoxLayout;
-    temp->setLayout(outerLayout);
-
     // Build the grid layout
     auto layout = new QGridLayout;
     outerLayout->addLayout(layout);
@@ -98,10 +86,17 @@ MapCoordControlWidget::MapCoordControlWidget(MapWidget* mapWidget)
     // Setup the submit button at the end.
     {
         auto btn = new QPushButton("Go", this);
-        QObject::connect(btn, &QPushButton::clicked, this, &MapCoordControlWidget::submitButtonPressed);
+        QObject::connect(
+            btn,
+            &QPushButton::clicked,
+            this,
+            &MapCoordControlWidget::submitButtonPressed);
         outerLayout->addWidget(btn);
     }
+}
 
+void MapCoordControlWidget::setupButtons(QBoxLayout *outerLayout, MapWidget *mapWidget)
+{
     // Setup the load tiles button
     {
         auto btn = new QPushButton("Load tiles", this);
@@ -117,6 +112,7 @@ MapCoordControlWidget::MapCoordControlWidget(MapWidget* mapWidget)
     {
         auto name = getShowingDebugBtnLabel(mapWidget);
         auto btn = new QPushButton(name, this);
+        outerLayout->addWidget(btn);
         QObject::connect(
             btn,
             &QPushButton::clicked,
@@ -127,9 +123,48 @@ MapCoordControlWidget::MapCoordControlWidget(MapWidget* mapWidget)
                 auto name = getShowingDebugBtnLabel(mapWidget);
                 btn->setText(name);
             });
-
-        outerLayout->addWidget(btn);
     }
+
+    {
+        auto btn = new QPushButton("Nydalen", this);
+        outerLayout->addWidget(btn);
+        QObject::connect(
+            btn,
+            &QPushButton::clicked,
+            mapWidget,
+            [=]() {
+                auto [x, y] = Bach::lonLatToWorldNormCoordDegrees(10.765248, 59.949584413);
+                mapWidget->setViewport(x, y, 11);
+            });
+    }
+
+    {
+        auto btn = new QPushButton("Gjøvik", this);
+        outerLayout->addWidget(btn);
+        QObject::connect(
+            btn,
+            &QPushButton::clicked,
+            mapWidget,
+            [=]() {
+                auto [x, y] = Bach::lonLatToWorldNormCoordDegrees(10.683791293772392, 60.79004068859685);
+                mapWidget->setViewport(x, y, 11);
+            });
+    }
+}
+
+MapCoordControlWidget::MapCoordControlWidget(MapWidget* mapWidget)
+{
+    auto temp = new QWidget(mapWidget);
+    // Set a dark and transparent background.
+    //temp->setStyleSheet("background-color: rgba(0, 0, 0, 127);");
+
+    /* From here on we establish a small layout.
+     */
+    auto outerLayout = new QVBoxLayout;
+    temp->setLayout(outerLayout);
+
+    setupInputFields(outerLayout);
+    setupButtons(outerLayout, mapWidget);
 }
 
 void MapCoordControlWidget::submitButtonPressed()
