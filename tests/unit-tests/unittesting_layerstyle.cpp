@@ -20,6 +20,61 @@ void UnitTesting::getStopOutput_returns_basic_values(){
 }
 
 
+void testBackgroundLayerStyle(AbstractLayereStyle *layerStyle)
+{
+    QString testError;
+
+    testError = QString("The layer style is expected to be of type BackgroundLayerStyle");
+    QVERIFY2(layerStyle->type() == AbstractLayereStyle::LayerType::background, testError.toUtf8());
+    auto const& backgroundStyle = *static_cast<BackgroundStyle const*>(layerStyle);
+
+    testError =  QString("The layerStyle id does not match, expected %1 but got %2")
+                    .arg("Background")
+                    .arg(backgroundStyle.m_id);
+    QVERIFY2(backgroundStyle.m_id == "Background", testError.toUtf8());
+
+    testError =  QString("The layerStyle visibility does not match, expected %1 but got %2")
+                    .arg("visible")
+                    .arg(backgroundStyle.m_visibility);
+    QVERIFY2(backgroundStyle.m_visibility == "visible", testError.toUtf8());
+
+    testError =  QString("The layerStyle minZoom does not match, expected %1 but got %2")
+                    .arg(0)
+                    .arg(backgroundStyle.m_minZoom);
+    QVERIFY2(backgroundStyle.m_minZoom == 0, testError.toUtf8());
+
+    testError =  QString("The layerStyle maxZoom does not match, expected %1 but got %2")
+                    .arg(24)
+                    .arg(backgroundStyle.m_maxZoom);
+    QVERIFY2(backgroundStyle.m_maxZoom == 24, testError.toUtf8());
+
+
+    QColor expectedColorForStop1 = QColor::fromHslF(60/359.,20/100.,85/100.);
+    QColor expectedColorForStop2 = QColor::fromHslF(60/359.,24/100.,90/100.);
+    bool hueMatch;
+    bool saturationMatch;
+    bool lightnessMatch;
+    bool alphaMatch;
+    for(int i = 0; i < 21; i++){
+        testError =  QString("The background-color does not match at zoom %1").arg(i);
+        QColor backgroundColor = backgroundStyle.getColorAtZoom(i).value<QColor>();
+        hueMatch = backgroundColor.hslHue() == expectedColorForStop1.hslHue();
+        saturationMatch = backgroundColor.hslSaturation() == expectedColorForStop1.hslSaturation();
+        lightnessMatch = backgroundColor.lightnessF() == expectedColorForStop1.lightnessF();
+        alphaMatch = backgroundColor.alphaF() == expectedColorForStop1.alphaF();
+        QVERIFY2(hueMatch && saturationMatch && lightnessMatch && alphaMatch == true, testError.toUtf8());
+    }
+
+    for(int i = 21; i < 25; i++){
+        testError =  QString("The background-color does not match at zoom %1").arg(i);
+        QColor backgroundColor = backgroundStyle.getColorAtZoom(i).value<QColor>();
+        hueMatch = backgroundColor.hslHue() == expectedColorForStop2.hslHue();
+        saturationMatch = backgroundColor.hslSaturation() == expectedColorForStop2.hslSaturation();
+        lightnessMatch = backgroundColor.lightnessF() == expectedColorForStop2.lightnessF();
+        alphaMatch = backgroundColor.alphaF() == expectedColorForStop2.alphaF();
+        QVERIFY2(hueMatch && saturationMatch && lightnessMatch && alphaMatch == true, testError.toUtf8());
+    }
+}
 
 void UnitTesting::parseSheet_returns_basic_values()
 {
@@ -70,6 +125,6 @@ void UnitTesting::parseSheet_returns_basic_values()
                     .arg(sheet.m_layerStyles.length());
     QVERIFY2(sheet.m_layerStyles.length() == expectedNumberOfLayers, testError.toUtf8());
 
-
+    testBackgroundLayerStyle(sheet.m_layerStyles.at(0));
 
 }
