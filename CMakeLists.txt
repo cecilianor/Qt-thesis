@@ -135,6 +135,12 @@ if (BUILD_TESTS)
         tests/unit-tests/unittesting_rendering.cpp
         tests/unit-tests/unittesting_layerstyle.cpp
     )
+
+    qt_add_resources(unit_test "unitTestResources"
+        PREFIX "/"
+        FILES
+        unitTestResources/styleTest.json
+    )
     target_link_libraries(unit_test PUBLIC maplib Qt6::Test)
 
     # Make sure we deploy the correct runtime dependencies to the test.
