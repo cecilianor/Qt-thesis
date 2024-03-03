@@ -31,17 +31,7 @@ static QColor getColorFromString(QString colorString)
 
 
 
-template <class T>
-T getStopOutput(QList<QPair<int, T>> list, int currentZoom)
-{
-    for(const auto stop : list)
-    {
-        if(currentZoom < stop.first){
-            return stop.second;
-        }
-    }
-    return list.last().second;
-}
+
 /*
  * ----------------------------------------------------------------------------
  */

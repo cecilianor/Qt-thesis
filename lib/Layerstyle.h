@@ -214,4 +214,17 @@ public:
 
 };
 
+template <class T>
+T getStopOutput(QList<QPair<int, T>> list, int currentZoom)
+{
+    if(currentZoom <= list.begin()->first) return list.begin()->second;
+    for(int i = 0; i < list.size(); i++)
+    {
+        if(currentZoom <= list.at(i).first){
+            return list.at(i-1).second;
+        }
+    }
+    return list.last().second;
+}
+
 #endif // LAYERSTYLE_H
