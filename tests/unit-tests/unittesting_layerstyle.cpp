@@ -3,73 +3,18 @@
 #include "Layerstyle.h"
 
 
-void UnitTesting::interpolate_returns_basic_expected_values() {
-    struct TestItem {
-        QPair<int, int> inputA;
-        QPair<int, int> inputB;
-        int inputViewportZoom;
-        int expectedOut;
-    };
+void UnitTesting::getStopOutput_returns_basic_values(){
+    QList<QPair<int, float>> stops({{4,0.8},{9, 1.1}, {11, 1.75}, {18, 2.5},{22, 2.72}});
+    QList<QPair<int, float>> values({{0, 0.8}, {3, 0.8}, {4, 0.8}, {8, 0.8}, {9, 0.8}, {10, 1.1}, {16, 1.75}, {18, 1.75}, {20, 2.5}, {23, 2.72}});
+    for(auto value : values){
+        auto result = getStopOutput(stops, value.first);
+        auto errorMsg = QString("At value #%1. Expected %2, but got %3")
+                            .arg(value.first)
+                            .arg(value.second)
+                            .arg(result);
+        QVERIFY2(result == value.second, errorMsg.toUtf8());
 
-    QVector<TestItem> testItems = {
-    {
-       {1, 1},
-       {9, 2},
-       15,
-       2
-    },
-    {
-        {1, 1},
-        {9, 2},
-        1,
-        1
-    },
-    };
-
-    for (int i = 0; i < testItems.size(); i++) {
-        const auto &item = testItems[i];
-
-        auto result = Bach::interpolate<int>(item.inputA, item.inputB, item.inputViewportZoom);
-        auto errorMsg = QString("At item #%1. Expected %2, but got %3")
-            .arg(i)
-            .arg(item.expectedOut)
-            .arg(result);
-
-        QVERIFY2(result == item.expectedOut, errorMsg.toUtf8());
     }
-}
 
-void UnitTesting::getLerpedValue_returns_basic_expceted_value()
-{
-    struct TestItem {
-        QVector<QPair<int, int>> inputStops;
-        int inputViewportZoom;
-        int expectedOut;
-    };
 
-    QVector<TestItem> testItems = {
-        {
-            { {1, 1}, {9, 2} },
-            10,
-            2
-        },
-        {
-            { {0, 1}, {9, 2} },
-            0,
-            1
-        },
-    };
-
-    for (int i = 0; i < testItems.size(); i++) {
-        const auto &item = testItems[i];
-
-        auto result = Bach::getLerpedValue<int>(item.inputStops, item.inputViewportZoom);
-
-        auto errorMsg = QString("At item #%1. Expected %2, but got %3")
-            .arg(i)
-            .arg(item.expectedOut)
-            .arg(result);
-
-        QVERIFY2(result == item.expectedOut, errorMsg.toUtf8());
-    }
 }

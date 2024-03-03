@@ -24,6 +24,7 @@ private slots:
 
     /* Layerstyle tests
      */
-    void interpolate_returns_basic_expected_values();
-    void getLerpedValue_returns_basic_expceted_value();
+    void getStopOutput_returns_basic_values();
+
+
 };
