@@ -25,6 +25,8 @@ private slots:
     /* Layerstyle tests
      */
     void getStopOutput_returns_basic_values();
+    void parseSheet_returns_basic_values();
+
 
 
 };
