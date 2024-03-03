@@ -1,4 +1,4 @@
-#include "networkcontroller.h"
+#include "NetworkController.h"
 
 #include <QApplication>
 #include <QNetworkAccessManager>

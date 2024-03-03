@@ -45,8 +45,8 @@ qt_add_library(maplib STATIC
     lib/Layerstyle.cpp
     lib/TileLoader.h
     lib/TileLoader.cpp
-    lib/networkcontroller.h
-    lib/networkcontroller.cpp
+    lib/NetworkController.h
+    lib/NetworkController.cpp
     lib/Evaluator.h
     lib/Evaluator.cpp)
 
