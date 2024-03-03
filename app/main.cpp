@@ -19,8 +19,10 @@ int main(int argc, char *argv[])
         // If we couldn't load the key, display an error box.
         QMessageBox::critical(
             nullptr,
-            "Critical failure",
-            "Unable to load file 'key.txt'. This key is necessary to contact MapTiler. The application will now shut down.");
+            "Internal Error",
+            "Internal error. Contact support if the error persists. The application will now shut down.");
+        // Add developer comments to QDebug, not to the end user/client.
+        qDebug() << "Reading of the MapTiler key failed...";
         return -1;
     }
 
