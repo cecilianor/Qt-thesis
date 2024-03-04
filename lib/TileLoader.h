@@ -7,7 +7,7 @@
 #include <QJsonArray>
 
 #include "TileCoord.h"
-#include "networkcontroller.h"
+#include "NetworkController.h"
 
 class TileLoader
 {
