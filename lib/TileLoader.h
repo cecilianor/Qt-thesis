@@ -48,7 +48,7 @@ public:
         unknown,
     };
 
-    // Error types
+    // Result types
     enum class ResultType {
         success,
         mapTilerError,
@@ -78,12 +78,23 @@ public:
     }
 
 
+    // Http response type
+    struct HttpResponse  {
+        QByteArray response;
+        TileLoader::ResultType resultType;
+    };
+
+    // Url after parsing HTTP data
+    struct ParsedLink {
+        QString link;
+        TileLoader::ResultType resultType;
+    };
 
     // Constructor and destructor
     TileLoader();                                  // Not implemented
 
     // Functionality making different requests
-    std::pair<QByteArray, ResultType> getStylesheet(StyleSheetType type, QString key, NetworkController &networkController); // Implemented
+    TileLoader::HttpResponse getStylesheet(StyleSheetType type, QString key, NetworkController &networkController); // Implemented
     std::pair<QString, ResultType> getTilesLink(const QJsonDocument & styleSheet, QString sourceType);// Implemented Gets dynamic url as a string based on source type!
     std::pair<QString, ResultType> getPBFLink (const QString & tileSheetUrl, NetworkController &networkController);                          // Implemented. Get PBF link based on dynamic or static url.
 

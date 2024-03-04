@@ -5,7 +5,7 @@
 
 #include "TileLoader.h"
 #include "TileCoord.h"
-#include "networkcontroller.h"
+#include "NetworkController.h"
 #include "qjsonarray.h"
 
 TileLoader::TileLoader() {};
@@ -16,27 +16,27 @@ TileLoader::TileLoader() {};
  * @param key The MapTiler key.
  * @return The response from MapTiler.
  */
-std::pair<QByteArray, TileLoader::ResultType> TileLoader::getStylesheet(StyleSheetType type, QString key, NetworkController &networkController) {
-    QByteArray response="";
-    QString url;
+TileLoader::HttpResponse TileLoader::getStylesheet(StyleSheetType type, QString key, NetworkController &networkController) {
+    auto response = QByteArray();
+    auto url = QString();
 
     switch(type) {
     case (TileLoader::StyleSheetType::basic_v2) : {
         url = "https://api.maptiler.com/maps/basic-v2/style.json?key=" + key;
-        auto result = networkController.sendRequest(QString(url));
+        auto result = networkController.sendRequest(url);
         if (!result.has_value()) {
-            return { "", ResultType::unknownError };
+            return { QByteArray(), ResultType::unknownError };
         }
         response = result.value();
         break;
         }
     default: {
         qDebug() << "No implementation of stylesheet type!";
-        return std::make_pair(response, ResultType::unknownError);
+        return {response, ResultType::unknownError};
         break;
         }
     }
-    return std::make_pair(response, ResultType::success);
+        return {response, ResultType::success};
 };
 
 /*!
@@ -172,11 +172,11 @@ QByteArray TileLoader::loadStyleSheetFromWeb(
     TileLoader::StyleSheetType &StyleSheetType,
     NetworkController &networkController)
 {
-    std::pair<QByteArray, TileLoader::ResultType> styleSheetResult = getStylesheet(StyleSheetType, mapTilerKey, networkController);
-    if (styleSheetResult.second != TileLoader::ResultType::success) {
-        qWarning() << "There was an error: " << styleSheetResult.first;
+    TileLoader::HttpResponse styleSheetResult = getStylesheet(StyleSheetType, mapTilerKey, networkController);
+    if (styleSheetResult.resultType != TileLoader::ResultType::success) {
+        qWarning() << "There was an error: " << ResultTypeToString(styleSheetResult.resultType);
     }
-    return styleSheetResult.first;
+    return styleSheetResult.response;
 }
 
 /*!
