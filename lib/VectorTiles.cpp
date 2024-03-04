@@ -82,17 +82,28 @@ int TileLayer::extent() const
  * ----------------------------------------------------------------------------
  */
 
-
+/* Decode the geometry of a layer's polygon feature from the desrialized protocol buffer.
+     *
+     * Parameters:
+     *      feature expects a refrence to the layer's feature from the deserialized protocol buffer
+     *
+     * Returns a pointer of type PolygonFeature conatininf the decoded geometry as a QPainterPath.
+     */
 PolygonFeature* polygonFeatureFromProto(const vector_tile::Tile::Feature &feature)
 {
     PolygonFeature *newFeature = new PolygonFeature();
 
     qint32 x = 0;
     qint32 y = 0;
-
+    //iterate through the geometry commands and parameters.
     for(int i = 0; i < feature.geometry().size(); ) {
         quint32 point = feature.geometry().at(i);
+        //the command type is encoded as the 3 LSBs of the command integer.
+        //With: command 1 = MoveTo; command 2 = LineTo; command 7 = ClosePAth (takes not parameters);
         quint32 commandId = point & 0x7;
+        //the command count is encoded as the remaining 29 bits, and represents how many
+        //times the command should be repeated (for command 1 and 2 the number of arguments
+        //should be equal to 2 * commandCount).
         quint32 count = point >> 3;
         i++;
         if (commandId == 7) {
@@ -101,6 +112,7 @@ PolygonFeature* polygonFeatureFromProto(const vector_tile::Tile::Feature &featur
         }
         while(count > 0 && i < feature.geometry().size() - 1) {
             point = feature.geometry().at(i);
+             //this is the formula for decoding the command parameters.
             x += ((point >> 1) ^ (-(point & 1)));
             i++;
             point = feature.geometry().at(i);
@@ -118,7 +130,13 @@ PolygonFeature* polygonFeatureFromProto(const vector_tile::Tile::Feature &featur
     return newFeature;
 }
 
-
+/* Decode the geometry of a layer's line feature from the desrialized protocol buffer.
+     *
+     * Parameters:
+     *      feature expects a refrence to the layer's feature from the deserialized protocol buffer
+     *
+     * Returns a pointer of type LineFeature conatininf the decoded geometry as a QPainterPath.
+     */
 LineFeature* lineFeatureFromProto(const vector_tile::Tile::Feature &feature)
 {
     LineFeature *newFeature = new LineFeature();
@@ -151,7 +169,13 @@ LineFeature* lineFeatureFromProto(const vector_tile::Tile::Feature &feature)
     return newFeature;
 }
 
-
+/* Decode the geometry of a layer's point feature from the desrialized protocol buffer.
+     *
+     * Parameters:
+     *      feature expects a refrence to the layer's feature from the deserialized protocol buffer
+     *
+     * Returns a pointer of type PointFeature conatininf the decoded geometry as a QList<QPoint>.
+     */
 PointFeature* pointFeatureFromProto(const vector_tile::Tile::Feature &feature)
 {
     PointFeature *newFeature = new PointFeature();
@@ -177,6 +201,9 @@ PointFeature* pointFeatureFromProto(const vector_tile::Tile::Feature &feature)
     return newFeature;
 }
 
+/*Extracts the feature's metadata from the layers keys and values lists
+ *
+*/
 void populateFeatureMetaData(AbstractLayerFeature* feature, QList<QString> &keys, QList<vector_tile::Tile_QtProtobufNested::Value> &values)
 {
 
@@ -215,6 +242,14 @@ VectorTile::VectorTile() {
 VectorTile::~VectorTile() {
 }
 
+/* Deserialize and extracts all the layers in the tile protocol buffer,
+     * then iterates therough each layer's features and
+     * calls the apropriate function to decode the feature's geometry.
+     *
+     * Parameters:
+     *      data expects a QByteArray containing the raw protocol buffer.
+     *
+     */
 bool VectorTile::DeserializeMessage(QByteArray data)
 {
     QProtobufSerializer serializer;
@@ -228,6 +263,7 @@ bool VectorTile::DeserializeMessage(QByteArray data)
         return false;
     }
 
+    //iterate throught the layer's features and call the apropriate decoding function on the feature.
     for (auto layer : tile.layers()) {
         qDebug() << "Parsing layer" << layer.name();
         qDebug() << " layer version: " << layer.version();
