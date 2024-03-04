@@ -2,9 +2,10 @@
 
 #include "Layerstyle.h"
 
-
+//Test the functionality of the function to determine stopoutputs.
 void UnitTesting::getStopOutput_returns_basic_values(){
     QList<QPair<int, float>> stops({{4,0.8},{9, 1.1}, {11, 1.75}, {18, 2.5},{22, 2.72}});
+    //List of pairs that represent the zoom level and the expected output for it.
     QList<QPair<int, float>> values({{0, 0.8}, {3, 0.8}, {4, 0.8}, {8, 0.8}, {9, 0.8}, {10, 1.1}, {16, 1.75}, {18, 1.75}, {20, 2.5}, {23, 2.72}});
     for(auto value : values){
         auto result = getStopOutput(stops, value.first);
@@ -378,21 +379,28 @@ void testNotImplementedLayerStyle(AbstractLayereStyle *layerStyle)
 
 }
 
+
+//Test the parsing functionality of the StyleSheet class.
 void UnitTesting::parseSheet_returns_basic_values()
 {
+    //Check that the file exists.
     QString path = ":/unitTestResources/styleTest.json";
     bool fileExist = QFile::exists(path);
     QString fileExistsError = "File \"" + path + "\" does not exist";
     QVERIFY2(fileExist == true, fileExistsError.toUtf8());
 
+    //Open the json file and check that the operation was succesful.
     QFile styleFile(path);
     bool fileOpened = styleFile.open(QIODevice::ReadOnly);
     QString fileOpenError = "Could not open file";
     QVERIFY2(fileOpened == true, fileOpenError.toUtf8());
 
+    //Parse the json file into a QJsonDocument for further processing.
     QJsonDocument doc;
     QJsonParseError parseError;
     doc = QJsonDocument::fromJson(styleFile.readAll(), &parseError);
+
+    //Check for parsing errors.
     QString parErrorString = "The Qt parser encountered an error";
     QVERIFY2(parseError.error == QJsonParseError::NoError, parErrorString.toUtf8());
 

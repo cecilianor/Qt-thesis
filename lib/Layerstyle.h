@@ -12,7 +12,7 @@
 #include <QPen>
 
 /*
- *  all the layers styles forllow the maptiler layer style specification : https://docs.maptiler.com/gl-style-specification/layers/
+ *  all the layers styles follow the maptiler layer style specification : https://docs.maptiler.com/gl-style-specification/layers/
  */
 
 class AbstractLayereStyle
