@@ -258,6 +258,117 @@ void testLineLayerStyle(AbstractLayereStyle *layerStyle)
 }
 
 
+void testPointLayerStyle(AbstractLayereStyle *layerStyle)
+{
+
+    QString testError;
+    QString expectedId = "Airport labels";
+    QString expectedSource = "maptiler_planet";
+    QString expectedSourceLayer = "aerodrome_label";
+    QString expectedVisibility = "visible";
+    int expectedMinZoom = 10;
+    int expectedMaxZoom = 24;
+    QStringList expectedFont = {"Noto Sans Regular"};
+    int expectedTextSizeStop1 = 10;
+    int expectedTextSizeStop2 = 12;
+    int expectedTextSizeStop3 = 14;
+    int expectedTextFieldSize = 3;
+    QColor expectedColor = QColor::fromHslF(0/359.,0/100.,12/100.);
+    bool hueMatch;
+    bool saturationMatch;
+    bool lightnessMatch;
+    bool alphaMatch;
+    int expectedFilterSize = 2;
+
+    testError = QString("The layer style is expected to be of type SymbolLayerStyle");
+    QVERIFY2(layerStyle->type() == AbstractLayereStyle::LayerType::symbol, testError.toUtf8());
+    auto const& symbolLayerStyle = *static_cast<SymbolLayerStyle const*>(layerStyle);
+
+    testError =  QString("The layerStyle id does not match, expected %1 but got %2")
+                    .arg(expectedId)
+                    .arg(symbolLayerStyle.m_id);
+    QVERIFY2(symbolLayerStyle.m_id == expectedId, testError.toUtf8());
+
+    testError =  QString("The layerStyle source does not match, expected %1 but got %2")
+                    .arg(expectedSource)
+                    .arg(symbolLayerStyle.m_source);
+    QVERIFY2(symbolLayerStyle.m_source == expectedSource, testError.toUtf8());
+
+    testError =  QString("The layerStyle source layer does not match, expected %1 but got %2")
+                    .arg(expectedSourceLayer)
+                    .arg(symbolLayerStyle.m_sourceLayer);
+    QVERIFY2(symbolLayerStyle.m_sourceLayer == expectedSourceLayer, testError.toUtf8());
+
+    testError =  QString("The layerStyle visibility does not match, expected %1 but got %2")
+                    .arg(expectedVisibility)
+                    .arg(symbolLayerStyle.m_visibility);
+    QVERIFY2(symbolLayerStyle.m_visibility == expectedVisibility, testError.toUtf8());
+
+    testError =  QString("The layerStyle minZoom does not match, expected %1 but got %2")
+                    .arg(expectedMinZoom)
+                    .arg(symbolLayerStyle.m_minZoom);
+    QVERIFY2(symbolLayerStyle.m_minZoom == expectedMinZoom, testError.toUtf8());
+
+    testError =  QString("The layerStyle maxZoom does not match, expected %1 but got %2")
+                    .arg(expectedMaxZoom)
+                    .arg(symbolLayerStyle.m_maxZoom);
+    QVERIFY2(symbolLayerStyle.m_maxZoom == expectedMaxZoom, testError.toUtf8());
+
+    testError =  QString("The layerStyle text font does not match");
+    QVERIFY2(symbolLayerStyle.m_textFont == expectedFont, testError.toUtf8());
+
+    for(int i = 0; i < 15; i++){
+        int size = symbolLayerStyle.getTextSizeAtZoom(i).toInt();
+        testError =  QString("The layerStyle text size does not match, expected %1 but got %2")
+                        .arg(expectedTextSizeStop1)
+                        .arg(size);
+        QVERIFY2(size == expectedTextSizeStop1, testError.toUtf8());
+    }
+
+    for(int i = 15; i < 17; i++){
+        int size = symbolLayerStyle.getTextSizeAtZoom(i).toInt();
+        testError =  QString("The layerStyle text size does not match, expected %1 but got %2")
+                        .arg(expectedTextSizeStop2)
+                        .arg(size);
+        QVERIFY2(size == expectedTextSizeStop2, testError.toUtf8());
+    }
+
+    for(int i = 17; i < 21; i++){
+        int size = symbolLayerStyle.getTextSizeAtZoom(i).toInt();
+        testError =  QString("The layerStyle text size does not match, expected %1 but got %2")
+                        .arg(expectedTextSizeStop3)
+                        .arg(size);
+        QVERIFY2(size == expectedTextSizeStop3, testError.toUtf8());
+    }
+
+    testError =  QString("The text field variable type is not correct");
+    QVERIFY2(symbolLayerStyle.m_textField.typeId() == QMetaType::Type::QJsonArray, testError.toUtf8());
+
+    int textField = symbolLayerStyle.m_textField.toJsonArray().size();
+    testError =  QString("The text field json array size does not match, expected %1 but got %2")
+                    .arg(expectedTextFieldSize)
+                    .arg(textField);
+    QVERIFY2(textField == expectedTextFieldSize, testError.toUtf8());
+
+
+    testError =  QString("The text color variable type is not correct at zoom %1").arg(1);
+    QVariant colorVariant = symbolLayerStyle.getTextColorAtZoom(1);
+    QVERIFY2(colorVariant.typeId() == QMetaType::Type::QColor, testError.toUtf8());
+
+    QColor textColor = colorVariant.value<QColor>();
+    hueMatch = textColor.hslHue() == expectedColor.hslHue();
+    saturationMatch = textColor.hslSaturation() == expectedColor.hslSaturation();
+    lightnessMatch = textColor.lightnessF() == expectedColor.lightnessF();
+    alphaMatch = textColor.alphaF() == expectedColor.alphaF();
+    testError =  QString("The text color does not match at zoom %1").arg(1);
+    QVERIFY2(hueMatch && saturationMatch && lightnessMatch && alphaMatch == true, testError.toUtf8());
+
+    testError =  QString("The Filter size json array does not match, expected %1 but got %2")
+                    .arg(expectedFilterSize)
+                    .arg(symbolLayerStyle.m_filter.size());
+    QVERIFY2(symbolLayerStyle.m_filter.size() == expectedFilterSize, testError.toUtf8());
+
+}
 
 void UnitTesting::parseSheet_returns_basic_values()
 {
@@ -311,6 +422,6 @@ void UnitTesting::parseSheet_returns_basic_values()
     testBackgroundLayerStyle(sheet.m_layerStyles.at(0));
     testFillLyerStyle(sheet.m_layerStyles.at(1));
     testLineLayerStyle(sheet.m_layerStyles.at(2));
-
+    testPointLayerStyle(sheet.m_layerStyles.at(3));
 
 }
