@@ -56,6 +56,29 @@ public:
         unknownError,
     };
 
+    // Converts a result type to a string.
+    const QString ResultTypeToString(ResultType r) {
+        QString str;
+
+        switch (r)
+        {
+        case TileLoader::ResultType::success:
+            str = "Success";
+        case TileLoader::ResultType::mapTilerError:
+            str = "Maptiler error";
+        case TileLoader::ResultType::parseError:
+            str = "Parsing error";
+        case TileLoader::ResultType::unknownError:
+            str = "Unknown error";
+        default:
+            str = "Unimplemented error. Check documentation.";
+        }
+
+        return str;
+    }
+
+
+
     // Constructor and destructor
     TileLoader();                                  // Not implemented
 
