@@ -370,6 +370,14 @@ void testPointLayerStyle(AbstractLayereStyle *layerStyle)
 
 }
 
+void testNotImplementedLayerStyle(AbstractLayereStyle *layerStyle)
+{
+     QString testError;
+    testError = QString("The layer style is expected to be of type NotImpleneted");
+     QVERIFY2(layerStyle->type() == AbstractLayereStyle::LayerType::notImplemented, testError.toUtf8());
+
+}
+
 void UnitTesting::parseSheet_returns_basic_values()
 {
     QString path = ":/unitTestResources/styleTest.json";
@@ -395,7 +403,7 @@ void UnitTesting::parseSheet_returns_basic_values()
     QString expectedId = "basic-v2";
     QString expectedName = "Basic";
     int expectedVersion = 8;
-    int expectedNumberOfLayers = 4;
+    int expectedNumberOfLayers = 5;
 
     testError = QString("The style Sheet object id does not match, expected %1 but got %2")
                     .arg(expectedId)
@@ -419,9 +427,15 @@ void UnitTesting::parseSheet_returns_basic_values()
                     .arg(sheet.m_layerStyles.length());
     QVERIFY2(sheet.m_layerStyles.length() == expectedNumberOfLayers, testError.toUtf8());
 
+    for(int i = 0; i < sheet.m_layerStyles.length(); i++){
+        testError = QString("The style layer pointer at index %1 is invalid").arg(i);
+        QVERIFY2(sheet.m_layerStyles.at(i) != nullptr, testError.toUtf8());
+    }
+
     testBackgroundLayerStyle(sheet.m_layerStyles.at(0));
     testFillLyerStyle(sheet.m_layerStyles.at(1));
     testLineLayerStyle(sheet.m_layerStyles.at(2));
     testPointLayerStyle(sheet.m_layerStyles.at(3));
+    testNotImplementedLayerStyle(sheet.m_layerStyles.at(4));
 
 }

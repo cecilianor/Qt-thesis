@@ -146,6 +146,12 @@
                 "has",
                 "iata"
             ]
+        },
+        {
+            "id": "test layer",
+            "type": "test type",
+            "source": "test",
+            "source-layer": "test"
         }
 
      ]
