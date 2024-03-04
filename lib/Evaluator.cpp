@@ -1,7 +1,23 @@
 #include "Evaluator.h"
 
+/*
+ * All theses functions follow the maptiler specification: https://docs.maptiler.com/gl-style-specification/expressions/
+ */
+
+
+//This maps the expression keywords to the functions
 QMap<QString, QVariant(*)(const QJsonArray&, const AbstractLayerFeature*, int mapZoomLevel, float vpZoomeLevel)> Evaluator::m_expressionMap;
 
+/*Call the appropriate function from the function map depending on the expression array
+    *
+    * parameters:
+    *       expression the QJsonArray containing the expression to be resolved
+    *       feature a pointer to an AbstractLayerFeature that is going to be used to  resolve the expression
+    *       mapZoomLevel an int for the zoom level of the map
+    *       vpZoomeLevel a float for the zoom level of the view port
+    *
+    * return a QVariant containing the result of the expression or an invalid(NULL) QVariant if the expression could not be resolved.
+    */
 QVariant Evaluator::resolveExpression(const QJsonArray &expression, const AbstractLayerFeature* feature, int mapZoomLevel, float vpZoomeLevel)
 {
     if (m_expressionMap.isEmpty()) setupExpressionMap();
@@ -40,6 +56,16 @@ void Evaluator::setupExpressionMap()
     m_expressionMap.insert("interpolate", interpolate);
 }
 
+/*Resolve the "get" expression which gets a property from the metadata of the feature.
+    *
+    * parameters:
+    *       expression the QJsonArray containing the expression to be resolved
+    *       feature a pointer to an AbstractLayerFeature that is going to be used to  resolve the expression
+    *       mapZoomLevel an int for the zoom level of the map
+    *       vpZoomeLevel a float for the zoom level of the view port
+    *
+    * return a QVariant the value of the feature's property or an invalid(NULL) QVariant if the feature does not contain the specified property.
+    */
 QVariant Evaluator::get(const QJsonArray & array, const AbstractLayerFeature * feature, int mapZoomLevel, float vpZoomeLevel)
 {
     QString property = array.at(1).toString();
@@ -50,12 +76,33 @@ QVariant Evaluator::get(const QJsonArray & array, const AbstractLayerFeature * f
     }
 }
 
+/*Resolve the "has" expression which checks if a property exists in the metadata of the feature.
+    *
+    * parameters:
+    *       expression the QJsonArray containing the expression to be resolved
+    *       feature a pointer to an AbstractLayerFeature that is going to be used to  resolve the expression
+    *       mapZoomLevel an int for the zoom level of the map
+    *       vpZoomeLevel a float for the zoom level of the view port
+    *
+    * return a QVariant containing true if the property exist or false otherwise
+    */
 QVariant Evaluator::has(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
 {
     QString property = array.at(1).toString();
     return feature->fetureMetaData.contains(property);
 }
 
+
+/*Resolve the "in" expression which checks if a feature's property is in a range of values
+    *
+    * parameters:
+    *       expression the QJsonArray containing the expression to be resolved
+    *       feature a pointer to an AbstractLayerFeature that is going to be used to  resolve the expression
+    *       mapZoomLevel an int for the zoom level of the map
+    *       vpZoomeLevel a float for the zoom level of the view port
+    *
+    * return a QVariant containing true if the property is in the range of values or false otherwise
+    */
 QVariant Evaluator::in(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
 {
     QString keyword = array.at(1).toString();
@@ -75,6 +122,17 @@ QVariant Evaluator::in(const QJsonArray &array, const AbstractLayerFeature *feat
     }
 }
 
+
+/*Resolve the "==" and "!=" expression which checks if two values are equal or not
+    *
+    * parameters:
+    *       expression the QJsonArray containing the expression to be resolved
+    *       feature a pointer to an AbstractLayerFeature that is going to be used to  resolve the expression
+    *       mapZoomLevel an int for the zoom level of the map
+    *       vpZoomeLevel a float for the zoom level of the view port
+    *
+    * return a QVariant containing the result of the comparison
+    */
 QVariant Evaluator::compare(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
 {
 
@@ -83,7 +141,7 @@ QVariant Evaluator::compare(const QJsonArray &array, const AbstractLayerFeature 
     if(array.at(1).isArray()){
         static QJsonArray operand1Arr = array.at(1).toArray();
         QString temp = resolveExpression(operand1Arr, feature, mapZoomLevel, vpZoomeLevel).toString();
-        if(temp == "$type"){
+        if(temp == "$type"){ //type is not a part of the feature's metadata so it is a special case
             switch(feature->type()){
             case AbstractLayerFeature::featureType::polygon:
                 operand1 = QVariant(QString("Polygon"));
@@ -102,7 +160,7 @@ QVariant Evaluator::compare(const QJsonArray &array, const AbstractLayerFeature 
         }
     }else{
         QString temp = array.at(1).toString();
-        if(temp == "$type"){
+        if(temp == "$type"){ //type is not a part of the feature's metadata so it is a special case
             switch(feature->type()){
             case AbstractLayerFeature::featureType::polygon:
                 operand1 = QVariant(QString("Polygon"));
@@ -123,6 +181,7 @@ QVariant Evaluator::compare(const QJsonArray &array, const AbstractLayerFeature 
 
 
     operand2 = array.at(2).toVariant();
+    //Check wich operation this expression contains
     if(array.at(0).toString() == "!="){
         return operand1 != operand2;
     }else{
@@ -131,6 +190,16 @@ QVariant Evaluator::compare(const QJsonArray &array, const AbstractLayerFeature 
 
 }
 
+/*Resolve the ">" expression which checks if a value is greater than the other one
+    *
+    * parameters:
+    *       expression the QJsonArray containing the expression to be resolved
+    *       feature a pointer to an AbstractLayerFeature that is going to be used to  resolve the expression
+    *       mapZoomLevel an int for the zoom level of the map
+    *       vpZoomeLevel a float for the zoom level of the view port
+    *
+    * return a QVariant containing the true if the first value is greated than the other one or false otherwise
+    */
 QVariant Evaluator::greater(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
 {
     QVariant operand1;
@@ -155,6 +224,16 @@ QVariant Evaluator::greater(const QJsonArray &array, const AbstractLayerFeature 
     }
 }
 
+/*Resolve the "all" expression which checks if all the inner expressions in the array evaluate to true
+    *
+    * parameters:
+    *       expression the QJsonArray containing the expression to be resolved
+    *       feature a pointer to an AbstractLayerFeature that is going to be used to  resolve the expression
+    *       mapZoomLevel an int for the zoom level of the map
+    *       vpZoomeLevel a float for the zoom level of the view port
+    *
+    * return a QVariant containing true if all the inner expressions are true or returns false otehrwise
+    */
 QVariant Evaluator::all(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
 {
     for(int i = 1; i < array.size() - 1; i += 2){
@@ -166,6 +245,17 @@ QVariant Evaluator::all(const QJsonArray &array, const AbstractLayerFeature *fea
     return true;
 }
 
+/*Resolve the "case" expression which return the first output whos corresponding input evaluates to true
+ * or the fallback value if all the inputs are false
+    *
+    * parameters:
+    *       expression the QJsonArray containing the expression to be resolved
+    *       feature a pointer to an AbstractLayerFeature that is going to be used to  resolve the expression
+    *       mapZoomLevel an int for the zoom level of the map
+    *       vpZoomeLevel a float for the zoom level of the view port
+    *
+    * return a QVariant containing the output for the input that evalueated to true, or the fallback value
+    */
 QVariant Evaluator::case_(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
 {
     for(int i = 1; i < array.size() - 2; i += 2){
@@ -179,6 +269,16 @@ QVariant Evaluator::case_(const QJsonArray &array, const AbstractLayerFeature *f
     return array.last();
 }
 
+/*Resolve the "coalesce" expression which return the first non null output
+    *
+    * parameters:
+    *       expression the QJsonArray containing the expression to be resolved
+    *       feature a pointer to an AbstractLayerFeature that is going to be used to  resolve the expression
+    *       mapZoomLevel an int for the zoom level of the map
+    *       vpZoomeLevel a float for the zoom level of the view port
+    *
+    * return a QVariant containing the value of the first expression that is non-null
+    */
 QVariant Evaluator::coalesce(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
 {
     for(int i = 1; i < array.size() - 1; i++){
@@ -189,6 +289,17 @@ QVariant Evaluator::coalesce(const QJsonArray &array, const AbstractLayerFeature
     return {};
 }
 
+
+/*Resolve the "match" expression which mimics a switch case statement
+    *
+    * parameters:
+    *       expression the QJsonArray containing the expression to be resolved
+    *       feature a pointer to an AbstractLayerFeature that is going to be used to  resolve the expression
+    *       mapZoomLevel an int for the zoom level of the map
+    *       vpZoomeLevel a float for the zoom level of the view port
+    *
+    * return a QVariant containing the value of the output whos label matches the input, or the fallback value if not labels match.
+    */
 QVariant Evaluator::match(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
 {
     QJsonArray expression = array.at(1).toArray();
@@ -202,12 +313,33 @@ QVariant Evaluator::match(const QJsonArray &array, const AbstractLayerFeature *f
 
 }
 
+
+/*Perform a linear interpolation
+    *
+    * parameters:
+    *       stop1 a QPair containing the x and y for the first stop point
+    *       stop2 a QPair containing the x and y for the second stop point
+    *       currentZoom an int containing the value to be used in the interpolation
+    *
+    * return a QVariant containing the value of the output whos label matches the input, or the fallback value if not labels match.
+    */
 static float lerp(QPair<float, float> stop1, QPair<float, float> stop2, int currentZoom)
 {
     float lerpedValue = stop1.second + (currentZoom - stop1.first)*(stop2.second - stop1.second)/(stop2.first - stop1.first);
     return lerpedValue;
 }
 
+
+/*Resolve the "interpolate" expression which performs an interpolation fiven a zoom level (limited only to linear interpolation)
+    *
+    * parameters:
+    *       expression the QJsonArray containing the expression to be resolved
+    *       feature a pointer to an AbstractLayerFeature that is going to be used to  resolve the expression
+    *       mapZoomLevel an int for the zoom level of the map
+    *       vpZoomeLevel a float for the zoom level of the view port
+    *
+    * return a QVariant containing the result of the interpolation.
+    */
 QVariant Evaluator::interpolate(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
 {
     QVariant returnVariant;
@@ -252,19 +384,6 @@ QVariant Evaluator::interpolate(const QJsonArray &array, const AbstractLayerFeat
     return returnVariant;
 
 }
-
-
-
-
-/*bool Evaluator::isExpression(QJsonArray &array) const
-{
-    if(!array.at(0).isString()) return false;
-    if(array.begin()->toString().startsWith("!")){
-        return m_expressionMap.keys().contains(array.begin()->toString().sliced(1));
-    }else{
-        return m_expressionMap.keys().contains(array.begin()->toString());
-    }
-}*/
 
 
 

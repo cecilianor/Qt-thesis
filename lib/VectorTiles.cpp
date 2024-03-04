@@ -2,6 +2,13 @@
 #include "vector_tile.qpb.h"
 #include <QProtobufSerializer>
 
+/*
+ *
+ * all the functions follow the mepbox vector tile specification:  https://github.com/mapbox/vector-tile-spec/tree/master/2.1
+ *
+ *
+ */
+
 AbstractLayerFeature::featureType PolygonFeature::type() const
 {
     return AbstractLayerFeature::featureType::polygon;

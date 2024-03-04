@@ -26,8 +26,6 @@ private:
     static QVariant coalesce(const QJsonArray& array, const AbstractLayerFeature* feature, int mapZoomLevel, float vpZoomeLevel);
     static QVariant match(const QJsonArray& array, const AbstractLayerFeature* feature, int mapZoomLevel, float vpZoomeLevel);
     static QVariant interpolate(const QJsonArray& array, const AbstractLayerFeature* feature, int mapZoomLevel, float vpZoomeLevel);
-    //bool isExpression(QJsonArray& array) const;
-
 };
 
 #endif // EVALUATOR_H
