@@ -96,6 +96,7 @@ void testFillLyerStyle(AbstractLayereStyle *layerStyle)
     bool saturationMatch;
     bool lightnessMatch;
     bool alphaMatch;
+    int expectedFilterSize = 3;
 
     testError = QString("The layer style is expected to be of type FillLayerStyle");
     QVERIFY2(layerStyle->type() == AbstractLayereStyle::LayerType::fill, testError.toUtf8());
@@ -142,14 +143,121 @@ void testFillLyerStyle(AbstractLayereStyle *layerStyle)
     QVERIFY2(colorVariant.typeId() == QMetaType::Type::QColor, testError.toUtf8());
 
 
-    QColor backgroundColor = colorVariant.value<QColor>();
-    hueMatch = backgroundColor.hslHue() == expectedColor.hslHue();
-    saturationMatch = backgroundColor.hslSaturation() == expectedColor.hslSaturation();
-    lightnessMatch = backgroundColor.lightnessF() == expectedColor.lightnessF();
-    alphaMatch = backgroundColor.alphaF() == expectedColor.alphaF();
+    QColor fillColor = colorVariant.value<QColor>();
+    hueMatch = fillColor.hslHue() == expectedColor.hslHue();
+    saturationMatch = fillColor.hslSaturation() == expectedColor.hslSaturation();
+    lightnessMatch = fillColor.lightnessF() == expectedColor.lightnessF();
+    alphaMatch = fillColor.alphaF() == expectedColor.alphaF();
     testError =  QString("The background-color does not match at zoom %1").arg(1);
     QVERIFY2(hueMatch && saturationMatch && lightnessMatch && alphaMatch == true, testError.toUtf8());
+
+    testError =  QString("The Filter json array size does not match, expected %1 but got %2")
+        .arg(expectedFilterSize)
+        .arg(filllayerStyle.m_filter.size());
+    QVERIFY2(filllayerStyle.m_filter.size() == expectedFilterSize, testError.toUtf8());
+
+
 }
+
+void testLineLayerStyle(AbstractLayereStyle *layerStyle)
+{
+    QString testError;
+    QString expectedId = "River";
+    QString expectedSource = "maptiler_planet";
+    QString expectedSourceLayer = "waterway";
+    QString expectedVisibility = "visible";
+    int expectedMinZoom = 0;
+    int expectedMaxZoom = 24;
+    QColor expectedColor = QColor::fromHslF(205/359.,56/100.,73/100.);
+    bool hueMatch;
+    bool saturationMatch;
+    bool lightnessMatch;
+    bool alphaMatch;
+    int expectedLineWidthStop1 = 1;
+    int expectedLineWidthStop2 = 3;
+    int expectedLineOpacitySize = 5;
+    int expectedFilterSize = 3;
+
+    testError = QString("The layer style is expected to be of type LineLayerStyle");
+    QVERIFY2(layerStyle->type() == AbstractLayereStyle::LayerType::line, testError.toUtf8());
+    auto const& lineLyaerStyle = *static_cast<LineLayerStyle const*>(layerStyle);
+
+    testError =  QString("The layerStyle id does not match, expected %1 but got %2")
+                    .arg(expectedId)
+                    .arg(lineLyaerStyle.m_id);
+    QVERIFY2(lineLyaerStyle.m_id == expectedId, testError.toUtf8());
+
+    testError =  QString("The layerStyle source does not match, expected %1 but got %2")
+                    .arg(expectedSource)
+                    .arg(lineLyaerStyle.m_source);
+    QVERIFY2(lineLyaerStyle.m_source == expectedSource, testError.toUtf8());
+
+    testError =  QString("The layerStyle source layer does not match, expected %1 but got %2")
+                    .arg(expectedSourceLayer)
+                    .arg(lineLyaerStyle.m_sourceLayer);
+    QVERIFY2(lineLyaerStyle.m_sourceLayer == expectedSourceLayer, testError.toUtf8());
+
+    testError =  QString("The layerStyle visibility does not match, expected %1 but got %2")
+                    .arg(expectedVisibility)
+                    .arg(lineLyaerStyle.m_visibility);
+    QVERIFY2(lineLyaerStyle.m_visibility == expectedVisibility, testError.toUtf8());
+
+    testError =  QString("The layerStyle minZoom does not match, expected %1 but got %2")
+                    .arg(expectedMinZoom)
+                    .arg(lineLyaerStyle.m_minZoom);
+    QVERIFY2(lineLyaerStyle.m_minZoom == expectedMinZoom, testError.toUtf8());
+
+    testError =  QString("The layerStyle maxZoom does not match, expected %1 but got %2")
+                    .arg(expectedMaxZoom)
+                    .arg(lineLyaerStyle.m_maxZoom);
+    QVERIFY2(lineLyaerStyle.m_maxZoom == expectedMaxZoom, testError.toUtf8());
+
+    testError =  QString("The line color variable type is not correct at zoom %1").arg(1);
+    QVariant colorVariant = lineLyaerStyle.getLineColorAtZoom(1);
+    QVERIFY2(colorVariant.typeId() == QMetaType::Type::QColor, testError.toUtf8());
+
+    QColor lineColor = colorVariant.value<QColor>();
+    hueMatch = lineColor.hslHue() == expectedColor.hslHue();
+    saturationMatch = lineColor.hslSaturation() == expectedColor.hslSaturation();
+    lightnessMatch = lineColor.lightnessF() == expectedColor.lightnessF();
+    alphaMatch = lineColor.alphaF() == expectedColor.alphaF();
+    testError =  QString("The line color does not match at zoom %1").arg(1);
+    QVERIFY2(hueMatch && saturationMatch && lightnessMatch && alphaMatch == true, testError.toUtf8());
+
+
+    for(int i = 0; i < 19; i++){
+        int lineWidth = lineLyaerStyle.getLineWidthAtZoom(i).toInt();
+        testError =  QString("The line width does not match at zoom %1, expected %2 but got %3")
+            .arg(i)
+            .arg(expectedLineWidthStop1)
+            .arg(lineWidth);
+        QVERIFY2(lineWidth == expectedLineWidthStop1, testError.toUtf8());
+    }
+
+    int lineWidth = lineLyaerStyle.getLineWidthAtZoom(19).toInt();
+    testError =  QString("The line width does not match at zoom 19, expected %1 but got %2")
+                    .arg(expectedLineWidthStop2)
+                    .arg(lineWidth);
+    QVERIFY2(lineWidth == expectedLineWidthStop2, testError.toUtf8());
+
+    testError =  QString("The line opacity variable type is not correct");
+    QVERIFY2(lineLyaerStyle.getLineOpacityAtZoom(1).typeId() == QMetaType::Type::QJsonArray, testError.toUtf8());
+
+    int lineOpacitySize = lineLyaerStyle.getLineOpacityAtZoom(1).toJsonArray().size();
+    testError =  QString("The line opacity json array size does not match, expected %1 but got %2")
+                    .arg(expectedLineOpacitySize)
+                    .arg(lineOpacitySize);
+    QVERIFY2(lineOpacitySize == expectedLineOpacitySize, testError.toUtf8());
+
+    testError =  QString("The Filter size json array does not match, expected %1 but got %2")
+                    .arg(expectedFilterSize)
+                    .arg(lineLyaerStyle.m_filter.size());
+    QVERIFY2(lineLyaerStyle.m_filter.size() == expectedFilterSize, testError.toUtf8());
+
+
+}
+
+
 
 void UnitTesting::parseSheet_returns_basic_values()
 {
@@ -202,5 +310,7 @@ void UnitTesting::parseSheet_returns_basic_values()
 
     testBackgroundLayerStyle(sheet.m_layerStyles.at(0));
     testFillLyerStyle(sheet.m_layerStyles.at(1));
+    testLineLayerStyle(sheet.m_layerStyles.at(2));
+
 
 }
