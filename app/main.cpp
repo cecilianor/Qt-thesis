@@ -12,6 +12,8 @@ int main(int argc, char *argv[])
 
     // Gets different URLs to download PBF tiles.
     TileLoader tileLoader;
+    // The style sheet type to load (can be many different types).
+    auto StyleSheetType = TileLoader::StyleSheetType::basic_v2;
 
      // Read key from file.
     QString mapTilerKey = tileLoader.readKey("key.txt");
@@ -23,15 +25,30 @@ int main(int argc, char *argv[])
             "Internal error. Contact support if the error persists. The application will now shut down.");
         // Add developer comments to QDebug, not to the end user/client.
         qDebug() << "Reading of the MapTiler key failed...";
-        return -1;
+        return EXIT_FAILURE;
     }
 
-    // Picks stylesheet to load and loads it.
-    auto StyleSheetType = TileLoader::StyleSheetType::basic_v2;
+    // Tries to load the stylesheet.
     auto styleSheetBytes = tileLoader.loadStyleSheetFromWeb(mapTilerKey, StyleSheetType, networkController);
+    if (styleSheetBytes.resultType != TileLoader::ResultType::success) {
+        qDebug() << "There was an error: " << tileLoader.PrintResultTypeInfo(styleSheetBytes.resultType);
+        QMessageBox::critical(
+            nullptr,
+            "Map Loading Failed",
+            "The map failed to load. Contact support if the error persists. The application will now shut down.");
+        return EXIT_FAILURE;
+    }
 
     // Gets the link template where we have to switch out x, y,z in the link.
-    auto pbfLinkTemplate = tileLoader.getPbfLinkTemplate(styleSheetBytes, "maptiler_planet", networkController);
+    auto pbfLinkTemplate = tileLoader.getPbfLinkTemplate(styleSheetBytes.response, "maptiler_planet", networkController);
+    if (pbfLinkTemplate.resultType != TileLoader::ResultType::success) {
+        qWarning() << "There was an error: " << tileLoader.PrintResultTypeInfo(pbfLinkTemplate.resultType);
+        QMessageBox::critical(
+            nullptr,
+            "Map Loading Failed",
+            "The map failed to load. Contact support if the error persists. The application will now shut down.");
+        return EXIT_FAILURE;
+    }
 
     // Creates the Widget that displays the map.
     auto *mapWidget = new MapWidget;
@@ -42,7 +59,7 @@ int main(int argc, char *argv[])
     /// REFACTOR HERE. Cecilia will discuss on an upcoming meeting how to handle this differently.
     // Parses the bytes that form the stylesheet into a json-document object.
     QJsonParseError parseError;
-    auto styleSheetJsonDoc = QJsonDocument::fromJson(styleSheetBytes, &parseError);
+    auto styleSheetJsonDoc = QJsonDocument::fromJson(styleSheetBytes.response, &parseError);
     if (parseError.error != QJsonParseError::NoError) {
         QMessageBox::critical(
             nullptr,
@@ -50,7 +67,7 @@ int main(int argc, char *argv[])
             QString("Error when parsing stylesheet as JSON. Parse error at 1%: 2%")
                 .arg(parseError.offset)
                 .arg(parseError.errorString()));
-        return -1;
+        return EXIT_FAILURE;
     }
     // Then finally parse the JSonDocument into our StyleSheet.
     styleSheet.parseSheet(styleSheetJsonDoc);
@@ -59,7 +76,7 @@ int main(int argc, char *argv[])
     auto downloadTile = [&](TileCoord tile) -> VectorTile {
         auto result = Bach::tileFromByteArray(
             tileLoader.downloadTile(
-                Bach::setPbfLink(tile, pbfLinkTemplate),
+                Bach::setPbfLink(tile, pbfLinkTemplate.link),
             networkController));
         if (!result.has_value()) {
             std::abort();

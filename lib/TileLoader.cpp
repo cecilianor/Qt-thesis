@@ -162,7 +162,7 @@ QString TileLoader::readKey(QString filePath) {
  * \param StyleSheetType is the type of style sheet to load.
  * \return
  */
-QByteArray TileLoader::loadStyleSheetFromWeb(
+TileLoader::HttpResponse TileLoader::loadStyleSheetFromWeb(
     const QString &mapTilerKey,
     TileLoader::StyleSheetType &StyleSheetType,
     NetworkController &networkController)
@@ -171,7 +171,7 @@ QByteArray TileLoader::loadStyleSheetFromWeb(
     if (styleSheetResult.resultType != TileLoader::ResultType::success) {
         qWarning() << "There was an error: " << PrintResultTypeInfo(styleSheetResult.resultType);
     }
-    return styleSheetResult.response;
+    return styleSheetResult;
 }
 
 /*!
@@ -180,22 +180,26 @@ QByteArray TileLoader::loadStyleSheetFromWeb(
  * \param sourceType is the source type used by MapTiler. This is currently passed as a string.
  * \return the PBF template.
  */
-QString TileLoader::getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType, NetworkController &networkController)
+TileLoader::ParsedLink TileLoader::getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType, NetworkController &networkController)
 {
     // Parse the stylesheet
     QJsonParseError parseError;
     QJsonDocument styleSheetJson = QJsonDocument::fromJson(styleSheetBytes, &parseError);
     if (parseError.error != QJsonParseError::NoError) {
         qWarning() << "Parse error at" << parseError.offset << ":" << parseError.errorString();
-        return QString();
+        return {QString(), TileLoader::ResultType::parseError};
     }
 
     // Grab link to tiles.json format link
     TileLoader::ParsedLink tilesLinkResult = getTilesLink(styleSheetJson, sourceType);
+    if (tilesLinkResult.resultType != TileLoader::ResultType::success) {
+        qWarning() << "";
+        return {QString(), tilesLinkResult.resultType};
+    }
 
     // Grab link to the XYZ PBF tile format based on the tiles.json link
     TileLoader::ParsedLink pbfLink = getPBFLink(tilesLinkResult.link, networkController);
-    return pbfLink.link;
+    return {pbfLink.link, pbfLink.resultType};
 }
 
 /*!

@@ -109,8 +109,8 @@ public:
     TileLoader::ParsedLink getTilesLink(const QJsonDocument & styleSheet, QString sourceType);// Implemented Gets dynamic url as a string based on source type!
     TileLoader::ParsedLink getPBFLink (const QString & tileSheetUrl, NetworkController &networkController);                          // Implemented. Get PBF link based on dynamic or static url.
 
-    QByteArray loadStyleSheetFromWeb(const QString &mapTilerKey, StyleSheetType &StyleSheetType, NetworkController &networkController);
-    QString getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType, NetworkController &networkController);
+    TileLoader::HttpResponse loadStyleSheetFromWeb(const QString &mapTilerKey, StyleSheetType &StyleSheetType, NetworkController &networkController);
+    TileLoader::ParsedLink getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType, NetworkController &networkController);
     QString setPbfLink(const TileCoord &tileCoord, const QString &pbfLinkTemplate);
     QByteArray downloadTile(const QString &pbfLink, NetworkController &controller);
     // Key reader
