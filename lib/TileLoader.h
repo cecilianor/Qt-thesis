@@ -55,12 +55,13 @@ public:
         styleSheetNotFound,
         tileSheetNotFound,
         unknownSourceType,
+        noData,
         parseError,
         unknownError,
     };
 
     // Converts a result type to a string.
-    const QString ResultTypeToString(ResultType r) {
+    const QString PrintResultTypeInfo(ResultType r) {
         QString str;
 
         switch (r)
@@ -74,7 +75,9 @@ public:
         case TileLoader::ResultType::tileSheetNotFound:
             str = "Tile sheet not found";
         case TileLoader::ResultType::unknownSourceType:
-            str = "The specified source type couldn't be found";
+            str = "Unknown source type";
+        case TileLoader::ResultType::noData:
+            str ="No returned data";
         case TileLoader::ResultType::parseError:
             str = "Parsing error";
         case TileLoader::ResultType::unknownError:
@@ -85,7 +88,6 @@ public:
 
         return str;
     }
-
 
     // Http response type
     struct HttpResponse  {

@@ -71,16 +71,16 @@ TileLoader::ParsedLink TileLoader::getTilesLink(const QJsonDocument & styleSheet
                 }
                 // The tile sheet couldn't be found. Print error message.
                 else {
-                    qWarning() << ResultTypeToString(ResultType::tileSheetNotFound);
+                    qWarning() << PrintResultTypeInfo(ResultType::tileSheetNotFound);
                 }
             }
         }
         else {
-            qWarning() << ResultTypeToString(ResultType::unknownSourceType);
+            qWarning() << PrintResultTypeInfo(ResultType::unknownSourceType);
         }
     } else  qWarning() << "The original stylesheet isn't a JSON object...";
 
-    qWarning() << ResultTypeToString(ResultType::unknownError);
+    qWarning() << PrintResultTypeInfo(ResultType::unknownError);
     return {QString(), ResultType::unknownError};
 
 };
@@ -102,7 +102,7 @@ TileLoader::ParsedLink TileLoader::getPBFLink (const QString & tileSheetUrl, Net
         return {QString(), ResultType::unknownError };
     }
 
-    // Parse the styleshee
+    // Parse the stylesheet
     tilesSheet = QJsonDocument::fromJson(dataResult.value(), &parseError);
 
     if (parseError.error != QJsonParseError::NoError) {
