@@ -52,6 +52,9 @@ public:
     enum class ResultType {
         success,
         mapTilerError,
+        styleSheetNotFound,
+        tileSheetNotFound,
+        unknownSourceType,
         parseError,
         unknownError,
     };
@@ -66,12 +69,18 @@ public:
             str = "Success";
         case TileLoader::ResultType::mapTilerError:
             str = "Maptiler error";
+        case TileLoader::ResultType::styleSheetNotFound:
+            str = "Style sheet not found";
+        case TileLoader::ResultType::tileSheetNotFound:
+            str = "Tile sheet not found";
+        case TileLoader::ResultType::unknownSourceType:
+            str = "The specified source type couldn't be found";
         case TileLoader::ResultType::parseError:
             str = "Parsing error";
         case TileLoader::ResultType::unknownError:
             str = "Unknown error";
         default:
-            str = "Unimplemented error. Check documentation.";
+            str = "Unknown error. Check documentation.";
         }
 
         return str;
@@ -95,8 +104,8 @@ public:
 
     // Functionality making different requests
     TileLoader::HttpResponse getStylesheet(StyleSheetType type, QString key, NetworkController &networkController); // Implemented
-    std::pair<QString, ResultType> getTilesLink(const QJsonDocument & styleSheet, QString sourceType);// Implemented Gets dynamic url as a string based on source type!
-    std::pair<QString, ResultType> getPBFLink (const QString & tileSheetUrl, NetworkController &networkController);                          // Implemented. Get PBF link based on dynamic or static url.
+    TileLoader::ParsedLink getTilesLink(const QJsonDocument & styleSheet, QString sourceType);// Implemented Gets dynamic url as a string based on source type!
+    TileLoader::ParsedLink getPBFLink (const QString & tileSheetUrl, NetworkController &networkController);                          // Implemented. Get PBF link based on dynamic or static url.
 
     QByteArray loadStyleSheetFromWeb(const QString &mapTilerKey, StyleSheetType &StyleSheetType, NetworkController &networkController);
     QString getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType, NetworkController &networkController);
