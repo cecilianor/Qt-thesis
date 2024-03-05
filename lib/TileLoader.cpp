@@ -130,9 +130,7 @@ TileLoader::ParsedLink TileLoader::getPBFLink (const QString & tileSheetUrl, Net
 
     //The else if branch is just used for testing. Do NOT pushto final version!!
     else if (tilesSheet.isArray()) {
-        QJsonArray jsonArray = tilesSheet.array();
         qWarning() << "A JSON array was found. The current functionality doesn't support this...";
-
     }
     else {
         qWarning() << "There is an unknown error with the loaded JSON data...";
@@ -171,7 +169,7 @@ QByteArray TileLoader::loadStyleSheetFromWeb(
 {
     TileLoader::HttpResponse styleSheetResult = getStylesheet(StyleSheetType, mapTilerKey, networkController);
     if (styleSheetResult.resultType != TileLoader::ResultType::success) {
-        qWarning() << "There was an error: " << ResultTypeToString(styleSheetResult.resultType);
+        qWarning() << "There was an error: " << PrintResultTypeInfo(styleSheetResult.resultType);
     }
     return styleSheetResult.response;
 }
@@ -189,7 +187,7 @@ QString TileLoader::getPbfLinkTemplate(const QByteArray &styleSheetBytes, const 
     QJsonDocument styleSheetJson = QJsonDocument::fromJson(styleSheetBytes, &parseError);
     if (parseError.error != QJsonParseError::NoError) {
         qWarning() << "Parse error at" << parseError.offset << ":" << parseError.errorString();
-        return 0;
+        return QString();
     }
 
     // Grab link to tiles.json format link
