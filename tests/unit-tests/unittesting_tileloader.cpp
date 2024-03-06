@@ -1,15 +1,13 @@
 #include <QTest>
 
 #include "unittesting.h"
-
 #include "TileLoader.h"
+#include "Utilities.h"
 
 #include <QObject>
 
 QTEST_MAIN(UnitTesting)
 // This include needs to match the name of this .cpp file.
-// Nils: I think it might not be needed when the class is defined in a .h file?
-//#include "unittesting.moc"
 
 // Try to get a key that's correct
 void UnitTesting::readKey_returns_success_when_valid_key() {
@@ -40,10 +38,10 @@ void UnitTesting::getStyleSheet_returns_success_on_supported_stylesheet() {
     TileLoader tileLoader;
     QString key = tileLoader.readKey("key.txt");
 
-    TileLoader::HttpResponse styleSheetURL =
-        tileLoader.getStylesheet(TileLoader::StyleSheetType::basic_v2, key, networkController);
+    HttpResponse styleSheetURL =
+        tileLoader.getStylesheet(StyleSheetType::basic_v2, key, networkController);
 
-    QVERIFY(styleSheetURL.resultType == TileLoader::ResultType::success);
+    QVERIFY(styleSheetURL.resultType == ResultType::success);
 }
 
 // Get a non-supported stylesheet
@@ -53,8 +51,9 @@ void UnitTesting::getStyleSheet_returns_failure_on_unsupported_stylesheet() {
     TileLoader tileLoader;
     QString key = tileLoader.readKey("key.txt");
 
-    TileLoader::HttpResponse styleSheetURL =
-        tileLoader.getStylesheet(TileLoader::StyleSheetType::bright_v2, key, networkController);
+    HttpResponse styleSheetURL =
+        tileLoader.getStylesheet(StyleSheetType::bright_v2, key, networkController);
 
-    QVERIFY(styleSheetURL.resultType == TileLoader::ResultType::unknownError);
+    QVERIFY(styleSheetURL.resultType == ResultType::unknownError);
 }
+

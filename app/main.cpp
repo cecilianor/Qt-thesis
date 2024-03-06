@@ -3,6 +3,7 @@
 
 #include "MainWindow.h"
 #include "TileLoader.h"
+#include "Utilities.h"
 
 int main(int argc, char *argv[])
 {
@@ -13,7 +14,7 @@ int main(int argc, char *argv[])
     // Gets different URLs to download PBF tiles.
     TileLoader tileLoader;
     // The style sheet type to load (can be many different types).
-    auto StyleSheetType = TileLoader::StyleSheetType::basic_v2;
+    auto StyleSheetType = StyleSheetType::basic_v2;
 
      // Read key from file.
     QString mapTilerKey = tileLoader.readKey("key.txt");
@@ -30,8 +31,8 @@ int main(int argc, char *argv[])
 
     // Tries to load the stylesheet.
     auto styleSheetBytes = tileLoader.loadStyleSheetFromWeb(mapTilerKey, StyleSheetType, networkController);
-    if (styleSheetBytes.resultType != TileLoader::ResultType::success) {
-        qDebug() << "There was an error: " << tileLoader.PrintResultTypeInfo(styleSheetBytes.resultType);
+    if (styleSheetBytes.resultType != ResultType::success) {
+        qWarning() << "There was an error: " << PrintResultTypeInfo(styleSheetBytes.resultType);
         QMessageBox::critical(
             nullptr,
             "Map Loading Failed",
@@ -41,8 +42,8 @@ int main(int argc, char *argv[])
 
     // Gets the link template where we have to switch out x, y,z in the link.
     auto pbfLinkTemplate = tileLoader.getPbfLinkTemplate(styleSheetBytes.response, "maptiler_planet", networkController);
-    if (pbfLinkTemplate.resultType != TileLoader::ResultType::success) {
-        qWarning() << "There was an error: " << tileLoader.PrintResultTypeInfo(pbfLinkTemplate.resultType);
+    if (pbfLinkTemplate.resultType != ResultType::success) {
+        qWarning() << "There was an error: " << PrintResultTypeInfo(pbfLinkTemplate.resultType);
         QMessageBox::critical(
             nullptr,
             "Map Loading Failed",

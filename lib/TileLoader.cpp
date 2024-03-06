@@ -7,6 +7,7 @@
 #include "TileCoord.h"
 #include "NetworkController.h"
 #include "qjsonarray.h"
+#include "Utilities.h"
 
 TileLoader::TileLoader() {};
 
@@ -16,12 +17,12 @@ TileLoader::TileLoader() {};
  * @param key The MapTiler key.
  * @return The response from MapTiler.
  */
-TileLoader::HttpResponse TileLoader::getStylesheet(StyleSheetType type, QString key, NetworkController &networkController) {
+HttpResponse TileLoader::getStylesheet(StyleSheetType type, QString key, NetworkController &networkController) {
     auto response = QByteArray();
     auto url = QString();
 
     switch(type) {
-    case (TileLoader::StyleSheetType::basic_v2) : {
+    case (StyleSheetType::basic_v2) : {
         url = "https://api.maptiler.com/maps/basic-v2/style.json?key=" + key;
         auto result = networkController.sendRequest(url);
         if (!result.has_value()) {
@@ -45,7 +46,7 @@ TileLoader::HttpResponse TileLoader::getStylesheet(StyleSheetType type, QString 
  * @param sourceType is the map source type passed as a QString
  * @return link as a string
  */
-TileLoader::ParsedLink TileLoader::getTilesLink(const QJsonDocument & styleSheet, QString sourceType)
+ParsedLink TileLoader::getTilesLink(const QJsonDocument & styleSheet, QString sourceType)
 {
     // Grab link to tile sheet
     if (styleSheet.isObject()) {
@@ -93,7 +94,7 @@ TileLoader::ParsedLink TileLoader::getTilesLink(const QJsonDocument & styleSheet
  * @param tileSheetUrl the link/url to the stylesheet.
  * @return The link to PBF tiles.
  */
-TileLoader::ParsedLink TileLoader::getPBFLink (const QString & tileSheetUrl, NetworkController &networkController) {
+ParsedLink TileLoader::getPBFLink (const QString & tileSheetUrl, NetworkController &networkController) {
     QJsonDocument tilesSheet;
     QJsonParseError parseError;
 
@@ -162,13 +163,13 @@ QString TileLoader::readKey(QString filePath) {
  * \param StyleSheetType is the type of style sheet to load.
  * \return
  */
-TileLoader::HttpResponse TileLoader::loadStyleSheetFromWeb(
+HttpResponse TileLoader::loadStyleSheetFromWeb(
     const QString &mapTilerKey,
-    TileLoader::StyleSheetType &StyleSheetType,
+    StyleSheetType &StyleSheetType,
     NetworkController &networkController)
 {
-    TileLoader::HttpResponse styleSheetResult = getStylesheet(StyleSheetType, mapTilerKey, networkController);
-    if (styleSheetResult.resultType != TileLoader::ResultType::success) {
+    HttpResponse styleSheetResult = getStylesheet(StyleSheetType, mapTilerKey, networkController);
+    if (styleSheetResult.resultType != ResultType::success) {
         qWarning() << "There was an error: " << PrintResultTypeInfo(styleSheetResult.resultType);
     }
     return styleSheetResult;
@@ -180,25 +181,25 @@ TileLoader::HttpResponse TileLoader::loadStyleSheetFromWeb(
  * \param sourceType is the source type used by MapTiler. This is currently passed as a string.
  * \return the PBF template.
  */
-TileLoader::ParsedLink TileLoader::getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType, NetworkController &networkController)
+ParsedLink TileLoader::getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType, NetworkController &networkController)
 {
     // Parse the stylesheet
     QJsonParseError parseError;
     QJsonDocument styleSheetJson = QJsonDocument::fromJson(styleSheetBytes, &parseError);
     if (parseError.error != QJsonParseError::NoError) {
         qWarning() << "Parse error at" << parseError.offset << ":" << parseError.errorString();
-        return {QString(), TileLoader::ResultType::parseError};
+        return {QString(), ResultType::parseError};
     }
 
     // Grab link to tiles.json format link
-    TileLoader::ParsedLink tilesLinkResult = getTilesLink(styleSheetJson, sourceType);
-    if (tilesLinkResult.resultType != TileLoader::ResultType::success) {
+    ParsedLink tilesLinkResult = getTilesLink(styleSheetJson, sourceType);
+    if (tilesLinkResult.resultType != ResultType::success) {
         qWarning() << "";
         return {QString(), tilesLinkResult.resultType};
     }
 
     // Grab link to the XYZ PBF tile format based on the tiles.json link
-    TileLoader::ParsedLink pbfLink = getPBFLink(tilesLinkResult.link, networkController);
+    ParsedLink pbfLink = getPBFLink(tilesLinkResult.link, networkController);
     return {pbfLink.link, pbfLink.resultType};
 }
 
