@@ -39,7 +39,7 @@ void UnitTesting::getStyleSheet_returns_success_on_supported_stylesheet() {
     QString key = tileLoader.readKey("key.txt");
 
     HttpResponse styleSheetURL =
-        tileLoader.getStylesheet(StyleSheetType::basic_v2, key, networkController);
+        tileLoader.getStylesheet(StyleSheetType::basic_v2, key);
 
     QVERIFY(styleSheetURL.resultType == ResultType::success);
 }
@@ -52,7 +52,7 @@ void UnitTesting::getStyleSheet_returns_failure_on_unsupported_stylesheet() {
     QString key = tileLoader.readKey("key.txt");
 
     HttpResponse styleSheetURL =
-        tileLoader.getStylesheet(StyleSheetType::bright_v2, key, networkController);
+        tileLoader.getStylesheet(StyleSheetType::bright_v2, key);
 
     QVERIFY(styleSheetURL.resultType == ResultType::unknownError);
 }

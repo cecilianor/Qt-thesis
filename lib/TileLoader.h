@@ -16,6 +16,7 @@ private:
     QByteArray styleSheet;
     QByteArray JSONTileURL;
     QUrl tileURL;
+    NetworkController networkController;
 
 public:
     // Constructor and destructor
@@ -23,14 +24,14 @@ public:
     ~TileLoader(){};
 
     // Functionality making different requests
-    HttpResponse getStylesheet(StyleSheetType type, QString key, NetworkController &networkController);
+    HttpResponse getStylesheet(StyleSheetType type, QString key);
     ParsedLink getTilesLink(const QJsonDocument & styleSheet, QString sourceType);
-    ParsedLink getPBFLink (const QString & tileSheetUrl, NetworkController &networkController);
+    ParsedLink getPBFLink (const QString & tileSheetUrl);
 
-    HttpResponse loadStyleSheetFromWeb(const QString &mapTilerKey, StyleSheetType &StyleSheetType, NetworkController &networkController);
-    ParsedLink getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType, NetworkController &networkController);
+    HttpResponse loadStyleSheetFromWeb(const QString &mapTilerKey, StyleSheetType &StyleSheetType);
+    ParsedLink getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType);
     QString setPbfLink(const TileCoord &tileCoord, const QString &pbfLinkTemplate);
-    HttpResponse downloadTile(const QString &pbfLink, NetworkController &controller);
+    HttpResponse downloadTile(const QString &pbfLink);
 
     // Key reader
     QString readKey(QString tilePath);
