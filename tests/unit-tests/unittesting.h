@@ -31,5 +31,9 @@ private slots:
      */
     void tileFromByteArray_returns_basic_values();
 
+    /* Evaluator test
+     */
+    void resolveExpression_returns_basic_values();
+
 
 };

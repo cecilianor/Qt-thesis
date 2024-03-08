@@ -135,6 +135,7 @@ if (BUILD_TESTS)
         tests/unit-tests/unittesting_rendering.cpp
         tests/unit-tests/unittesting_layerstyle.cpp
         tests/unit-tests/unittesting_vectortile.cpp
+        tests/unit-tests/unittest_evaluator.cpp
     )
 
     qt_add_resources(unit_test "unitTestResources"
@@ -142,6 +143,7 @@ if (BUILD_TESTS)
         FILES
         unitTestResources/styleTest.json
         unitTestResources/000testTile.pbf
+        unitTestResources/expressionTest.json
     )
     target_link_libraries(unit_test PUBLIC maplib Qt6::Test)
 
