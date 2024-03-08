@@ -45,44 +45,35 @@ HttpResponse TileLoader::getStylesheet(StyleSheetType type, QString key) {
  * @param sourceType is the map source type passed as a QString
  * @return link as a string
  */
-ParsedLink TileLoader::getTilesLink(const QJsonDocument & styleSheet, QString sourceType)
+ParsedLink TileLoader::getTilesLink(const QJsonDocument &styleSheet, QString sourceType)
 {
     // Grab link to tile sheet
     if (styleSheet.isObject()) {
         QJsonObject jsonObject = styleSheet.object();
-        //qDebug() << "A JSON object was found!"; // It is the following: \n" << jsonObject;
 
-        if(jsonObject.contains("sources") && jsonObject["sources"].isObject()) {
-            //qDebug() << jsonObject["sources"];
-
+        if (jsonObject.contains("sources") && jsonObject["sources"].isObject()) {
             QJsonObject sourcesObject = jsonObject["sources"].toObject();
 
             if (sourcesObject.contains(sourceType) && sourcesObject[sourceType].isObject()) {
-                //qDebug() << "Found maptiler_planet";
-
                 QJsonObject maptilerObject = sourcesObject[sourceType].toObject();
-                //qDebug() << maptilerObject;
 
                 // Return the tile sheet if the url to it was found.
-                if(maptilerObject.contains("url")) {
+                if (maptilerObject.contains("url")) {
                     QString link = maptilerObject["url"].toString();
-                    //qDebug() << "Link to tiles API: " << link;
                     return {link, ResultType::success};
-                }
-                // The tile sheet couldn't be found. Print error message.
-                else {
+                } else {
                     qWarning() << PrintResultTypeInfo(ResultType::tileSheetNotFound);
+                    return {QString(), ResultType::tileSheetNotFound};
                 }
+            } else {
+                qWarning() << PrintResultTypeInfo(ResultType::unknownSourceType);
+                return {QString(), ResultType::unknownSourceType};
             }
         }
-        else {
-            qWarning() << PrintResultTypeInfo(ResultType::unknownSourceType);
-        }
-    } else  qWarning() << "The original stylesheet isn't a JSON object...";
+    }
 
     qWarning() << PrintResultTypeInfo(ResultType::unknownError);
     return {QString(), ResultType::unknownError};
-
 };
 
 /*!

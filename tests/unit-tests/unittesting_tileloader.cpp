@@ -5,6 +5,7 @@
 #include "Utilities.h"
 
 #include <QObject>
+#include <QJsonDocument>
 
 QTEST_MAIN(UnitTesting)
 // This include needs to match the name of this .cpp file.
@@ -54,6 +55,70 @@ void UnitTesting::getStyleSheet_returns_failure_on_unsupported_stylesheet() {
     HttpResponse styleSheetURL =
         tileLoader.getStylesheet(StyleSheetType::bright_v2, key);
 
-    QVERIFY(styleSheetURL.resultType == ResultType::unknownError);
+    QVERIFY(styleSheetURL.resultType == ResultType::noImplementation);
 }
+
+// Test the getTilesLink function with a valid style sheet containing the specified source type
+void UnitTesting::getTilesLink_valid_style_sheet_returns_success() {
+    // Create a TileLoader instance
+    TileLoader tileLoader;
+
+    // Create a valid JSON style sheet with the specified source type
+    QJsonObject sourcesObject;
+    QJsonObject sourceTypeObject;
+    sourceTypeObject["url"] = "https://example.com/tiles";
+    sourcesObject["maptiler_planet"] = sourceTypeObject;
+    QJsonObject jsonObject;
+    jsonObject["sources"] = sourcesObject;
+    QJsonDocument styleSheet(jsonObject);
+
+    // Call the function with the valid style sheet and source type
+    ParsedLink parsedLink = tileLoader.getTilesLink(styleSheet, "maptiler_planet");
+
+    // Verify that the parsed link and result type are as expected
+    QCOMPARE(parsedLink.link, QString("https://example.com/tiles"));
+    QCOMPARE(parsedLink.resultType, ResultType::success);
+}
+
+// Test the getTilesLink function with an unknown source type
+void UnitTesting::getTilesLink_unknown_source_type_returns_unknown_source_type_error() {
+    // Create a TileLoader instance
+    TileLoader tileLoader;
+    QString unknownType = ("random_string");
+    // Create a valid JSON style sheet with a different source type
+    QJsonObject sourcesObject;
+    QJsonObject sourceTypeObject;
+    sourceTypeObject["url"] = "https://example.com/tiles";
+    sourcesObject["another_source_type"] = sourceTypeObject;
+    QJsonObject jsonObject;
+    jsonObject["sources"] = sourcesObject;
+    QJsonDocument styleSheet(jsonObject);
+
+    // Call the function with the style sheet and an unknown source type
+    ParsedLink parsedLink = tileLoader.getTilesLink(styleSheet, unknownType);
+
+    // Verify that the result type is unknown source type
+    QCOMPARE(parsedLink.resultType, ResultType::unknownSourceType);
+}
+
+// Test the getTilesLink function with a style sheet missing the URL for the specified source type
+void UnitTesting::getTilesLink_missing_url_returns_tile_sheet_not_found_error() {
+    // Create a TileLoader instance
+    TileLoader tileLoader;
+
+    // Create a valid JSON style sheet missing the URL for the specified source type
+    QJsonObject sourcesObject;
+    QJsonObject sourceTypeObject;
+    sourcesObject["maptiler_planet"] = sourceTypeObject;
+    QJsonObject jsonObject;
+    jsonObject["sources"] = sourcesObject;
+    QJsonDocument styleSheet(jsonObject);
+
+    // Call the function with the style sheet
+    ParsedLink parsedLink = tileLoader.getTilesLink(styleSheet, "maptiler_planet");
+
+    // Verify that the result type is tile sheet not found
+    QCOMPARE(parsedLink.resultType, ResultType::tileSheetNotFound);
+}
+
 
