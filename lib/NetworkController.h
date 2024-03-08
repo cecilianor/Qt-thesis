@@ -3,7 +3,7 @@
 
 #include <QNetworkAccessManager>
 
-#include <optional>
+#include "Utilities.h"
 
 class NetworkController : public QObject
 {
@@ -16,7 +16,7 @@ public:
 
     ~NetworkController();
 
-    std::optional<QByteArray> sendRequest(QString url);
+    HttpResponse sendRequest(QString url);
 
 signals:
     void finished(QNetworkReply *reply);

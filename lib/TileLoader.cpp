@@ -18,26 +18,25 @@ TileLoader::TileLoader() {};
  * @return The response from MapTiler.
  */
 HttpResponse TileLoader::getStylesheet(StyleSheetType type, QString key, NetworkController &networkController) {
-    auto response = QByteArray();
     auto url = QString();
-
+    HttpResponse res;
     switch(type) {
-    case (StyleSheetType::basic_v2) : {
-        url = "https://api.maptiler.com/maps/basic-v2/style.json?key=" + key;
-        auto result = networkController.sendRequest(url);
-        if (!result.has_value()) {
-            return { QByteArray(), ResultType::unknownError };
+        case (StyleSheetType::basic_v2) : {
+            url = "https://api.maptiler.com/maps/basic-v2/style.json?key=" + key;
+            res = networkController.sendRequest(url);
+            if (res.resultType != ResultType::success) {
+                qWarning() << "Error: " << PrintResultTypeInfo(res.resultType);
+                return { QByteArray(), res.resultType };
+            }
+            break;
         }
-        response = result.value();
-        break;
-        }
-    default: {
-        qDebug() << "No implementation of stylesheet type!";
-        return {response, ResultType::unknownError};
-        break;
+        default: {
+            qWarning() << "Error: " <<PrintResultTypeInfo(ResultType::noImplementation);
+            return {QByteArray(), ResultType::noImplementation};
+            break;
         }
     }
-        return {response, ResultType::success};
+    return res;
 };
 
 /*!
@@ -98,13 +97,14 @@ ParsedLink TileLoader::getPBFLink (const QString & tileSheetUrl, NetworkControll
     QJsonDocument tilesSheet;
     QJsonParseError parseError;
 
-    auto dataResult = networkController.sendRequest(tileSheetUrl);
-    if (!dataResult.has_value()) {
-        return {QString(), ResultType::unknownError };
+    auto res = networkController.sendRequest(tileSheetUrl);
+    if (res.resultType != ResultType::success) {
+        qWarning() << "Error: " << PrintResultTypeInfo(res.resultType);
+        return { QString(), res.resultType };
     }
 
     // Parse the stylesheet
-    tilesSheet = QJsonDocument::fromJson(dataResult.value(), &parseError);
+    tilesSheet = QJsonDocument::fromJson(res.response, &parseError);
 
     if (parseError.error != QJsonParseError::NoError) {
         qWarning() << "Parse error at" << parseError.offset << ":" << parseError.errorString();
@@ -170,7 +170,12 @@ HttpResponse TileLoader::loadStyleSheetFromWeb(
 {
     HttpResponse styleSheetResult = getStylesheet(StyleSheetType, mapTilerKey, networkController);
     if (styleSheetResult.resultType != ResultType::success) {
-        qWarning() << "There was an error: " << PrintResultTypeInfo(styleSheetResult.resultType);
+        qWarning() << "There was an error getting the stylesheet: " << PrintResultTypeInfo(styleSheetResult.resultType);
+        return {QByteArray(), styleSheetResult.resultType};
+    }
+    if(styleSheetResult.response.isNull()) {
+        qWarning() << "Error: An empty stylesheet was returned: " << PrintResultTypeInfo(styleSheetResult.resultType);
+        return{QByteArray(), styleSheetResult.resultType};
     }
     return styleSheetResult;
 }
@@ -183,6 +188,12 @@ HttpResponse TileLoader::loadStyleSheetFromWeb(
  */
 ParsedLink TileLoader::getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType, NetworkController &networkController)
 {
+     // Assert that the passed styleSheet isn't null.
+     if(styleSheetBytes.isNull()) {
+         qWarning() << "Empty stylesheet passed to getPbfLinkTemplate...\n";
+        return {QString(), ResultType::noData};
+    }
+
     // Parse the stylesheet
     QJsonParseError parseError;
     QJsonDocument styleSheetJson = QJsonDocument::fromJson(styleSheetBytes, &parseError);
@@ -230,12 +241,12 @@ QString TileLoader::setPbfLink(const TileCoord &tileCoord, const QString &pbfLin
  */
 QByteArray TileLoader::downloadTile(const QString &pbfLink, NetworkController &controller)
 {
-    auto result = controller.sendRequest(pbfLink);
-    if (result.has_value()) {
-        return result.value();
+    auto res = controller.sendRequest(pbfLink);
+    if (res.resultType != ResultType::success) {
+        qWarning() << "Error: " << PrintResultTypeInfo(res.resultType);
+        return { QByteArray()/*res.resultType */};
     } else {
-        qDebug() << "Download tile failed. No code here to handle the failure.\n";
-        std::abort();
+        return res.response; // Everything went well, return.
     }
 }
 

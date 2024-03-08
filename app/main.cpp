@@ -25,32 +25,35 @@ int main(int argc, char *argv[])
             "Internal Error",
             "Internal error. Contact support if the error persists. The application will now shut down.");
         // Add developer comments to QDebug, not to the end user/client.
-        qDebug() << "Reading of the MapTiler key failed...";
+        qWarning() << "Reading of the MapTiler key failed...";
         return EXIT_FAILURE;
     }
 
     // Tries to load the stylesheet.
     auto styleSheetBytes = tileLoader.loadStyleSheetFromWeb(mapTilerKey, StyleSheetType, networkController);
+    qDebug() << "Loading stylesheet from MapTiler...\n";
     if (styleSheetBytes.resultType != ResultType::success) {
-        qWarning() << "There was an error: " << PrintResultTypeInfo(styleSheetBytes.resultType);
+        qWarning() << "There was an error loading stylesheet: " << PrintResultTypeInfo(styleSheetBytes.resultType);
         QMessageBox::critical(
             nullptr,
-            "Map Loading Failed",
+            "Map Loading Bytesheet Failed",
             "The map failed to load. Contact support if the error persists. The application will now shut down.");
         return EXIT_FAILURE;
     }
+    qDebug() << "Loading stylesheet from Maptiler completed without issues.\n";
 
     // Gets the link template where we have to switch out x, y,z in the link.
     auto pbfLinkTemplate = tileLoader.getPbfLinkTemplate(styleSheetBytes.response, "maptiler_planet", networkController);
+    qDebug() << "Getting the link to download PPF tiles from MapTiler...\n";
     if (pbfLinkTemplate.resultType != ResultType::success) {
-        qWarning() << "There was an error: " << PrintResultTypeInfo(pbfLinkTemplate.resultType);
+        qWarning() << "Loading tiles failed: There was an error getting PBF link template: " << PrintResultTypeInfo(pbfLinkTemplate.resultType);
         QMessageBox::critical(
             nullptr,
-            "Map Loading Failed",
+            "Map Loading Tiles Failed",
             "The map failed to load. Contact support if the error persists. The application will now shut down.");
         return EXIT_FAILURE;
     }
-
+    qDebug() << "Getting PBF link completed without issues.\n";
     // Creates the Widget that displays the map.
     auto *mapWidget = new MapWidget;
     auto &styleSheet = mapWidget->styleSheet;

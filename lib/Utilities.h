@@ -56,6 +56,8 @@ enum class ResultType {
     tileSheetNotFound,
     unknownSourceType,
     noData,
+    noImplementation,
+    networkError,
     parseError,
     unknownError,
 };
@@ -82,10 +84,14 @@ const inline QString PrintResultTypeInfo(ResultType r) {
         str = "Unknown source type";
     case ResultType::noData:
         str ="No returned data";
+    case ResultType::noImplementation:
+        str = "No implementation";
     case ResultType::parseError:
         str = "Parsing error";
     case ResultType::unknownError:
         str = "Unknown error";
+    case ResultType::networkError:
+        str = "Network error";
     default:
         str = "Unknown error. Check documentation for PrintResultTypeInfo.";
     }
