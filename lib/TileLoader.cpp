@@ -250,6 +250,19 @@ QByteArray TileLoader::downloadTile(const QString &pbfLink, NetworkController &c
     }
 }
 
+/*!
+ * \brief Bach::setPbfLink exchanges x, y, z coordinates in a Protobuf link.
+ *
+ * The function searches for {x}, {y}, and {z} in the link and replaces them
+ * with their corresponding coordinate values from the TileCoord struct:
+ * - x: x-coordinate
+ * - y: y-coordinate
+ * - z: zoomlevel
+ *
+ * \param tileCoord is a struct containing x and y coordinates, z (zoom) information.
+ * \param pbfLinkTemplate is the templated URL/link.
+ * \return The generated link.
+ */
 QString Bach::setPbfLink(const TileCoord &tileCoord, const QString &pbfLinkTemplate)
 {
     // Exchange the {x, y z} in link
