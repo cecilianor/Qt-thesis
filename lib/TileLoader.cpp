@@ -239,14 +239,14 @@ QString TileLoader::setPbfLink(const TileCoord &tileCoord, const QString &pbfLin
  * \param controller is the network controller making the request.
  * \return the response from the GET request.
  */
-QByteArray TileLoader::downloadTile(const QString &pbfLink, NetworkController &controller)
+HttpResponse TileLoader::downloadTile(const QString &pbfLink, NetworkController &controller)
 {
     auto res = controller.sendRequest(pbfLink);
     if (res.resultType != ResultType::success) {
         qWarning() << "Error: " << PrintResultTypeInfo(res.resultType);
-        return { QByteArray()/*res.resultType */};
+        return { QByteArray(), res.resultType};
     } else {
-        return res.response; // Everything went well, return.
+        return res; // Everything went well, return.
     }
 }
 

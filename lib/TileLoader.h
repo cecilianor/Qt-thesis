@@ -29,7 +29,7 @@ public:
     HttpResponse loadStyleSheetFromWeb(const QString &mapTilerKey, StyleSheetType &StyleSheetType, NetworkController &networkController);
     ParsedLink getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType, NetworkController &networkController);
     QString setPbfLink(const TileCoord &tileCoord, const QString &pbfLinkTemplate);
-    QByteArray downloadTile(const QString &pbfLink, NetworkController &controller);
+    HttpResponse downloadTile(const QString &pbfLink, NetworkController &controller);
     // Key reader
     QString readKey(QString tilePath);
 
