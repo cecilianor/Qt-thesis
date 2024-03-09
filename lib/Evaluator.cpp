@@ -262,11 +262,11 @@ QVariant Evaluator::case_(const QJsonArray &array, const AbstractLayerFeature *f
         if(array.at(i).isArray()){
             QJsonArray expression = array.at(i).toArray();
             if(resolveExpression(expression, feature, mapZoomLevel, vpZoomeLevel).toBool()){
-                return array.at(i + 1).toInt();
+                return array.at(i + 1).toDouble();
             }
         }
     }
-    return array.last().toInt();
+    return array.last().toDouble();
 }
 
 /*Resolve the "coalesce" expression which return the first non null output
@@ -305,8 +305,13 @@ QVariant Evaluator::match(const QJsonArray &array, const AbstractLayerFeature *f
     QJsonArray expression = array.at(1).toArray();
     QVariant input = resolveExpression(expression, feature, mapZoomLevel, vpZoomeLevel);
     for(int i = 2; i < array.size() - 2; i += 2){
-        if(input == array.at(i)){
-            return array.at(i + 1).toVariant();
+        if(input == array.at(i).toVariant()){
+            if(array.at(i + 1).isArray()){
+                return resolveExpression(array.at(i + 1).toArray(), feature, mapZoomLevel, vpZoomeLevel);
+            }else{
+                return array.at(i + 1).toVariant();
+            }
+
         }
     }
     return array.last().toVariant();
