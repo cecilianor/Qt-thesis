@@ -262,11 +262,11 @@ QVariant Evaluator::case_(const QJsonArray &array, const AbstractLayerFeature *f
         if(array.at(i).isArray()){
             QJsonArray expression = array.at(i).toArray();
             if(resolveExpression(expression, feature, mapZoomLevel, vpZoomeLevel).toBool()){
-                return array.at(i + 1).toDouble();
+                return array.at(i + 1).toVariant();
             }
         }
     }
-    return array.last().toDouble();
+    return array.last().toVariant();
 }
 
 /*Resolve the "coalesce" expression which return the first non null output
@@ -289,7 +289,6 @@ QVariant Evaluator::coalesce(const QJsonArray &array, const AbstractLayerFeature
     return {};
 }
 
-
 /*Resolve the "match" expression which mimics a switch case statement
     *
     * parameters:
@@ -305,13 +304,21 @@ QVariant Evaluator::match(const QJsonArray &array, const AbstractLayerFeature *f
     QJsonArray expression = array.at(1).toArray();
     QVariant input = resolveExpression(expression, feature, mapZoomLevel, vpZoomeLevel);
     for(int i = 2; i < array.size() - 2; i += 2){
-        if(input == array.at(i).toVariant()){
+        if(array.at(i).isArray()){
+            if(array.at(i).toArray().toVariantList().contains(input)){
+                if(array.at(i + 1).isArray()){
+                    return resolveExpression(array.at(i + 1).toArray(), feature, mapZoomLevel, vpZoomeLevel);
+                }else{
+                    return array.at(i + 1).toVariant();
+                }
+            }
+
+        }else if(input == array.at(i).toVariant()){
             if(array.at(i + 1).isArray()){
                 return resolveExpression(array.at(i + 1).toArray(), feature, mapZoomLevel, vpZoomeLevel);
             }else{
                 return array.at(i + 1).toVariant();
             }
-
         }
     }
     return array.last().toVariant();
