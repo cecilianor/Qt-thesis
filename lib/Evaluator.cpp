@@ -48,7 +48,7 @@ void Evaluator::setupExpressionMap()
     m_expressionMap.insert("in", in);
     m_expressionMap.insert("!=", compare);
     m_expressionMap.insert("==", compare);
-    m_expressionMap.insert("<", greater);
+    m_expressionMap.insert(">", greater);
     m_expressionMap.insert("all", all);
     m_expressionMap.insert("case", case_);
     m_expressionMap.insert("coalesce", coalesce);
@@ -213,9 +213,9 @@ QVariant Evaluator::greater(const QJsonArray &array, const AbstractLayerFeature 
 
     if(array.at(2).isArray()){
         static QJsonArray operand2Arr = array.at(2).toArray();
-        operand1 = resolveExpression(operand2Arr, feature, mapZoomLevel, vpZoomeLevel);
+        operand2 = resolveExpression(operand2Arr, feature, mapZoomLevel, vpZoomeLevel);
     }else{
-        operand1 = array.at(2).toVariant();
+        operand2 = array.at(2).toVariant();
     }
     if(operand1.typeId() == QMetaType::QString){
         return operand1.toString() > operand2.toString();
