@@ -2,7 +2,7 @@
     "get" : {
         "positive" :[
             "get",
-            "intermittent"
+            "class"
         ],
         "negative":[
             "get",
@@ -48,6 +48,16 @@
             "==",
             "class",
             "notAvalidValue"
+        ],
+        "specialCase1":[
+            "==",
+            "$type",
+            "Polygon"
+        ],
+        "specialCase2":[
+            "==",
+            "$type",
+            "LineString"
         ]
     },
 
@@ -64,19 +74,23 @@
         ]
     },
 
-    "<" : {
+    ">" : {
         "positive" :[
-            "<",
+            ">",
+            [
             "get",
-            "intermittent",
-            10
+            "intermittent"
+            ],
+            0
 
         ],
         "negative":[
-            "<",
-            "get",
-            "intermittent",
-            0
+            ">",
+            [
+                "get",
+                "intermittent"
+            ],
+            10
         ]
     },
 
@@ -89,27 +103,32 @@
                 "neighbourhood"
             ],
             [
-                "<",
-                "get",
-                "intermittent",
-                10
+                ">",
+                [
+                    "get",
+                    "intermittent"
+                ],
+                0
             ],
             [
                 "!=",
-                "class",
+                "subclass",
                 "notAvalidValue"
             ]
         ],
         "negative":[
+            "all",
             [
                 "==",
                 "class",
-                "notAvalidValue"
+                "neighbourhood"
             ],
             [
-                "<",
-                "get",
-                "intermittent",
+                ">",
+                [
+                    "get",
+                    "intermittent"
+                ],
                 10
             ],
             [
