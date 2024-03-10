@@ -1,5 +1,8 @@
 #include <QApplication>
 #include <QMessageBox>
+#include <QFile>
+#include <QStandardPaths>
+#include <QDir>
 
 #include "MainWindow.h"
 #include "TileLoader.h"
@@ -27,18 +30,66 @@ int main(int argc, char *argv[])
         return EXIT_FAILURE;
     }
 
-    // Tries to load the stylesheet.
-    auto styleSheetBytes = tileLoader.loadStyleSheetFromWeb(mapTilerKey, StyleSheetType);
-    qDebug() << "Loading stylesheet from MapTiler...\n";
-    if (styleSheetBytes.resultType != ResultType::success) {
-        qWarning() << "There was an error loading stylesheet: " << PrintResultTypeInfo(styleSheetBytes.resultType);
-        QMessageBox::critical(
-            nullptr,
-            "Map Loading Bytesheet Failed",
-            "The map failed to load. Contact support if the error persists. The application will now shut down.");
-        return EXIT_FAILURE;
+    HttpResponse styleSheetBytes;
+
+    // Caching variables.
+    QString styleSheetCacheFormat = QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation) +
+                                    QDir::separator() + "styleSheetCache.json";
+    QString styleSheetCacheUrl =styleSheetCacheFormat;
+
+    // Try to load the style sheet from file. Download it from MapTiler if it's not foind.
+    QFile file(styleSheetCacheUrl);
+    if (file.exists())
+    {
+        qDebug() << "Loading stylesheet from cache. Reading from file...\n";
+        // Open the file
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            qWarning() << "There was a problem opening the cache file to write to it.";
+            return EXIT_FAILURE;
+        }
+
+        // Read the cache file contents and convert it to a byteArray().
+        QTextStream in(&file);
+        qDebug() << "Finished loading from the cache file. Converting data to string...\n";
+        auto myString = in.readAll();
+        file.close();
+
+        qDebug() << "Converting stylesheet to byteArray...\n";
+        auto data = myString.toUtf8();
+
+        if (!data.isValidUtf8()){
+            qWarning()<<"Error when converting cached stylesheet to byteArray... Exiting.\n";
+            return EXIT_FAILURE;
+        }
+
+        // Potential bugs:
+        // What if the cache file got garbled at some step before here? There could potentially be
+        // more errors here. Note that the stylesheet is only written to the cached file
+        // in the first place if the original HTTP request had not-empty data on the expected form.
+        styleSheetBytes = HttpResponse{data, ResultType::success}; // Kinda strange signature here, but it must be this way to match its original implementation.
+    } else {
+        // Load stylesheet from web
+        styleSheetBytes = tileLoader.loadStyleSheetFromWeb(mapTilerKey, StyleSheetType);
+        qDebug() << "Loading stylesheet from MapTiler...\n";
+        if (styleSheetBytes.resultType != ResultType::success) {
+            qWarning() << "There was an error loading stylesheet: " << PrintResultTypeInfo(styleSheetBytes.resultType);
+            QMessageBox::critical(
+                nullptr,
+                "Map Loading Bytesheet Failed",
+                "The map failed to load. Contact support if the error persists. The application will now shut down.");
+            return EXIT_FAILURE;
+        }
+        qDebug() << "Loading stylesheet from Maptiler completed without issues.\n";
+
+        // Write the response data to the cache.
+        // Consider additional error handling here in the future.
+        if (!file.open(QIODevice::WriteOnly)) {
+            qWarning() << "There was a problem opening the cache file to write to it.";
+            return EXIT_FAILURE;
+        }
+        file.write(styleSheetBytes.response);
+        file.close();
     }
-    qDebug() << "Loading stylesheet from Maptiler completed without issues.\n";
 
     // Gets the link template where we have to switch out x, y,z in the link.
     auto pbfLinkTemplate = tileLoader.getPbfLinkTemplate(styleSheetBytes.response, "maptiler_planet");

@@ -35,6 +35,10 @@ public:
 
     // Key reader
     QString readKey(QString tilePath);
+
+    // Caching
+    QString cacheForStyleSheet() const;
+    QString cacheForVectorTile(int z, int x, int y) const;
 };
 
 namespace Bach {
