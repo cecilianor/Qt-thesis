@@ -93,7 +93,7 @@ const inline QString PrintResultTypeInfo(ResultType r) {
     case ResultType::networkError:
         str = "Network error";
     default:
-        str = "Unknown error. Check documentation for PrintResultTypeInfo.";
+        str = "Unknown error. Check ResultType documentation for PrintResultTypeInfo.";
     }
 
     return str;

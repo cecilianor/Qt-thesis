@@ -47,29 +47,31 @@ HttpResponse TileLoader::getStylesheet(StyleSheetType type, QString key) {
  */
 ParsedLink TileLoader::getTilesLink(const QJsonDocument &styleSheet, QString sourceType)
 {
-    // Grab link to tile sheet
-    if (styleSheet.isObject()) {
-        QJsonObject jsonObject = styleSheet.object();
+    // Convert stylesheet to a Json Object.
+    QJsonObject jsonObject = styleSheet.object();
 
-        if (jsonObject.contains("sources") && jsonObject["sources"].isObject()) {
-            QJsonObject sourcesObject = jsonObject["sources"].toObject();
+    if (jsonObject.contains("sources") && jsonObject["sources"].isObject()) {
+        QJsonObject sourcesObject = jsonObject["sources"].toObject();
 
-            if (sourcesObject.contains(sourceType) && sourcesObject[sourceType].isObject()) {
-                QJsonObject maptilerObject = sourcesObject[sourceType].toObject();
+        if (sourcesObject.contains(sourceType) && sourcesObject[sourceType].isObject()) {
+            QJsonObject maptilerObject = sourcesObject[sourceType].toObject();
 
-                // Return the tile sheet if the url to it was found.
-                if (maptilerObject.contains("url")) {
-                    QString link = maptilerObject["url"].toString();
-                    return {link, ResultType::success};
-                } else {
-                    qWarning() << PrintResultTypeInfo(ResultType::tileSheetNotFound);
-                    return {QString(), ResultType::tileSheetNotFound};
-                }
+            // Return the tile sheet if the url to it was found.
+            if (maptilerObject.contains("url")) {
+                QString link = maptilerObject["url"].toString();
+                return {link, ResultType::success};
             } else {
-                qWarning() << PrintResultTypeInfo(ResultType::unknownSourceType);
-                return {QString(), ResultType::unknownSourceType};
+                qWarning() << PrintResultTypeInfo(ResultType::tileSheetNotFound);
+                return {QString(), ResultType::tileSheetNotFound};
             }
+        } else {
+            qWarning() << PrintResultTypeInfo(ResultType::unknownSourceType);
+            return {QString(), ResultType::unknownSourceType};
         }
+    } else {
+        qWarning() << "The stylesheet doesn't contain 'sources' field like it should.\n"
+                   << "Check if MapTiler API has been updated to store map sources differently.\n";
+        return {QString(), ResultType::parseError};
     }
 
     qWarning() << PrintResultTypeInfo(ResultType::unknownError);
