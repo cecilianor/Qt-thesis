@@ -4,7 +4,6 @@
 
 
 void UnitTesting::interpolate_returns_basic_expected_values() {
-    /*
     struct TestItem {
         QPair<int, int> inputA;
         QPair<int, int> inputB;
@@ -38,12 +37,10 @@ void UnitTesting::interpolate_returns_basic_expected_values() {
 
         QVERIFY2(result == item.expectedOut, errorMsg.toUtf8());
     }
-*/
 }
 
 void UnitTesting::getLerpedValue_returns_basic_expceted_value()
 {
-    /*
     struct TestItem {
         QVector<QPair<int, int>> inputStops;
         int inputViewportZoom;
@@ -75,5 +72,4 @@ void UnitTesting::getLerpedValue_returns_basic_expceted_value()
 
         QVERIFY2(result == item.expectedOut, errorMsg.toUtf8());
     }
-*/
 }
