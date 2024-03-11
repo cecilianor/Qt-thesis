@@ -49,18 +49,9 @@ int main(int argc, char *argv[])
         }
 
         // Read the cache file contents and convert it to a byteArray().
-        QTextStream in(&file);
+        QByteArray data = file.readAll();
         qDebug() << "Finished loading from the cache file. Converting data to string...\n";
-        auto myString = in.readAll();
         file.close();
-
-        qDebug() << "Converting stylesheet to byteArray...\n";
-        auto data = myString.toUtf8();
-
-        if (!data.isValidUtf8()){
-            qWarning()<<"Error when converting cached stylesheet to byteArray... Exiting.\n";
-            return EXIT_FAILURE;
-        }
 
         // Potential bugs:
         // What if the cache file got garbled at some step before here? There could potentially be
