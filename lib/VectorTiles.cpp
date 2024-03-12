@@ -229,9 +229,9 @@ bool VectorTile::DeserializeMessage(QByteArray data)
     }
 
     for (auto layer : tile.layers()) {
-        qDebug() << "Parsing layer" << layer.name();
-        qDebug() << " layer version: " << layer.version();
-        qDebug() << " layer extent: " << layer.extent();
+        //qDebug() << "Parsing layer" << layer.name();
+        //qDebug() << " layer version: " << layer.version();
+        //qDebug() << " layer extent: " << layer.extent();
         TileLayer *newLayer = new TileLayer(layer.version(), layer.name(), layer.extent());
         m_layers.insert(layer.name(), newLayer);
         AbstractLayerFeature* newFeature = nullptr;
@@ -266,7 +266,7 @@ bool VectorTile::DeserializeMessage(QByteArray data)
     return true;
 }
 
-std::optional<VectorTile> Bach::tileFromByteArray(QByteArray bytes)
+std::optional<VectorTile> Bach::tileFromByteArray(const QByteArray &bytes)
 {
     QProtobufSerializer serializer;
 
@@ -284,9 +284,9 @@ std::optional<VectorTile> Bach::tileFromByteArray(QByteArray bytes)
     VectorTile output;
 
     for (auto layer : tile.layers()) {
-        qDebug() << "Parsing layer" << layer.name();
-        qDebug() << " layer version: " << layer.version();
-        qDebug() << " layer extent: " << layer.extent();
+        //qDebug() << "Parsing layer" << layer.name();
+        //qDebug() << " layer version: " << layer.version();
+        //qDebug() << " layer extent: " << layer.extent();
         TileLayer *newLayer = new TileLayer(layer.version(), layer.name(), layer.extent());
         output.m_layers.insert(layer.name(), newLayer);
         AbstractLayerFeature* newFeature = nullptr;

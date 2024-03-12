@@ -2,6 +2,9 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QFile>
+#include <QNetworkReply>
+#include <QDir>
+#include <QCoreApplication>
 
 #include "TileLoader.h"
 #include "TileCoord.h"
@@ -149,6 +152,7 @@ QString TileLoader::readKey(QString filePath) {
 
     return in.readAll().trimmed();
 }
+
 /*!
  * \brief TileURL::loadStyleSheetFromWeb loads a style sheet from the MapTiler API.
  * \param mapTilerKey is the personal key to the MapTiler API. This must be placed in a file
@@ -158,8 +162,7 @@ QString TileLoader::readKey(QString filePath) {
  */
 HttpResponse TileLoader::loadStyleSheetFromWeb(
     const QString &mapTilerKey,
-    StyleSheetType &StyleSheetType
-    )
+    StyleSheetType &StyleSheetType)
 {
     HttpResponse styleSheetResult = getStylesheet(StyleSheetType, mapTilerKey);
     if (styleSheetResult.resultType != ResultType::success) {
@@ -256,7 +259,7 @@ HttpResponse TileLoader::downloadTile(const QString &pbfLink)
  * \param pbfLinkTemplate is the templated URL/link.
  * \return The generated link.
  */
-QString Bach::setPbfLink(const TileCoord &tileCoord, const QString &pbfLinkTemplate)
+QString Bach::setPbfLink(TileCoord tileCoord, const QString &pbfLinkTemplate)
 {
     // Exchange the {x, y z} in link
     auto copy = pbfLinkTemplate;
@@ -264,4 +267,258 @@ QString Bach::setPbfLink(const TileCoord &tileCoord, const QString &pbfLinkTempl
     copy.replace("{x}", QString::number(tileCoord.x));
     copy.replace("{y}", QString::number(tileCoord.y));
     return copy;
+}
+
+QString Bach::getTileDiskPath(TileCoord tile)
+{
+    QString basePath = QCoreApplication::applicationDirPath();
+    auto sep = QDir::separator();
+    QString fileDirPath =
+        QString("tilecache") + sep +
+        QString("z%1") + sep +
+        QString("x%2");
+    fileDirPath = fileDirPath
+        .arg(tile.zoom)
+        .arg(tile.x);
+
+    QString filename = QString("y%1.mvt").arg(tile.y);
+
+    QString finalPath =
+        basePath + sep +
+        fileDirPath + sep +
+        filename;
+    finalPath = QDir::cleanPath(finalPath);
+    return finalPath;
+}
+
+QScopedPointer<Bach::RequestTilesResult> TileLoader::requestTiles(
+    const std::set<TileCoord> &input,
+    TileLoadedCallbackFn signalFn)
+{
+    // This might not be ideal place to define this struct.
+    struct ResultType : public Bach::RequestTilesResult {
+        virtual ~ResultType() {
+            // TODO:
+            // This should eventually notify the TileLoader
+            // that our tiles are no longer being read.
+        }
+
+        QMap<TileCoord, const VectorTile*> _map;
+
+        const QMap<TileCoord, const VectorTile*> &map() const override
+        {
+            return _map;
+        }
+    };
+    auto out = new ResultType;
+
+    // Contains the list of tiles we want to load deferredly.
+    QVector<TileCoord> loadJobs;
+
+    // Create scope for the mutex-locker
+    {
+        QMutexLocker lock(&tileMemoryLock);
+        for (TileCoord requestedCoord : input) {
+            // Load iterator to our tile memory.
+            auto tileIt = tileMemory.find(requestedCoord);
+
+            // If found, return it immediately.
+            // (Maybe mark it as recently used for cache purposes???)
+            if (tileIt != tileMemory.end()) {
+
+                // Key found, check if it can be returned immediately.
+                const VectorTile* memoryItem = *tileIt;
+
+                // If the item is marked as nullptr,
+                // it means it is pending and should not be immediately returned.
+                if (memoryItem != nullptr) {
+                    out->_map.insert(requestedCoord, memoryItem);
+                }
+            } else {
+                // Tile not found, queue it for loading.
+                // Insert it with the pending status.
+                tileMemory.insert(requestedCoord, nullptr);
+                loadJobs.push_back(requestedCoord);
+            }
+        }
+    }
+
+    queueTileLoadingJobs(loadJobs, signalFn);
+
+    return QScopedPointer<Bach::RequestTilesResult>{ out };
+}
+
+bool TileLoader::loadFromDisk(TileCoord coord, TileLoadedCallbackFn signalFn)
+{
+    // Check if it's in disk.
+    QString diskPath = Bach::getTileDiskPath(coord);
+
+    QFile file { diskPath };
+
+    if (file.exists()) {
+
+        // TODO: Check that the file isn't currently being written into
+        // by another thread by checking for associated .lock file.
+        if (!file.open(QFile::ReadOnly)) {
+            qDebug() << "Tried reading tile from file, but encountered unexpected error when opening file.\n";
+            // Error, file exists but didn't open.
+        }
+
+        // Successfully opened file, read contents.
+        QByteArray bytes = file.readAll(); 
+
+        // Now we need to insert the tile into the tile-memory
+        // and NOT insert it into disk cache.
+        insertTile(coord, bytes, signalFn);
+
+        // Return success if we found the file.
+        return true;
+    }
+
+    return false;
+}
+
+void writeToDisk(TileCoord coord, const QByteArray &bytes) {
+    QFileInfo diskPath { Bach::getTileDiskPath(coord) };
+
+    // QFile won't create our directories for us.
+    // We gotta make them ourselves.
+
+    QDir dir = diskPath.dir();
+    if (!dir.exists() && !dir.mkpath(dir.absolutePath())) {
+        qDebug() << "Tried writing tile to disk. Creating parent directory failed.\n";
+        return;
+    }
+
+    QFile file { diskPath.absoluteFilePath() };
+    if (file.exists()) {
+        qDebug() << "Tried writing tile to disk. File already exists.\n";
+        return;
+    }
+
+    if (!file.open(QFile::WriteOnly)) {
+        qDebug() << "Tried writing tile to disk. Failed to create new file.\n";
+        return;
+    }
+
+    // Todo: make a lock file
+    file.write(bytes);
+}
+
+void TileLoader::loadFromWeb(TileCoord coord, TileLoadedCallbackFn signalFn)
+{
+    // Load the URL for this particular tile.
+    QString tileUrl = Bach::setPbfLink(coord, pbfLinkTemplate);
+
+    // We expect this function to be called on the background thread, but our
+    // QNetworkAccessManager lives on the main thread.
+    // We can't make requests from this thread. Queue a request to it.
+
+    auto job = [=]() {
+        // We don't want to use NetworkController here, because it
+        // forces us to wait. And since we are on main GUI thread,
+        // that would block GUI logic until we get a reply.
+
+        QNetworkReply *reply = networkManager.get(QNetworkRequest{ tileUrl });
+        QObject::connect(
+            reply,
+            &QNetworkReply::finished,
+            this,
+            [=]() {
+                // Check for errors in the reply.
+                if (reply->error() != QNetworkReply::NoError) {
+                    qDebug() << "Error when requesting tile from web: " << reply->errorString() << '\n';
+                    // TODO: Do something meaningful, like retrying the request or
+                    // marking this tile as non-functional to stop us from requesting it anymore.
+                }
+
+                // TODO: Reply can return 204 No Content, and this is a valid result
+                // it just means that the tile has no data and doesn't need to be rendered.
+
+                // Extract the bytes we want and discard the reply.
+                auto bytes = reply->readAll();
+                reply->deleteLater();
+
+                // We are now on the same thread as the QNetworkAccessManager,
+                // which means we are on the GUI thread. We need to dispatch the result of
+                // the reply onto a new thread. This is because parsing will block
+                // GUI responsiveness.
+                queueTileParsing(coord, bytes, signalFn);
+            });
+    };
+    QMetaObject::invokeMethod(
+        &networkManager,
+        job);
+}
+
+// This function should not block!
+// Offload all work to background thread(s)!
+void TileLoader::queueTileLoadingJobs(
+    const QVector<TileCoord> &input,
+    TileLoadedCallbackFn signalFn)
+{
+    // We can assume all input tiles do not exist in memory.
+
+    // We queue up one task to launch
+    // the smaller tasks to return as early as possible.
+    auto asyncJob = [=]() {
+        for (TileCoord coord : input) {
+
+            // Then we spawn one async task per item.
+            getThreadPool().start([=]() {
+
+                // First we try loading from disk. If found, the disk function will handle
+                // the rest of this async process.
+                // If not found, start the process to download from web.
+                bool loadedFromDiskSuccess = loadFromDisk(coord, signalFn);
+                if (!loadedFromDiskSuccess) {
+                    loadFromWeb(coord, signalFn);
+                }
+
+            });
+
+        }
+    };
+    getThreadPool().start(asyncJob);
+}
+
+void TileLoader::queueTileParsing(
+    TileCoord coord,
+    QByteArray bytes,
+    TileLoadedCallbackFn signalFn)
+{
+    getThreadPool().start([=]() {
+        insertTile(coord, bytes, signalFn);
+    });
+
+    getThreadPool().start([=]() {
+        writeToDisk(coord, bytes);
+    });
+}
+
+void TileLoader::insertTile(
+    TileCoord coord,
+    const QByteArray &bytes,
+    TileLoadedCallbackFn signalFn)
+{
+    // Try parsing the bytes into our tile.
+    std::optional<VectorTile> newTileResult = Bach::tileFromByteArray(bytes);
+
+    // TODO: Could have better error handling here.
+    if (!newTileResult.has_value()) {
+        qDebug() << "Error when parsing tile.\n";
+    }
+
+    // Turn our VectorTile into a dedicated allocation that fits our storage.
+    VectorTile* newTile = new VectorTile(newTileResult.value());
+
+    {
+        // Insert into the common storage.
+        QMutexLocker lock(&tileMemoryLock);
+        tileMemory.insert(coord, newTile);
+    }
+
+    // Fire the signal.
+    if (signalFn)
+        signalFn(coord);
 }

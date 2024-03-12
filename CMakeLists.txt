@@ -50,7 +50,7 @@ qt_add_library(maplib STATIC
     lib/Evaluator.h
     lib/Evaluator.cpp
     lib/Utilities.h
-    )
+    lib/RequestTilesResult.h)
 
 # Qt containers by default don't include asserts (i.e out of bounds checks) in their containers
 # under the RelWithDebInfo config. We enforce that they do to help us catch bugs.
@@ -81,11 +81,10 @@ set(PROJECT_SOURCES
     app/MainWindow.h
     app/MainWindow.cpp)
 
-    qt_add_executable(application
+qt_add_executable(application
     MANUAL_FINALIZATION
     ${PROJECT_SOURCES}
-    lib/Utilities.h
-    )
+)
 
 # Link our app to our library target.
 target_link_libraries(application PUBLIC maplib)

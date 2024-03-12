@@ -41,15 +41,31 @@ void MapWidget::keyPressEvent(QKeyEvent* event)
 
 void MapWidget::paintEvent(QPaintEvent* event)
 {
+    auto visibleTiles = calcVisibleTiles();
+    std::set<TileCoord> tilesRequested{ visibleTiles.begin(), visibleTiles.end()};
+
+    // We want this signal to run every time a new tile is loaded later.
+    auto signalFn = [this](TileCoord newTile) {
+        // Possible optimization:
+        // Check if this new tile is relevant anymore, and only
+        // issue redraw if it is.
+
+        update();
+    };
+
+    // Request tiles
+    auto requestResult = requestTilesFn(
+        tilesRequested,
+        signalFn);
+
     QPainter painter(this);
-    //painter.setRenderHint(QPainter::Antialiasing);
     Bach::paintTiles(
         painter,
         x,
         y,
         getViewportZoomLevel(),
         getMapZoomLevel(),
-        tileStorage,
+        requestResult->map(),
         styleSheet,
         isShowingDebug());
 }
@@ -171,20 +187,6 @@ bool MapWidget::KeyPressFilter::eventFilter(QObject *obj, QEvent *event)
     }
     // Pass the event on to the parent class for default processing
     return QObject::eventFilter(obj, event);
-}
-
-void MapWidget::loadNewTiles(const std::function<VectorTile(TileCoord)> &fn) {
-    auto visibleTiles = calcVisibleTiles();
-
-    //tileStorage.clear();
-
-    for (auto tileCoord : visibleTiles) {
-        if (!tileStorage.contains(tileCoord)) {
-            tileStorage.insert(tileCoord, new VectorTile(fn(tileCoord)));
-        }
-    }
-
-    update();
 }
 
 void MapWidget::toggleIsShowingDebug()

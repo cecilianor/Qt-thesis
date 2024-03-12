@@ -9,11 +9,7 @@
 
 using Bach::MainWindow;
 
-MainWindow::MainWindow(
-    MapWidget* mapWidgetIn,
-    std::function<VectorTile(TileCoord)>&& fn) :
-    mapWidget{ mapWidgetIn },
-    loadTileFn{ std::move(fn) }
+MainWindow::MainWindow(MapWidget* mapWidgetIn) : mapWidget{ mapWidgetIn }
 {
     resize(800, 800);
     setCentralWidget(mapWidget);
@@ -26,11 +22,6 @@ MainWindow::MainWindow(
     // map-widget.
     auto coordControls = new MapCoordControlWidget(mapWidget);
     QObject::connect(coordControls, &MapCoordControlWidget::submitNewCoords, mapWidget, &MapWidget::setViewport);
-    QObject::connect(
-        coordControls,
-        &MapCoordControlWidget::loadNewTiles,
-        this,
-        [this]() { mapWidget->loadNewTiles(loadTileFn); });
 
     mapWidget->focusWidget();
 
