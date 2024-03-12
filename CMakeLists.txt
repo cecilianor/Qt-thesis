@@ -10,7 +10,6 @@ set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 # We need to look for packages that are hard requirements for the code to run.
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Protobuf Network)
 qt_standard_project_setup()
@@ -84,7 +83,6 @@ set(PROJECT_SOURCES
     qt_add_executable(application
     MANUAL_FINALIZATION
     ${PROJECT_SOURCES}
-    lib/Utilities.h
     )
 
 # Link our app to our library target.
@@ -123,9 +121,6 @@ add_custom_command(
 qt_add_executable(cmd_example cmd_example.cpp)
 target_link_libraries(cmd_example PUBLIC maplib)
 
-
-
-
 # All testing related code goes in here
 if (BUILD_TESTS)
     # Find the necessary packages on the system.
@@ -147,40 +142,5 @@ if (BUILD_TESTS)
     # Adds our executable to CTest.
     enable_testing()
     add_test(NAME MyTest COMMAND unit_test)
-
-
-
-    # Coco Content here. Only used for testing now
-    SET(COVERAGE_FLAGS "--cs-on --cs-count")
-    SET(CMAKE_CXX_FLAGS_COVERAGE
-        "${CMAKE_CXX_FLAGS_DEBUG} ${COVERAGE_FLAGS}" CACHE STRING
-        "Flags used by the C++ compiler during coverage builds."
-        FORCE )
-    SET(CMAKE_C_FLAGS_COVERAGE
-        "${CMAKE_C_FLAGS_DEBUG} ${COVERAGE_FLAGS}" CACHE STRING
-        "Flags used by the C compiler during coverage builds."
-        FORCE )
-    SET(CMAKE_EXE_LINKER_FLAGS_COVERAGE
-        "${CMAKE_EXE_LINKER_FLAGS_DEBUG} ${COVERAGE_FLAGS}" CACHE STRING
-        "Flags used for linking binaries during coverage builds."
-        FORCE )
-    SET(CMAKE_SHARED_LINKER_FLAGS_COVERAGE
-        "${CMAKE_SHARED_LINKER_FLAGS_DEBUG} ${COVERAGE_FLAGS}" CACHE STRING
-        "Flags used by the shared libraries linker during coverage builds."
-        FORCE )
-    SET( CMAKE_STATIC_LINKER_FLAGS_COVERAGE
-        "${CMAKE_STATIC_LINKER_FLAGS_DEBUG} ${COVERAGE_FLAGS}" CACHE STRING
-        "Flags used by the static libraries linker during coverage builds."
-        FORCE )
-    MARK_AS_ADVANCED(
-        CMAKE_CXX_FLAGS_COVERAGE
-        CMAKE_C_FLAGS_COVERAGE
-        CMAKE_EXE_LINKER_FLAGS_COVERAGE
-        CMAKE_SHARED_LINKER_FLAGS_COVERAGE
-        CMAKE_STATIC_LINKER_FLAGS_COVERAGE
-        COMPILE_DEFINITIONS_COVERAGE
-    )
-    ## COCO end here
-
 
 endif()
