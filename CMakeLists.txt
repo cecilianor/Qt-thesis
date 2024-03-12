@@ -10,7 +10,6 @@ set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 # We need to look for packages that are hard requirements for the code to run.
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Protobuf Network)
 qt_standard_project_setup()
@@ -48,7 +47,9 @@ qt_add_library(maplib STATIC
     lib/NetworkController.h
     lib/NetworkController.cpp
     lib/Evaluator.h
-    lib/Evaluator.cpp)
+    lib/Evaluator.cpp
+    lib/Utilities.h
+    )
 
 # Qt containers by default don't include asserts (i.e out of bounds checks) in their containers
 # under the RelWithDebInfo config. We enforce that they do to help us catch bugs.
@@ -78,7 +79,8 @@ set(PROJECT_SOURCES
     app/MapCoordControlWidget.cpp
     app/MainWindow.h
     app/MainWindow.cpp)
-qt_add_executable(application
+
+    qt_add_executable(application
     MANUAL_FINALIZATION
     ${PROJECT_SOURCES}
     )
@@ -119,9 +121,6 @@ add_custom_command(
 qt_add_executable(cmd_example cmd_example.cpp)
 target_link_libraries(cmd_example PUBLIC maplib)
 
-
-
-
 # All testing related code goes in here
 if (BUILD_TESTS)
     # Find the necessary packages on the system.
@@ -149,4 +148,5 @@ if (BUILD_TESTS)
     # Adds our executable to CTest.
     enable_testing()
     add_test(NAME MyTest COMMAND unit_test)
+
 endif()

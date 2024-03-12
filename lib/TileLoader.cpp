@@ -5,8 +5,9 @@
 
 #include "TileLoader.h"
 #include "TileCoord.h"
-#include "networkcontroller.h"
+#include "NetworkController.h"
 #include "qjsonarray.h"
+#include "Utilities.h"
 
 TileLoader::TileLoader() {};
 
@@ -16,27 +17,26 @@ TileLoader::TileLoader() {};
  * @param key The MapTiler key.
  * @return The response from MapTiler.
  */
-std::pair<QByteArray, TileLoader::ResultType> TileLoader::getStylesheet(StyleSheetType type, QString key, NetworkController &networkController) {
-    QByteArray response="";
-    QString url;
-
+HttpResponse TileLoader::getStylesheet(StyleSheetType type, QString key) {
+    auto url = QString();
+    HttpResponse res;
     switch(type) {
-    case (TileLoader::StyleSheetType::basic_v2) : {
-        url = "https://api.maptiler.com/maps/basic-v2/style.json?key=" + key;
-        auto result = networkController.sendRequest(QString(url));
-        if (!result.has_value()) {
-            return { "", ResultType::unknownError };
+        case (StyleSheetType::basic_v2) : {
+            url = "https://api.maptiler.com/maps/basic-v2/style.json?key=" + key;
+            res = networkController.sendRequest(url);
+            if (res.resultType != ResultType::success) {
+                qWarning() << "Error: " << PrintResultTypeInfo(res.resultType);
+                return { QByteArray(), res.resultType };
+            }
+            break;
         }
-        response = result.value();
-        break;
-        }
-    default: {
-        qDebug() << "No implementation of stylesheet type!";
-        return std::make_pair(response, ResultType::unknownError);
-        break;
+        default: {
+            qWarning() << "Error: " <<PrintResultTypeInfo(ResultType::noImplementation);
+            return {QByteArray(), ResultType::noImplementation};
+            break;
         }
     }
-    return std::make_pair(response, ResultType::success);
+    return res;
 };
 
 /*!
@@ -45,47 +45,37 @@ std::pair<QByteArray, TileLoader::ResultType> TileLoader::getStylesheet(StyleShe
  * @param sourceType is the map source type passed as a QString
  * @return link as a string
  */
-std::pair<QString, TileLoader::ResultType> TileLoader::getTilesLink(const QJsonDocument & styleSheet, QString sourceType)
+ParsedLink TileLoader::getTilesLink(const QJsonDocument &styleSheet, QString sourceType)
 {
-    //Pair <QString, ResultType>
-    //  Make an ResultType enum
-    //
-    // Map <ResultType, errorMessage>
-    //
-    // std::expected and std::optional
+    // Convert stylesheet to a Json Object.
+    QJsonObject jsonObject = styleSheet.object();
 
-    // Grab link to tile sheet
-    if (styleSheet.isObject()) {
-        QJsonObject jsonObject = styleSheet.object();
-        //qDebug() << "A JSON object was found!"; // It is the following: \n" << jsonObject;
+    if (jsonObject.contains("sources") && jsonObject["sources"].isObject()) {
+        QJsonObject sourcesObject = jsonObject["sources"].toObject();
 
-        if(jsonObject.contains("sources") && jsonObject["sources"].isObject()) {
-            //qDebug() << jsonObject["sources"];
+        if (sourcesObject.contains(sourceType) && sourcesObject[sourceType].isObject()) {
+            QJsonObject maptilerObject = sourcesObject[sourceType].toObject();
 
-            QJsonObject sourcesObject = jsonObject["sources"].toObject();
-
-            if (sourcesObject.contains(sourceType) && sourcesObject[sourceType].isObject()) {
-                //qDebug() << "Found maptiler_planet";
-
-                QJsonObject maptilerObject = sourcesObject[sourceType].toObject();
-                //qDebug() << maptilerObject;
-
-                if(maptilerObject.contains("url")) {
-                    QString link = maptilerObject["url"].toString();
-                    //qDebug() << "Link to tiles API: " << link;
-                    return std::make_pair(link, ResultType::success);
-                }
-                else {
-                    qDebug() << "The URL to the tilesheet couldn't be found...";
-                }
+            // Return the tile sheet if the url to it was found.
+            if (maptilerObject.contains("url")) {
+                QString link = maptilerObject["url"].toString();
+                return {link, ResultType::success};
+            } else {
+                qWarning() << PrintResultTypeInfo(ResultType::tileSheetNotFound);
+                return {QString(), ResultType::tileSheetNotFound};
             }
+        } else {
+            qWarning() << PrintResultTypeInfo(ResultType::unknownSourceType);
+            return {QString(), ResultType::unknownSourceType};
         }
-        else {
-            qDebug() << "No 'maptiler_planet' object was found in the JSON object...";
-        }
-    } else  qDebug() << "The original stylesheet isn't a JSON object...";
+    } else {
+        qWarning() << "The stylesheet doesn't contain 'sources' field like it should.\n"
+                   << "Check if MapTiler API has been updated to store map sources differently.\n";
+        return {QString(), ResultType::parseError};
+    }
 
-    return std::make_pair("", ResultType::unknownError);
+    qWarning() << PrintResultTypeInfo(ResultType::unknownError);
+    return {QString(), ResultType::unknownError};
 };
 
 /*!
@@ -96,21 +86,22 @@ std::pair<QString, TileLoader::ResultType> TileLoader::getTilesLink(const QJsonD
  * @param tileSheetUrl the link/url to the stylesheet.
  * @return The link to PBF tiles.
  */
-std::pair<QString, TileLoader::ResultType> TileLoader::getPBFLink (const QString & tileSheetUrl, NetworkController &networkController) {
+ParsedLink TileLoader::getPBFLink (const QString & tileSheetUrl) {
     QJsonDocument tilesSheet;
     QJsonParseError parseError;
 
-    auto dataResult = networkController.sendRequest(tileSheetUrl);
-    if (!dataResult.has_value()) {
-        return { "", ResultType::unknownError };
+    auto res = networkController.sendRequest(tileSheetUrl);
+    if (res.resultType != ResultType::success) {
+        qWarning() << "Error: " << PrintResultTypeInfo(res.resultType);
+        return { QString(), res.resultType };
     }
 
-    // Parse the styleshee
-    tilesSheet = QJsonDocument::fromJson(dataResult.value(), &parseError);
+    // Parse the stylesheet
+    tilesSheet = QJsonDocument::fromJson(res.response, &parseError);
 
     if (parseError.error != QJsonParseError::NoError) {
         qWarning() << "Parse error at" << parseError.offset << ":" << parseError.errorString();
-        return std::make_pair("Parse error", ResultType::parseError);
+        return {QString(), ResultType::parseError};
     }
 
     if (tilesSheet.isObject()) {
@@ -123,7 +114,7 @@ std::pair<QString, TileLoader::ResultType> TileLoader::getPBFLink (const QString
             for (const auto &tileValue : tilesArray) {
                 QString tileLink = tileValue.toString();
                 //qDebug() << "\n\t" <<"Link to PBF tiles: " << tileLink <<"\n";
-                return std::make_pair(tileLink, ResultType::success);
+                return {tileLink, ResultType::success};
             }
         }
         else {
@@ -133,14 +124,12 @@ std::pair<QString, TileLoader::ResultType> TileLoader::getPBFLink (const QString
 
     //The else if branch is just used for testing. Do NOT pushto final version!!
     else if (tilesSheet.isArray()) {
-        QJsonArray jsonArray = tilesSheet.array();
-        qDebug() << "A JSON array was found. The current functionality doesn't support this...";
-
+        qWarning() << "A JSON array was found. The current functionality doesn't support this...";
     }
     else {
-        qWarning() << "There is an error with the loaded JSON data...";
+        qWarning() << "There is an unknown error with the loaded JSON data...";
     }
-    return std::make_pair("Link wasn't found...", ResultType::unknownError);
+    return {QString(), ResultType::unknownError};
 };
 
 /*!
@@ -167,16 +156,21 @@ QString TileLoader::readKey(QString filePath) {
  * \param StyleSheetType is the type of style sheet to load.
  * \return
  */
-QByteArray TileLoader::loadStyleSheetFromWeb(
+HttpResponse TileLoader::loadStyleSheetFromWeb(
     const QString &mapTilerKey,
-    TileLoader::StyleSheetType &StyleSheetType,
-    NetworkController &networkController)
+    StyleSheetType &StyleSheetType
+    )
 {
-    std::pair<QByteArray, TileLoader::ResultType> styleSheetResult = getStylesheet(StyleSheetType, mapTilerKey, networkController);
-    if (styleSheetResult.second != TileLoader::ResultType::success) {
-        qWarning() << "There was an error: " << styleSheetResult.first;
+    HttpResponse styleSheetResult = getStylesheet(StyleSheetType, mapTilerKey);
+    if (styleSheetResult.resultType != ResultType::success) {
+        qWarning() << "There was an error getting the stylesheet: " << PrintResultTypeInfo(styleSheetResult.resultType);
+        return {QByteArray(), styleSheetResult.resultType};
     }
-    return styleSheetResult.first;
+    if(styleSheetResult.response.isNull()) {
+        qWarning() << "Error: An empty stylesheet was returned: " << PrintResultTypeInfo(styleSheetResult.resultType);
+        return{QByteArray(), styleSheetResult.resultType};
+    }
+    return styleSheetResult;
 }
 
 /*!
@@ -185,22 +179,32 @@ QByteArray TileLoader::loadStyleSheetFromWeb(
  * \param sourceType is the source type used by MapTiler. This is currently passed as a string.
  * \return the PBF template.
  */
-QString TileLoader::getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType, NetworkController &networkController)
+ParsedLink TileLoader::getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType)
 {
+     // Assert that the passed styleSheet isn't null.
+     if(styleSheetBytes.isNull()) {
+         qWarning() << "Empty stylesheet passed to getPbfLinkTemplate...\n";
+        return {QString(), ResultType::noData};
+    }
+
     // Parse the stylesheet
     QJsonParseError parseError;
     QJsonDocument styleSheetJson = QJsonDocument::fromJson(styleSheetBytes, &parseError);
     if (parseError.error != QJsonParseError::NoError) {
         qWarning() << "Parse error at" << parseError.offset << ":" << parseError.errorString();
-        return 0;
+        return {QString(), ResultType::parseError};
     }
 
     // Grab link to tiles.json format link
-    std::pair<QString, TileLoader::ResultType> tilesLinkResult = getTilesLink(styleSheetJson, sourceType);
+    ParsedLink tilesLinkResult = getTilesLink(styleSheetJson, sourceType);
+    if (tilesLinkResult.resultType != ResultType::success) {
+        qWarning() << "";
+        return {QString(), tilesLinkResult.resultType};
+    }
 
     // Grab link to the XYZ PBF tile format based on the tiles.json link
-    std::pair<QString, TileLoader::ResultType> pbfLink = getPBFLink(tilesLinkResult.first, networkController);
-    return pbfLink.first;
+    ParsedLink pbfLink = getPBFLink(tilesLinkResult.link);
+    return {pbfLink.link, pbfLink.resultType};
 }
 
 /*!
@@ -228,17 +232,30 @@ QString TileLoader::setPbfLink(const TileCoord &tileCoord, const QString &pbfLin
  * \param controller is the network controller making the request.
  * \return the response from the GET request.
  */
-QByteArray TileLoader::downloadTile(const QString &pbfLink, NetworkController &controller)
+HttpResponse TileLoader::downloadTile(const QString &pbfLink)
 {
-    auto result = controller.sendRequest(pbfLink);
-    if (result.has_value()) {
-        return result.value();
+    auto res = networkController.sendRequest(pbfLink);
+    if (res.resultType != ResultType::success) {
+        qWarning() << "Error: " << PrintResultTypeInfo(res.resultType);
+        return { QByteArray(), res.resultType};
     } else {
-        qDebug() << "Download tile failed. No code here to handle the failure.\n";
-        std::abort();
+        return res; // Everything went well, return.
     }
 }
 
+/*!
+ * \brief Bach::setPbfLink exchanges x, y, z coordinates in a Protobuf link.
+ *
+ * The function searches for {x}, {y}, and {z} in the link and replaces them
+ * with their corresponding coordinate values from the TileCoord struct:
+ * - x: x-coordinate
+ * - y: y-coordinate
+ * - z: zoomlevel
+ *
+ * \param tileCoord is a struct containing x and y coordinates, z (zoom) information.
+ * \param pbfLinkTemplate is the templated URL/link.
+ * \return The generated link.
+ */
 QString Bach::setPbfLink(const TileCoord &tileCoord, const QString &pbfLinkTemplate)
 {
     // Exchange the {x, y z} in link

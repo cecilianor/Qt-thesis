@@ -36,7 +36,7 @@ NetworkController::~NetworkController()
  * @param url The url to make a get request to (as a QString).
  * @return The response from a the get request (sent as a QString url).
  */
-std::optional<QByteArray> NetworkController::sendRequest(QString url)
+HttpResponse NetworkController::sendRequest(QString url)
 {
     QNetworkRequest request;
     request.setUrl(QUrl(url));
@@ -44,32 +44,38 @@ std::optional<QByteArray> NetworkController::sendRequest(QString url)
     // Perform the GET request
     // This will call the appropriate destroy functions
     // on the reply object when the function ends.
-    auto reply = QScopedPointer(manager.get(request));
-    if (reply == nullptr) {
-        return std::nullopt;
-    }
 
-    // Create an event loop to wait for the request to finish
+    //Nils' code, just commented away in case we want to restore it later.
+    //auto reply = QScopedPointer(manager.get(request));
+    QNetworkReply *reply = manager.get(request);
+    //if (reply == nullptr) {
+    //    return std::nullopt;
+    //}
+
+    // Creates an event loop to waits for the request to finish.
     QEventLoop loop;
     QObject::connect(
-        reply.get(),
+        reply,
         &QNetworkReply::finished,
         &loop,
         &QEventLoop::quit);
     loop.exec();
 
-    // Check for errors
+    // Checks for errors.
     if (reply->error() != QNetworkReply::NoError) {
-        qDebug() << "Error:" << reply->errorString();
-        return std::nullopt;
+        qWarning() << "Error in file NetworkController.cpp: " << reply->errorString() << '\n';
+        return {QByteArray(), ResultType::networkError};
     }
 
-    // Process the response
+    // Processes the response.
     QByteArray responseData = reply->readAll();
     if (responseData.length() == 0) {
-        return std::nullopt;
+        qWarning() << "No data was returned from the external source";
+        return {QByteArray(), ResultType::noData};
     }
 
-    // Return response data
-    return responseData;
+    // Deletes the reply.
+    reply->deleteLater();
+    // Returns response data if everything was successful.
+    return {responseData, ResultType::success};
 }
