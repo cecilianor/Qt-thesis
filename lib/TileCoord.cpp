@@ -31,3 +31,8 @@ bool TileCoord::operator==(const TileCoord& other) const
 {
     return zoom == other.zoom && x == other.x && y == other.y;
 }
+
+bool TileCoord::operator!=(const TileCoord& other) const
+{
+    return !(*this == other);
+}

@@ -36,9 +36,8 @@ int main(int argc, char *argv[])
     HttpResponse styleSheetBytes;
 
     // Caching variables.
-    QString styleSheetCacheFormat = QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation) +
-                                    QDir::separator() + "styleSheetCache.json";
-    QString styleSheetCacheUrl =styleSheetCacheFormat;
+    QString styleSheetCacheFormat = TileLoader::getGeneralCacheFolder() + QDir::separator() + "styleSheetCache.json";
+    QString styleSheetCacheUrl = styleSheetCacheFormat;
 
     // Try to load the style sheet from file. Download it from MapTiler if it's not foind.
     QFile file(styleSheetCacheUrl);
@@ -103,7 +102,7 @@ int main(int argc, char *argv[])
     // Creates the Widget that displays the map.
     auto *mapWidget = new MapWidget;
     mapWidget->requestTilesFn = [&](auto input, auto signal) {
-        return tileLoader.requestTiles(input, signal);
+        return tileLoader.requestTiles(input, signal, true);
     };
     auto &styleSheet = mapWidget->styleSheet;
 

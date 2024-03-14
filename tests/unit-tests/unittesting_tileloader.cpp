@@ -6,6 +6,7 @@
 
 #include <QObject>
 #include <QJsonDocument>
+#include <QTimer>
 
 QTEST_MAIN(UnitTesting)
 // This include needs to match the name of this .cpp file.
@@ -121,4 +122,154 @@ void UnitTesting::getTilesLink_missing_url_returns_tile_sheet_not_found_error() 
     QCOMPARE(parsedLink.resultType, ResultType::tileSheetNotFound);
 }
 
+namespace Bach::UnitTesting {
+    class TempDir {
+    public:
+        TempDir()
+        {
+            auto sep = QDir::separator();
 
+            QString uniqueDirName = QUuid::createUuid().toString();
+            QString tempDirPath =
+                QDir::tempPath() + sep +
+                "Qt_thesis_unit_test_files" + sep +
+                uniqueDirName;
+
+            _dir = tempDirPath;
+        }
+        TempDir(const TempDir&) = delete;
+        TempDir(TempDir&&) = delete;
+
+        ~TempDir() {
+            QDir temp{ _dir };
+            temp.removeRecursively();
+        }
+
+        const QString& path() const { return _dir; }
+
+    private:
+        QString _dir;
+    };
+}
+
+// This test uses a predetermined cached file that is known to be corrupt.
+// This test should make sure the TileLoader is able to catch this as a parsing error.
+void UnitTesting::loadTileFromCache_fails_on_broken_file()
+{
+    const TileCoord expectedCoord = {0, 0, 0};
+
+    Bach::UnitTesting::TempDir tempDir;
+
+    // Write our input file to the tile cache.
+    QFile inputFile(":unitTestResources/loadTileFromCache_fails_on_broken_file.mvt");
+    auto inputFileOpenResult = inputFile.open(QFile::ReadOnly);
+    QVERIFY2(inputFileOpenResult == true, "Unable to open input file.");
+
+    auto inputFileBytes = inputFile.readAll();
+    auto writeToCacheResult = Bach::writeTileToDiskCache(
+        tempDir.path(),
+        expectedCoord,
+        inputFileBytes);
+    QVERIFY2(writeToCacheResult == true, "Unable to write input file into tile cache.");
+
+    TileLoader tileLoader(tempDir.path(), false);
+
+    QEventLoop loop;
+    QObject::connect(
+        &tileLoader,
+        &TileLoader::tileFinished,
+        &loop,
+        &QEventLoop::quit);
+
+    // If loading has a bug somewhere, it might never get finished.
+    // For now we just have a timeout in case something went wrong.
+    QTimer::singleShot(
+        5000,
+        &loop,
+        [&]() {
+            QVERIFY2(false, "Test hit the timeout. This should never happen.");
+            loop.quit();
+        });
+
+    tileLoader.requestTiles({ expectedCoord }, true);
+
+    loop.exec();
+
+    auto tileStateResult = tileLoader.getTileState(expectedCoord);
+    QVERIFY2(
+        tileStateResult.has_value(),
+        "TileLoader::getTileState returned nullopt when it was just reported to have finished loading.");
+
+    auto tileState = tileStateResult.value();
+    QVERIFY2(
+        tileState == Bach::LoadedTileState::ParsingFailed,
+        "Expected loaded to be marked as parsing failed, but result was different.");
+}
+
+// This test uses a predetermined cached file that is known to be correct.
+// This test should make sure the TileLoader is able to parse this.
+void UnitTesting::loadTileFromCache_parses_cached_file_successfully()
+{
+    // Write our input file to the tile cache.
+    QFile inputFile(":unitTestResources/loadTileFromCache_parses_cached_file_successfully.mvt");
+    auto inputFileOpenResult = inputFile.open(QFile::ReadOnly);
+    QVERIFY2(inputFileOpenResult == true, "Unable to open input file.");
+
+    const TileCoord expectedCoord = {0, 0, 0};
+
+    Bach::UnitTesting::TempDir tempDir;
+
+    auto inputFileBytes = inputFile.readAll();
+    auto writeToCacheResult = Bach::writeTileToDiskCache(
+        tempDir.path(),
+        expectedCoord,
+        inputFileBytes);
+    QVERIFY2(writeToCacheResult == true, "Unable to write input file into tile cache.");
+
+    TileLoader tileLoader(
+        tempDir.path(),
+        false);
+
+    QEventLoop loop;
+
+    // If loading has a bug somewhere, it might never get finished.
+    // For now we just have a timeout in case something went wrong.
+    QTimer::singleShot(
+        3000,
+        &loop,
+        [&]() {
+            QVERIFY2(false, "Timed out when loading tile.");
+            loop.quit();
+        });
+
+    tileLoader.requestTiles(
+        { expectedCoord },
+        [&](TileCoord loadedCoord) {
+            QVERIFY2(
+                loadedCoord == expectedCoord,
+                "Tile signal function was not signaled with correct tile coordinate.");
+
+            // Stop the loop, so we can check the result of the tile.
+            loop.quit();
+        });
+
+    loop.exec();
+
+
+    auto tileStateResult = tileLoader.getTileState(expectedCoord);
+    QVERIFY2(
+        tileStateResult.has_value(),
+        "TileLoader::getTileState returned nullopt when it was just reported to have finished loading.");
+    auto tileState = tileStateResult.value();
+    QVERIFY2(
+        tileState == Bach::LoadedTileState::Ok,
+        "Expected loaded to be marked as parsing OK, but result was different.");
+}
+
+void UnitTesting::check_new_tileLoader_has_no_tiles()
+{
+    TileLoader tileLoader;
+    auto result = tileLoader.requestTiles({});
+    auto &map = result->map();
+    QVERIFY(map.size() == 0);
+}

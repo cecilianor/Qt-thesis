@@ -12,7 +12,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # We need to look for packages that are hard requirements for the code to run.
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Protobuf Network)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Protobuf ProtobufTools Network)
 qt_standard_project_setup()
 
 
@@ -139,6 +139,11 @@ if (BUILD_TESTS)
         tests/unit-tests/unittesting_layerstyle.cpp
     )
     target_link_libraries(unit_test PUBLIC maplib Qt6::Test)
+    qt_add_resources(unit_test "unitTestResources"
+        FILES
+        "unitTestResources/loadTileFromCache_fails_on_broken_file.mvt"
+        "unitTestResources/loadTileFromCache_parses_cached_file_successfully.mvt"
+    )
 
     # Make sure we deploy the correct runtime dependencies to the test.
     win32_deploy(unit_test)

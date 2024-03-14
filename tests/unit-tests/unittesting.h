@@ -15,6 +15,9 @@ private slots:
     void getTilesLink_valid_style_sheet_returns_success();
     void getTilesLink_unknown_source_type_returns_unknown_source_type_error();
     void getTilesLink_missing_url_returns_tile_sheet_not_found_error();
+    void loadTileFromCache_fails_on_broken_file();
+    void loadTileFromCache_parses_cached_file_successfully();
+    void check_new_tileLoader_has_no_tiles();
 
     /* Rendering tests
      */

@@ -5,6 +5,8 @@
 #include <QNetworkReply>
 #include <QDir>
 #include <QCoreApplication>
+#include <QScopeGuard>
+#include <QStandardPaths>
 
 #include "TileLoader.h"
 #include "TileCoord.h"
@@ -12,7 +14,40 @@
 #include "qjsonarray.h"
 #include "Utilities.h"
 
-TileLoader::TileLoader() {};
+TileLoader::TileLoader() :
+    tileCacheDiskPath { getTileCacheFolder() }
+{
+
+}
+
+TileLoader::TileLoader(QString tileCacheDiskPath, bool useWeb) :
+    tileCacheDiskPath{ tileCacheDiskPath },
+    useWeb { useWeb }
+{
+}
+
+QString TileLoader::getGeneralCacheFolder()
+{
+    return QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation);
+    //return QCoreApplication::applicationDirPath();
+}
+
+QString TileLoader::getTileCacheFolder()
+{
+    return getGeneralCacheFolder() + QDir::separator() + "tiles";
+}
+
+std::optional<Bach::LoadedTileState> TileLoader::getTileState(TileCoord coord) const
+{
+    auto tileLock = createTileMemoryLocker();
+    auto itemIt = tileMemory.find(coord);
+    if (itemIt == tileMemory.end())
+        return std::nullopt;
+    else {
+        const StoredTile &item = itemIt->second;
+        return item.state;
+    }
+}
 
 /*!
  * @brief TileURL::getStylesheet gets a stylesheet from MapTiler
@@ -269,31 +304,15 @@ QString Bach::setPbfLink(TileCoord tileCoord, const QString &pbfLinkTemplate)
     return copy;
 }
 
-QString Bach::getTileDiskPath(TileCoord tile)
+QString TileLoader::getTileDiskPath(TileCoord coord)
 {
-    QString basePath = QCoreApplication::applicationDirPath();
-    auto sep = QDir::separator();
-    QString fileDirPath =
-        QString("tilecache") + sep +
-        QString("z%1") + sep +
-        QString("x%2");
-    fileDirPath = fileDirPath
-        .arg(tile.zoom)
-        .arg(tile.x);
-
-    QString filename = QString("y%1.mvt").arg(tile.y);
-
-    QString finalPath =
-        basePath + sep +
-        fileDirPath + sep +
-        filename;
-    finalPath = QDir::cleanPath(finalPath);
-    return finalPath;
+    return tileCacheDiskPath + QDir::separator() + Bach::tileDiskCacheSubPath(coord);
 }
 
 QScopedPointer<Bach::RequestTilesResult> TileLoader::requestTiles(
     const std::set<TileCoord> &input,
-    TileLoadedCallbackFn signalFn)
+    TileLoadedCallbackFn signalFn,
+    bool loadMissingTiles)
 {
     // This might not be ideal place to define this struct.
     struct ResultType : public Bach::RequestTilesResult {
@@ -317,7 +336,7 @@ QScopedPointer<Bach::RequestTilesResult> TileLoader::requestTiles(
 
     // Create scope for the mutex-locker
     {
-        QMutexLocker lock(&tileMemoryLock);
+        QMutexLocker lock = createTileMemoryLocker();
         for (TileCoord requestedCoord : input) {
             // Load iterator to our tile memory.
             auto tileIt = tileMemory.find(requestedCoord);
@@ -327,23 +346,24 @@ QScopedPointer<Bach::RequestTilesResult> TileLoader::requestTiles(
             if (tileIt != tileMemory.end()) {
 
                 // Key found, check if it can be returned immediately.
-                const VectorTile* memoryItem = *tileIt;
+                const StoredTile &memoryItem = tileIt->second;
 
                 // If the item is marked as nullptr,
                 // it means it is pending and should not be immediately returned.
-                if (memoryItem != nullptr) {
-                    out->_map.insert(requestedCoord, memoryItem);
+                if (memoryItem.isOk()) {
+                    out->_map.insert(requestedCoord, memoryItem.tile.get());
                 }
-            } else {
+            } else if (loadMissingTiles) {
                 // Tile not found, queue it for loading.
                 // Insert it with the pending status.
-                tileMemory.insert(requestedCoord, nullptr);
+                tileMemory.insert({ requestedCoord, StoredTile::makePending() });
                 loadJobs.push_back(requestedCoord);
             }
         }
     }
 
-    queueTileLoadingJobs(loadJobs, signalFn);
+    if (loadMissingTiles)
+        queueTileLoadingJobs(loadJobs, signalFn);
 
     return QScopedPointer<Bach::RequestTilesResult>{ out };
 }
@@ -351,58 +371,64 @@ QScopedPointer<Bach::RequestTilesResult> TileLoader::requestTiles(
 bool TileLoader::loadFromDisk(TileCoord coord, TileLoadedCallbackFn signalFn)
 {
     // Check if it's in disk.
-    QString diskPath = Bach::getTileDiskPath(coord);
+    QString diskPath = getTileDiskPath(coord);
 
     QFile file { diskPath };
-
-    if (file.exists()) {
-
-        // TODO: Check that the file isn't currently being written into
-        // by another thread by checking for associated .lock file.
-        if (!file.open(QFile::ReadOnly)) {
-            qDebug() << "Tried reading tile from file, but encountered unexpected error when opening file.\n";
-            // Error, file exists but didn't open.
-        }
-
-        // Successfully opened file, read contents.
-        QByteArray bytes = file.readAll(); 
-
-        // Now we need to insert the tile into the tile-memory
-        // and NOT insert it into disk cache.
-        insertTile(coord, bytes, signalFn);
-
-        // Return success if we found the file.
-        return true;
+    if (!file.exists()) {
+        // Todo: More error feedback?
+        return false;
     }
 
-    return false;
+    // TODO: Check that the file isn't currently being written into
+    // by another thread by checking for associated .lock file.
+    if (!file.open(QFile::ReadOnly)) {
+        qDebug() << "Tried reading tile from file, but encountered unexpected error when opening file.\n";
+        // Error, file exists but didn't open.
+    }
+
+    // Successfully opened file, read contents.
+    QByteArray bytes = file.readAll();
+
+    // Now we need to insert the tile into the tile-memory
+    // and NOT insert it into disk cache.
+    insertTile(coord, bytes, signalFn);
+
+    // Return success if we found the file.
+    return true;
 }
 
-void writeToDisk(TileCoord coord, const QByteArray &bytes) {
-    QFileInfo diskPath { Bach::getTileDiskPath(coord) };
+void TileLoader::writeTileToDisk(TileCoord coord, const QByteArray &bytes) {
+    // TODO unused return value of this function.
+    Bach::writeTileToDiskCache(tileCacheDiskPath, coord, bytes);
+}
 
-    // QFile won't create our directories for us.
-    // We gotta make them ourselves.
+void TileLoader::networkReplyHandler(
+    QNetworkReply* reply,
+    TileCoord coord,
+    TileLoadedCallbackFn signalFn)
+{
+    QScopeGuard cleanup { [&]() { reply->deleteLater(); } };
 
-    QDir dir = diskPath.dir();
-    if (!dir.exists() && !dir.mkpath(dir.absolutePath())) {
-        qDebug() << "Tried writing tile to disk. Creating parent directory failed.\n";
-        return;
+    // Check for errors in the reply.
+    if (reply->error() != QNetworkReply::NoError) {
+        qDebug() << "Error when requesting tile from web: " << reply->errorString() << '\n';
+        // TODO: Do something meaningful, like retrying the request or
+        // marking this tile as non-functional to stop us from requesting it anymore.
+
     }
 
-    QFile file { diskPath.absoluteFilePath() };
-    if (file.exists()) {
-        qDebug() << "Tried writing tile to disk. File already exists.\n";
-        return;
-    }
+    // TODO: Reply can return 204 No Content, and this is a valid result
+    // it just means that the tile has no data and doesn't need to be rendered.
+    // Only background needs to be rendered.
 
-    if (!file.open(QFile::WriteOnly)) {
-        qDebug() << "Tried writing tile to disk. Failed to create new file.\n";
-        return;
-    }
+    // Extract the bytes we want and discard the reply.
+    auto bytes = reply->readAll();
 
-    // Todo: make a lock file
-    file.write(bytes);
+    // We are now on the same thread as the QNetworkAccessManager,
+    // which means we are on the GUI thread. We need to dispatch the result of
+    // the reply onto a new thread. This is because parsing will block
+    // GUI responsiveness.
+    queueTileParsing(coord, bytes, signalFn);
 }
 
 void TileLoader::loadFromWeb(TileCoord coord, TileLoadedCallbackFn signalFn)
@@ -424,27 +450,7 @@ void TileLoader::loadFromWeb(TileCoord coord, TileLoadedCallbackFn signalFn)
             reply,
             &QNetworkReply::finished,
             this,
-            [=]() {
-                // Check for errors in the reply.
-                if (reply->error() != QNetworkReply::NoError) {
-                    qDebug() << "Error when requesting tile from web: " << reply->errorString() << '\n';
-                    // TODO: Do something meaningful, like retrying the request or
-                    // marking this tile as non-functional to stop us from requesting it anymore.
-                }
-
-                // TODO: Reply can return 204 No Content, and this is a valid result
-                // it just means that the tile has no data and doesn't need to be rendered.
-
-                // Extract the bytes we want and discard the reply.
-                auto bytes = reply->readAll();
-                reply->deleteLater();
-
-                // We are now on the same thread as the QNetworkAccessManager,
-                // which means we are on the GUI thread. We need to dispatch the result of
-                // the reply onto a new thread. This is because parsing will block
-                // GUI responsiveness.
-                queueTileParsing(coord, bytes, signalFn);
-            });
+            [=]() { networkReplyHandler(reply, coord, signalFn); } );
     };
     QMetaObject::invokeMethod(
         &networkManager,
@@ -471,12 +477,10 @@ void TileLoader::queueTileLoadingJobs(
                 // the rest of this async process.
                 // If not found, start the process to download from web.
                 bool loadedFromDiskSuccess = loadFromDisk(coord, signalFn);
-                if (!loadedFromDiskSuccess) {
+                if (!loadedFromDiskSuccess && useWeb) {
                     loadFromWeb(coord, signalFn);
                 }
-
             });
-
         }
     };
     getThreadPool().start(asyncJob);
@@ -492,7 +496,7 @@ void TileLoader::queueTileParsing(
     });
 
     getThreadPool().start([=]() {
-        writeToDisk(coord, bytes);
+        writeTileToDisk(coord, bytes);
     });
 }
 
@@ -504,21 +508,102 @@ void TileLoader::insertTile(
     // Try parsing the bytes into our tile.
     std::optional<VectorTile> newTileResult = Bach::tileFromByteArray(bytes);
 
-    // TODO: Could have better error handling here.
     if (!newTileResult.has_value()) {
-        qDebug() << "Error when parsing tile.\n";
+        qDebug() << "Error when parsing tile " << coord.toString();
+
+        // Insert into the common storage.
+        QMutexLocker lock = createTileMemoryLocker();
+
+        auto tileIt = tileMemory.find(coord);
+        if (tileIt == tileMemory.end() || tileIt->second.state != Bach::LoadedTileState::Pending) {
+            // Error because tile needs to exist and be pending
+            // before we insert it.
+            qDebug() <<
+                "TileLoader error: Tile " <<
+                coord.toString() <<
+                " needs to be in pending state before insertion.";
+            return;
+        } else {
+            StoredTile &memoryItem = tileIt->second;
+            memoryItem.tile = nullptr;
+            memoryItem.state = Bach::LoadedTileState::ParsingFailed;
+        }
+        emit tileFinished(coord);
+        return;
     }
 
     // Turn our VectorTile into a dedicated allocation that fits our storage.
-    VectorTile* newTile = new VectorTile(newTileResult.value());
-
+    auto allocatedTile = std::make_unique<VectorTile>(std::move(newTileResult.value()));
+    // Create a scope for our mutex lock.
     {
-        // Insert into the common storage.
-        QMutexLocker lock(&tileMemoryLock);
-        tileMemory.insert(coord, newTile);
+        QMutexLocker lock = createTileMemoryLocker();
+
+        auto tileIt = tileMemory.find(coord);
+        if (tileIt == tileMemory.end() || tileIt->second.state != Bach::LoadedTileState::Pending) {
+            // Error because tile needs to exist and be pending
+            // before we insert it.
+            qDebug() << "Error. Tile " << coord.toString() << " needs to be in pending state before insertion.";
+            return;
+        } else {
+            StoredTile &memoryItem = tileIt->second;
+            memoryItem.tile = std::move(allocatedTile);
+            memoryItem.state = Bach::LoadedTileState::Ok;
+        }
     }
+    emit tileFinished(coord);
 
     // Fire the signal.
     if (signalFn)
         signalFn(coord);
+}
+
+bool Bach::writeTileToDiskCache(
+    const QString& basePath,
+    TileCoord coord,
+    const QByteArray &bytes)
+{
+    QString fullPath = basePath + QDir::separator() + tileDiskCacheSubPath(coord);
+    QFileInfo diskPath { fullPath };
+
+    QDir dir = diskPath.dir();
+
+    // QFile won't create our directories for us.
+    // We gotta make them ourselves.
+    if (!dir.exists() && !dir.mkpath(dir.absolutePath())) {
+        qDebug() << "Tried writing tile to disk. Creating parent directory failed.\n";
+        return false;
+    }
+
+    QFile file { diskPath.absoluteFilePath() };
+    if (file.exists()) {
+        qDebug() << "Tried writing tile to disk. File already exists.\n";
+        return false;
+    }
+
+    if (!file.open(QFile::WriteOnly)) {
+        qDebug() << "Tried writing tile to disk. Failed to create new file.\n";
+        return false;
+    }
+
+    // Todo: make a lock file
+    if (file.write(bytes) != bytes.length()) {
+        qDebug() << "Tried writing tile to disk. Didn't write the correct amount of bytes.\n";
+        return false;
+    }
+
+    return true;
+}
+
+QString Bach::tileDiskCacheSubPath(TileCoord coord)
+{
+    auto sep = QDir::separator();
+    QString fileDirPath =
+        QString("z%1") +
+        QString("x%2") +
+        QString("y%3.mvt");
+    fileDirPath = fileDirPath
+        .arg(coord.zoom)
+        .arg(coord.x)
+        .arg(coord.y);
+    return fileDirPath;
 }
