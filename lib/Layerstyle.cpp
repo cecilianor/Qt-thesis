@@ -93,7 +93,7 @@ BackgroundStyle *BackgroundStyle::fromJson(const QJsonObject &json)
                 float opacityStop = stop.toArray().last().toDouble();
                 stops.append(QPair<int, float>(zoomStop, opacityStop));
             }
-             returnLayer->m_backgroundOpacity.setValue(stops);
+            returnLayer->m_backgroundOpacity.setValue(stops);
         }else if(backgroundOpacity.isArray()){ //Case where the property is an expression
             returnLayer->m_backgroundOpacity.setValue(backgroundOpacity.toArray());
         }else{ //Case where the property is a numeric value
@@ -118,6 +118,7 @@ QVariant BackgroundStyle::getColorAtZoom(int zoomLevel) const
         return QColor(Qt::GlobalColor::black);
     }else if(m_backgroundColor.typeId() != QMetaType::Type::QColor && m_backgroundColor.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, QColor>> stops = m_backgroundColor.value<QList<QPair<int, QColor>>>();
+        if(stops.size() == 0) return QColor(Qt::GlobalColor::black);
         return QVariant(getStopOutput(stops, zoomLevel));
     }else{
         return m_backgroundColor;
@@ -138,6 +139,7 @@ QVariant BackgroundStyle::getOpacityAtZoom(int zoomLevel) const
         return QVariant(1);
     }else if(m_backgroundOpacity.typeId() != QMetaType::Type::Double && m_backgroundOpacity.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, float>> stops = m_backgroundOpacity.value<QList<QPair<int, float>>>();
+        if(stops.size() == 0) return QVariant(1);
         return QVariant(getStopOutput(stops, zoomLevel));
     }else{
         return m_backgroundColor;
@@ -234,6 +236,7 @@ QVariant FillLayerStyle::getFillColorAtZoom(int zoomLevel) const
         return QColor(Qt::GlobalColor::black);
     }else if(m_fillColor.typeId() != QMetaType::Type::QColor && m_fillColor.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, QColor>> stops = m_fillColor.value<QList<QPair<int, QColor>>>();
+        if(stops.size() == 0) return QColor(Qt::GlobalColor::black);
         return QVariant(getStopOutput(stops, zoomLevel));
     } else {
         return m_fillColor;
@@ -255,6 +258,7 @@ QVariant FillLayerStyle::getFillOpacityAtZoom(int zoomLevel) const
         return QVariant(1);
     }else if(m_fillOpacity.typeId() != QMetaType::Type::QColor && m_fillOpacity.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, float>> stops = m_fillOpacity.value<QList<QPair<int, float>>>();
+        if(stops.size() == 0) return QVariant(1);
         return QVariant(getStopOutput(stops, zoomLevel));
     }else{
         return m_fillOpacity;
@@ -278,6 +282,7 @@ QVariant FillLayerStyle::getFillOutLineColorAtZoom(int zoomLevel) const
     }
     if(m_fillOutlineColor.typeId() != QMetaType::Type::QColor && m_fillOutlineColor.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, QColor>> stops = m_fillOutlineColor.value<QList<QPair<int, QColor>>>();
+        if(stops.size() == 0) return QVariant();
         return QVariant(getStopOutput(stops, zoomLevel));
     }else{
         return m_fillOutlineColor;
@@ -383,6 +388,7 @@ QVariant LineLayerStyle::getLineColorAtZoom(int zoomLevel) const
         return QVariant(QColor(Qt::GlobalColor::black));
     }else if(m_lineColor.typeId() != QMetaType::Type::QColor && m_lineColor.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, QColor>> stops = m_lineColor.value<QList<QPair<int, QColor>>>();
+        if(stops.size() == 0) return QVariant(QColor(Qt::GlobalColor::black));
         return QVariant(getStopOutput(stops, zoomLevel));
     }else{
         return m_lineColor;
@@ -403,6 +409,7 @@ QVariant LineLayerStyle::getLineOpacityAtZoom(int zoomLevel) const
         return QVariant(1);
     }else if(m_lineOpacity.typeId() != QMetaType::Type::Double && m_lineOpacity.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, float>> stops = m_lineOpacity.value<QList<QPair<int, float>>>();
+        if(stops.size() == 0) return QVariant(1);
         return QVariant(getStopOutput(stops, zoomLevel));
     }else{
         return m_lineOpacity;
@@ -424,6 +431,7 @@ QVariant LineLayerStyle::getLineWidthAtZoom(int zoomLevel) const
         return QVariant(1);
     }else if(m_lineWidth.typeId() != QMetaType::Type::Int && m_lineWidth.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, int>> stops = m_lineWidth.value<QList<QPair<int, int>>>();
+        if(stops.size() == 0) return QVariant(1);
         return QVariant(getStopOutput(stops, zoomLevel));
     }else{
         return m_lineWidth;
@@ -559,6 +567,7 @@ QVariant SymbolLayerStyle::getTextSizeAtZoom(int zoomLevel) const
         return QVariant(16);
     }else if(m_textSize.typeId() != QMetaType::Type::Double && m_textSize.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, int>> stops = m_textSize.value<QList<QPair<int, int>>>();
+        if(stops.size() == 0) return QVariant(16);
         return QVariant(getStopOutput(stops, zoomLevel));
     }else{
         return QVariant(m_textSize);
@@ -579,6 +588,7 @@ QVariant SymbolLayerStyle::getTextColorAtZoom(int zoomLevel) const
         return QVariant(QColor(Qt::GlobalColor::black));
     }else if(m_textColor.typeId() != QMetaType::Type::QColor && m_textColor.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, QColor>> stops = m_textColor.value<QList<QPair<int, QColor>>>();
+        if(stops.size() == 0) return QVariant(QColor(Qt::GlobalColor::black));
         return QVariant(getStopOutput(stops, zoomLevel));
     }else{
         return QVariant(m_textColor);
@@ -601,6 +611,7 @@ QVariant SymbolLayerStyle::getTextOpacityAtZoom(int zoomLevel) const
         return QVariant(1);
     }else if(m_textOpacity.typeId() != QMetaType::Type::Double && m_textOpacity.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, float>> stops = m_textOpacity.value<QList<QPair<int, float>>>();
+        if(stops.size() == 0) return QVariant(1);
         return QVariant(getStopOutput(stops, zoomLevel));
     }else{
         return QVariant(m_textOpacity);
