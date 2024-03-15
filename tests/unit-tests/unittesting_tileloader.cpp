@@ -13,35 +13,38 @@ QTEST_MAIN(UnitTesting)
 
 // Try to get a key that's correct
 void UnitTesting::readKey_returns_success_when_valid_key() {
-    TileLoader tileLoader;
+    std::optional<QString> keyFromFileResult = Bach::readMapTilerKey("testkey.txt");
+    QVERIFY2(keyFromFileResult.has_value(), "Unable to load MapTiler key from file.");
 
-    QString keyFromFile = tileLoader.readKey("testkey.txt");
+    QString keyFromFile = keyFromFileResult.value();
     QString keyString ="123*+abcDEF<>";
 
-    QVERIFY(keyFromFile==keyString);
+    QVERIFY(keyFromFile == keyString);
 }
 
 // Try to get a key that's wrong
-void UnitTesting::readKey_returns_failure_when_invalid_key() {
-    TileLoader tileLoader;
+void UnitTesting::readKey_returns_failure_when_invalid_key()
+{
+    std::optional<QString> keyFromFileResult = Bach::readMapTilerKey("testkey.txt");
+    QVERIFY2(keyFromFileResult.has_value(), "Unable to load MapTiler key from file.");
 
-    QString keyFromFile = tileLoader.readKey("testkey.txt");
+    QString keyFromFile = keyFromFileResult.value();
     QString wrongKey ="IAmWrong";       //correct key = 123*+abcDEF<>
 
-    QVERIFY(keyFromFile!=wrongKey);
+    QVERIFY(keyFromFile != wrongKey);
 }
 
 /// Tests of getting styleshehets
 // Get a supported stylesheet
 // Note that this specific test will fail if an illegal key is provided
-void UnitTesting::getStyleSheet_returns_success_on_supported_stylesheet() {
-    NetworkController networkController;
+void UnitTesting::getStyleSheet_returns_success_on_supported_stylesheet()
+{
+    std::optional<QString> keyFromFileResult = Bach::readMapTilerKey("testkey.txt");
+    QVERIFY2(keyFromFileResult.has_value(), "Unable to load MapTiler key from file.");
 
-    TileLoader tileLoader;
-    QString key = tileLoader.readKey("key.txt");
-
-    HttpResponse styleSheetURL =
-        tileLoader.getStylesheet(StyleSheetType::basic_v2, key);
+    HttpResponse styleSheetURL = Bach::requestStyleSheetFromWeb(
+        StyleSheetType::basic_v2,
+        keyFromFileResult.value());
 
     QVERIFY(styleSheetURL.resultType == ResultType::success);
 }
@@ -49,12 +52,12 @@ void UnitTesting::getStyleSheet_returns_success_on_supported_stylesheet() {
 // Get a non-supported stylesheet
 // Note that this specific test will fail if an illegal key is provided
 void UnitTesting::getStyleSheet_returns_failure_on_unsupported_stylesheet() {
-    NetworkController networkController;
-    TileLoader tileLoader;
-    QString key = tileLoader.readKey("key.txt");
+    std::optional<QString> keyFromFileResult = Bach::readMapTilerKey("testkey.txt");
+    QVERIFY2(keyFromFileResult.has_value(), "Unable to load MapTiler key from file.");
 
-    HttpResponse styleSheetURL =
-        tileLoader.getStylesheet(StyleSheetType::bright_v2, key);
+    HttpResponse styleSheetURL = Bach::requestStyleSheetFromWeb(
+        StyleSheetType::bright_v2,
+        keyFromFileResult.value());
 
     QVERIFY(styleSheetURL.resultType == ResultType::noImplementation);
 }
@@ -162,11 +165,11 @@ void UnitTesting::loadTileFromCache_fails_on_broken_file()
 
     // Write our input file to the tile cache.
     QFile inputFile(":unitTestResources/loadTileFromCache_fails_on_broken_file.mvt");
-    auto inputFileOpenResult = inputFile.open(QFile::ReadOnly);
+    bool inputFileOpenResult = inputFile.open(QFile::ReadOnly);
     QVERIFY2(inputFileOpenResult == true, "Unable to open input file.");
 
-    auto inputFileBytes = inputFile.readAll();
-    auto writeToCacheResult = Bach::writeTileToDiskCache(
+    QByteArray inputFileBytes = inputFile.readAll();
+    bool writeToCacheResult = Bach::writeTileToDiskCache(
         tempDir.path(),
         expectedCoord,
         inputFileBytes);
@@ -195,12 +198,12 @@ void UnitTesting::loadTileFromCache_fails_on_broken_file()
 
     loop.exec();
 
-    auto tileStateResult = tileLoader.getTileState(expectedCoord);
+    std::optional<Bach::LoadedTileState> tileStateResult = tileLoader.getTileState(expectedCoord);
     QVERIFY2(
         tileStateResult.has_value(),
         "TileLoader::getTileState returned nullopt when it was just reported to have finished loading.");
 
-    auto tileState = tileStateResult.value();
+    Bach::LoadedTileState tileState = tileStateResult.value();
     QVERIFY2(
         tileState == Bach::LoadedTileState::ParsingFailed,
         "Expected loaded to be marked as parsing failed, but result was different.");
@@ -212,15 +215,15 @@ void UnitTesting::loadTileFromCache_parses_cached_file_successfully()
 {
     // Write our input file to the tile cache.
     QFile inputFile(":unitTestResources/loadTileFromCache_parses_cached_file_successfully.mvt");
-    auto inputFileOpenResult = inputFile.open(QFile::ReadOnly);
+    bool inputFileOpenResult = inputFile.open(QFile::ReadOnly);
     QVERIFY2(inputFileOpenResult == true, "Unable to open input file.");
 
     const TileCoord expectedCoord = {0, 0, 0};
 
     Bach::UnitTesting::TempDir tempDir;
 
-    auto inputFileBytes = inputFile.readAll();
-    auto writeToCacheResult = Bach::writeTileToDiskCache(
+    QByteArray inputFileBytes = inputFile.readAll();
+    bool writeToCacheResult = Bach::writeTileToDiskCache(
         tempDir.path(),
         expectedCoord,
         inputFileBytes);

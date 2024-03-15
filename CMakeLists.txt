@@ -50,6 +50,7 @@ qt_add_library(maplib STATIC
     lib/Evaluator.h
     lib/Evaluator.cpp
     lib/Utilities.h
+    lib/Utilities.cpp
     lib/RequestTilesResult.h)
 
 # Qt containers by default don't include asserts (i.e out of bounds checks) in their containers

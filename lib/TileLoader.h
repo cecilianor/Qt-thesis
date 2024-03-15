@@ -49,7 +49,12 @@ public:
      */
     QString getTileDiskPath(TileCoord coord);
 
-    // Thread safe.
+    /*!
+     * @brief Loads the tile-state of a given tile, if it has been loaded in some form.
+     * Mostly used in tests to see if tiles were put into correct state.
+     *
+     * Thread safe.
+     */
     std::optional<Bach::LoadedTileState> getTileState(TileCoord) const;
 
 signals:
@@ -67,13 +72,15 @@ private:
 
     struct StoredTile {
         Bach::LoadedTileState state = {};
+        // We use std::unique_ptr over QScopedPointer
+        // because QScopedPointer doesn't support move semantics.
         std::unique_ptr<VectorTile> tile;
 
         // Tells us whether this tile is safe to return to
         // rendering.
-        bool isOk() const { return state == Bach::LoadedTileState::Ok; }
+        bool isReadyToRender() const { return state == Bach::LoadedTileState::Ok; }
 
-        static StoredTile makePending()
+        static StoredTile newPending()
         {
             StoredTile temp;
             temp.state = Bach::LoadedTileState::Pending;
@@ -103,17 +110,11 @@ public:
 
 public:
     // Functionality making different requests
-    HttpResponse getStylesheet(StyleSheetType type, QString key);
     ParsedLink getTilesLink(const QJsonDocument & styleSheet, QString sourceType);
     ParsedLink getPBFLink (const QString & tileSheetUrl);
-
-    HttpResponse loadStyleSheetFromWeb(const QString &mapTilerKey, StyleSheetType &StyleSheetType);
     ParsedLink getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType);
     QString setPbfLink(const TileCoord &tileCoord, const QString &pbfLinkTemplate);
     HttpResponse downloadTile(const QString &pbfLink);
-
-    // Key reader
-    QString readKey(QString tilePath);
 
 public:
     using TileLoadedCallbackFn = std::function<void(TileCoord)>;
@@ -204,6 +205,7 @@ namespace Bach {
         const QString& basePath,
         TileCoord coord,
         const QByteArray &bytes);
+
     QString tileDiskCacheSubPath(TileCoord coord);
 }
 

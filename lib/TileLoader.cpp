@@ -50,34 +50,6 @@ std::optional<Bach::LoadedTileState> TileLoader::getTileState(TileCoord coord) c
 }
 
 /*!
- * @brief TileURL::getStylesheet gets a stylesheet from MapTiler
- * @param type The type of the stylesheet passed as an enum.
- * @param key The MapTiler key.
- * @return The response from MapTiler.
- */
-HttpResponse TileLoader::getStylesheet(StyleSheetType type, QString key) {
-    auto url = QString();
-    HttpResponse res;
-    switch(type) {
-        case (StyleSheetType::basic_v2) : {
-            url = "https://api.maptiler.com/maps/basic-v2/style.json?key=" + key;
-            res = networkController.sendRequest(url);
-            if (res.resultType != ResultType::success) {
-                qWarning() << "Error: " << PrintResultTypeInfo(res.resultType);
-                return { QByteArray(), res.resultType };
-            }
-            break;
-        }
-        default: {
-            qWarning() << "Error: " <<PrintResultTypeInfo(ResultType::noImplementation);
-            return {QByteArray(), ResultType::noImplementation};
-            break;
-        }
-    }
-    return res;
-};
-
-/*!
  * @brief TileURL::getTilesLink grabs a link to a mapTiler tile sheet
  * @param styleSheet is the stylesheet to get the link from
  * @param sourceType is the map source type passed as a QString
@@ -169,47 +141,6 @@ ParsedLink TileLoader::getPBFLink (const QString & tileSheetUrl) {
     }
     return {QString(), ResultType::unknownError};
 };
-
-/*!
- * @brief TileURL::readKey reads a key from file.
- * @param filePath is the relative path + filename that's storing the key.
- * @return The key if successfully read from file.
- */
-QString TileLoader::readKey(QString filePath) {
-
-    QFile file(filePath);
-
-    if (!file.open(QFile::ReadOnly | QFile::Text)) {
-        qDebug() << "Couldn't read key...";
-        return QString();
-    }
-    QTextStream in(&file);
-
-    return in.readAll().trimmed();
-}
-
-/*!
- * \brief TileURL::loadStyleSheetFromWeb loads a style sheet from the MapTiler API.
- * \param mapTilerKey is the personal key to the MapTiler API. This must be placed in a file
- * called 'key.txt' and stored in the same folder as the executable.
- * \param StyleSheetType is the type of style sheet to load.
- * \return
- */
-HttpResponse TileLoader::loadStyleSheetFromWeb(
-    const QString &mapTilerKey,
-    StyleSheetType &StyleSheetType)
-{
-    HttpResponse styleSheetResult = getStylesheet(StyleSheetType, mapTilerKey);
-    if (styleSheetResult.resultType != ResultType::success) {
-        qWarning() << "There was an error getting the stylesheet: " << PrintResultTypeInfo(styleSheetResult.resultType);
-        return {QByteArray(), styleSheetResult.resultType};
-    }
-    if(styleSheetResult.response.isNull()) {
-        qWarning() << "Error: An empty stylesheet was returned: " << PrintResultTypeInfo(styleSheetResult.resultType);
-        return{QByteArray(), styleSheetResult.resultType};
-    }
-    return styleSheetResult;
-}
 
 /*!
  * \brief TileURL::getPbfLinkTemplate templatises the PBF link used to get MapTiler vector tiles.
@@ -320,6 +251,7 @@ QScopedPointer<Bach::RequestTilesResult> TileLoader::requestTiles(
             // TODO:
             // This should eventually notify the TileLoader
             // that our tiles are no longer being read.
+            // Only really necessary when we have an eviction policy in place.
         }
 
         QMap<TileCoord, const VectorTile*> _map;
@@ -350,13 +282,13 @@ QScopedPointer<Bach::RequestTilesResult> TileLoader::requestTiles(
 
                 // If the item is marked as nullptr,
                 // it means it is pending and should not be immediately returned.
-                if (memoryItem.isOk()) {
+                if (memoryItem.isReadyToRender()) {
                     out->_map.insert(requestedCoord, memoryItem.tile.get());
                 }
             } else if (loadMissingTiles) {
                 // Tile not found, queue it for loading.
                 // Insert it with the pending status.
-                tileMemory.insert({ requestedCoord, StoredTile::makePending() });
+                tileMemory.insert({ requestedCoord, StoredTile::newPending() });
                 loadJobs.push_back(requestedCoord);
             }
         }
@@ -384,6 +316,7 @@ bool TileLoader::loadFromDisk(TileCoord coord, TileLoadedCallbackFn signalFn)
     if (!file.open(QFile::ReadOnly)) {
         qDebug() << "Tried reading tile from file, but encountered unexpected error when opening file.\n";
         // Error, file exists but didn't open.
+        return false;
     }
 
     // Successfully opened file, read contents.
@@ -412,9 +345,8 @@ void TileLoader::networkReplyHandler(
     // Check for errors in the reply.
     if (reply->error() != QNetworkReply::NoError) {
         qDebug() << "Error when requesting tile from web: " << reply->errorString() << '\n';
-        // TODO: Do something meaningful, like retrying the request or
+        // TODO: Do something meaningful, like retrying the request later or
         // marking this tile as non-functional to stop us from requesting it anymore.
-
     }
 
     // TODO: Reply can return 204 No Content, and this is a valid result
@@ -553,6 +485,8 @@ void TileLoader::insertTile(
     emit tileFinished(coord);
 
     // Fire the signal.
+    // In the case of the application, this
+    // is gonna trigger the MapWidget to redraw.
     if (signalFn)
         signalFn(coord);
 }
@@ -596,7 +530,6 @@ bool Bach::writeTileToDiskCache(
 
 QString Bach::tileDiskCacheSubPath(TileCoord coord)
 {
-    auto sep = QDir::separator();
     QString fileDirPath =
         QString("z%1") +
         QString("x%2") +

@@ -15,74 +15,29 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    // Gets different URLs to download PBF tiles.
-    TileLoader tileLoader;
-    // The style sheet type to load (can be many different types).
-    auto StyleSheetType = StyleSheetType::basic_v2;
-
-     // Read key from file.
-    QString mapTilerKey = tileLoader.readKey("key.txt");
-    if(mapTilerKey == "") {
-        // If we couldn't load the key, display an error box.
-        QMessageBox::critical(
-            nullptr,
-            "Internal Error",
-            "Internal error. Contact support if the error persists. The application will now shut down.");
+    // Read key from file.
+    std::optional<QString> mapTilerKeyResult = Bach::readMapTilerKey("key.txt");
+    if (!mapTilerKeyResult.has_value()) {
         // Add developer comments to QDebug, not to the end user/client.
         qWarning() << "Reading of the MapTiler key failed...";
+    }
+
+    // The style sheet type to load (can be many different types).
+    auto styleSheetType = StyleSheetType::basic_v2;
+
+    HttpResponse styleSheetBytes = Bach::loadStyleSheetBytes(styleSheetType, mapTilerKeyResult);
+    // If we couldn't load the style sheet, we can't display anything.
+    // So we quit.
+    if (styleSheetBytes.resultType != ResultType::success) {
+        QMessageBox::critical(
+            nullptr,
+            "Unexpected error.",
+            "Application will now quit.");
         return EXIT_FAILURE;
     }
 
-    HttpResponse styleSheetBytes;
-
-    // Caching variables.
-    QString styleSheetCacheFormat = TileLoader::getGeneralCacheFolder() + QDir::separator() + "styleSheetCache.json";
-    QString styleSheetCacheUrl = styleSheetCacheFormat;
-
-    // Try to load the style sheet from file. Download it from MapTiler if it's not foind.
-    QFile file(styleSheetCacheUrl);
-    if (file.exists())
-    {
-        qDebug() << "Loading stylesheet from cache. Reading from file...\n";
-        // Open the file
-        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-            qWarning() << "There was a problem opening the cache file to write to it.";
-            return EXIT_FAILURE;
-        }
-
-        // Read the cache file contents and convert it to a byteArray().
-        QByteArray data = file.readAll();
-        qDebug() << "Finished loading from the cache file. Converting data to string...\n";
-        file.close();
-
-        // Potential bugs:
-        // What if the cache file got garbled at some step before here? There could potentially be
-        // more errors here. Note that the stylesheet is only written to the cached file
-        // in the first place if the original HTTP request had not-empty data on the expected form.
-        styleSheetBytes = HttpResponse{data, ResultType::success}; // Kinda strange signature here, but it must be this way to match its original implementation.
-    } else {
-        // Load stylesheet from web
-        styleSheetBytes = tileLoader.loadStyleSheetFromWeb(mapTilerKey, StyleSheetType);
-        qDebug() << "Loading stylesheet from MapTiler...\n";
-        if (styleSheetBytes.resultType != ResultType::success) {
-            qWarning() << "There was an error loading stylesheet: " << PrintResultTypeInfo(styleSheetBytes.resultType);
-            QMessageBox::critical(
-                nullptr,
-                "Map Loading Bytesheet Failed",
-                "The map failed to load. Contact support if the error persists. The application will now shut down.");
-            return EXIT_FAILURE;
-        }
-        qDebug() << "Loading stylesheet from Maptiler completed without issues.\n";
-
-        // Write the response data to the cache.
-        // Consider additional error handling here in the future.
-        if (!file.open(QIODevice::WriteOnly)) {
-            qWarning() << "There was a problem opening the cache file to write to it.";
-            return EXIT_FAILURE;
-        }
-        file.write(styleSheetBytes.response);
-        file.close();
-    }
+    // Gets different URLs to download PBF tiles.
+    TileLoader tileLoader;
 
     // Gets the link template where we have to switch out x, y,z in the link.
     auto pbfLinkTemplate = tileLoader.getPbfLinkTemplate(styleSheetBytes.response, "maptiler_planet");

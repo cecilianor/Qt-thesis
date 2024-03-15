@@ -5,6 +5,8 @@
 #include <QString>
 #include <QByteArray>
 
+#include <optional>
+
 /*!
  * @brief The StyleSheetType enum covers the basic style sheets provided by MapTiler.
  *
@@ -122,5 +124,34 @@ struct ParsedLink {
     QString link;
     ResultType resultType;
 };
+
+namespace Bach {
+    /*!
+     * @brief Reads MapTiler key from file.
+     * @param filePath is the relative path + filename that's storing the key.
+     * @return The key if successfully read from file.
+     */
+    std::optional<QString> readMapTilerKey(const QString &filePath);
+
+    HttpResponse requestAndWait(const QString &url);
+    /*!
+     * @brief Makes a blocking network request to get a stylesheet from MapTiler
+     * @param type The style of the stylesheet
+     * @param key The MapTiler key.
+     * @return The response from MapTiler.
+     */
+    HttpResponse requestStyleSheetFromWeb(StyleSheetType type, const QString &key);
+
+    /*!
+     * \brief Loads the bytes of the stylesheet.
+     * Will attempt to load from cache first, then try downloading from web.
+     * If loaded from web, it will then try to write the result to disk cache.
+     * This is a blocking and re-entrant function.
+     *
+     */
+    HttpResponse loadStyleSheetBytes(
+        StyleSheetType type,
+        const std::optional<QString> &mapTilerKey);
+}
 
 #endif // UTILITIES_H
