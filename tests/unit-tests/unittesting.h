@@ -29,6 +29,13 @@ private slots:
     void getStopOutput_returns_basic_values();
     void parseSheet_returns_basic_values();
 
+    /* VectorTile tests
+     */
+    void tileFromByteArray_returns_basic_values();
+
+    /* Evaluator test
+     */
+    void resolveExpression_returns_basic_values();
 
 
 };

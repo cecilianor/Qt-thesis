@@ -215,7 +215,7 @@ public:
 };
 
 template <class T>
-T getStopOutput(QList<QPair<int, T>> list, int currentZoom)
+inline T getStopOutput(QList<QPair<int, T>> list, int currentZoom)
 {
     if(currentZoom <= list.begin()->first) return list.begin()->second;
     for(int i = 0; i < list.size(); i++)
