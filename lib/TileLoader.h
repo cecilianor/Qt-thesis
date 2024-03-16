@@ -31,12 +31,17 @@ namespace Bach {
     };
 }
 
+/*!
+ * @brief System for loading, storing and caching map-tiles.
+ *
+ * Can be used to load tiles for the MapWidget.
+ */
 class TileLoader : public QObject
 {
     Q_OBJECT
 
 private:
-    // Please use the static creator functions.
+    // Use the static creator functions.
     // This constructor alone will not guarantee you a functional
     // TileLoader object.
     TileLoader();
@@ -44,19 +49,53 @@ public:
 
     ~TileLoader(){};
 
+    // Returns the path to the general cache storage for the application.
     static QString getGeneralCacheFolder();
+    // Returns the path to the tile cache storage for the application.
+    // This guaranteed to be a subfolder of the general cache.
     static QString getTileCacheFolder();
 
+
+    // We can't return by value below, because TileLoader is a QObject and therefore
+    // doesn't support move-semantics.
+
+    /*!
+     * @brief Create a new TileLoader instance by utilizing a
+     * PBF URL template. The TileLoader will then use this URL
+     * to download tiles from the web.
+     *
+     * @param The URL template for downloading PBF files.
+     * The function expects this URL to contain the patterns
+     * {x}, {y} and {z} (including curly braces). The TileLoader will
+     * then insert the actual Tile-coordinates into the URL.
+     *
+     * @param The stylesheet to pass on to the MapWidget.
+     *
+     * @return The constructed TileLoader instance.
+     */
     static std::unique_ptr<TileLoader> fromPbfLink(
         const QString &pbfUrlTemplate,
         StyleSheet&& styleSheet);
+
+    /*!
+     * @brief Local-only alternative to 'fromPbfLink' function.
+     * Creates a TileLoader that can not access the web and will
+     * only try to load from cache.
+     */
     static std::unique_ptr<TileLoader> newLocalOnly(StyleSheet&& styleSheet);
-    // We can't return by value, because TileLoader is a QObject and therefore
-    // doesn't support move-semantics.
+
+    /*!
+     * @brief Creates an incomplete TileLoader without any stylesheet to pass onto
+     * rendering. This TileLoader should never be used when it needs to render anything.
+     *
+     * This function is mostly used for testing purposes.
+     *
+     * @param Takes the directory path to read/write cache into.
+     */
     static std::unique_ptr<TileLoader> newDummy(const QString &diskCachePath);
 
     /*!
-     * @brief Gets the full file-path of a given tile.
+     * @brief Gets the full file-path of a given tile, whether it exists or not.
      */
     QString getTileDiskPath(TileCoord coord);
 
@@ -64,36 +103,50 @@ public:
      * @brief Loads the tile-state of a given tile, if it has been loaded in some form.
      * Mostly used in tests to see if tiles were put into correct state.
      *
-     * Thread safe.
+     * @threadsafe
      */
     std::optional<Bach::LoadedTileState> getTileState(TileCoord) const;
 
 signals:
+    /*!
+     * @brief Gets signalled whenever a tile is finished loading,
+     * the coordinates of said tile. Will not be signalled if the
+     * tile loading process is cancelled.
+     */
     void tileFinished(TileCoord);
 
 private:
-    //QByteArray styleSheet;
-    //QByteArray JSONTileURL;
-    //QUrl tileURL;
-    //NetworkController networkController;
-
-
     StyleSheet styleSheet;
+
     QString pbfLinkTemplate;
+
     QNetworkAccessManager networkManager;
+
+    // Controls whether the TileLoader should try to access
+    // web when loading.
     bool useWeb = true;
+
+    // Directory path to tile cache storage.
     QString tileCacheDiskPath;
 
     struct StoredTile {
+        // Current loading-state of this tile.
         Bach::LoadedTileState state = {};
+
+        // Stores the final tile data.
+        //
         // We use std::unique_ptr over QScopedPointer
         // because QScopedPointer doesn't support move semantics.
         std::unique_ptr<VectorTile> tile;
 
         // Tells us whether this tile is safe to return to
         // rendering.
-        bool isReadyToRender() const { return state == Bach::LoadedTileState::Ok; }
+        bool isReadyToRender() const
+        {
+            return state == Bach::LoadedTileState::Ok;
+        }
 
+        // Creates a new tile-item with a pending state.
         static StoredTile newPending()
         {
             StoredTile temp;
@@ -103,50 +156,61 @@ private:
     };
     /* This contains our memory tile-cache.
      *
-     * The value is a pointer to the loaded tile.
-     *
      * IMPORTANT! Only use when 'tileMemoryLock' is locked!
      *
      * We had to use std::map because QMap doesn't support move semantics,
      * which interferes with our automated resource cleanup.
      */
     std::map<TileCoord, StoredTile> tileMemory;
+
     // We use unique-ptr here to let use the lock in const methods.
     std::unique_ptr<QMutex> _tileMemoryLock = std::make_unique<QMutex>();
+
+    // Generates the scoped lock for our tile-memory.
+    // Will block if mutex is already held.
     QMutexLocker<QMutex> createTileMemoryLocker() const { return QMutexLocker(_tileMemoryLock.get()); }
 
 public:
+    // Function signature of the tile-loaded
+    // callback passed into 'requestTiles'.
     using TileLoadedCallbackFn = std::function<void(TileCoord)>;
 
     /*!
-     * @brief Grabs loaded tiles and enqueues loading tiles that are missing.
-     *        This function does not block and is not re-entrant as
-     *        this may get called from a QWidget paint event.
+     * @brief Grabs loaded tiles, and enqueues loading tiles that are missing
+     * onto bakground thread(s).
      *
-     *        Returns the set of tiles that are already in memory at the
-     *        time of the request. To grab new tiles as they are loaded,
-     *        use the tileLoadedSignalFn parameter and call this function again.
+     * This function does not block and is not re-entrant as
+     * this may get called from a QWidget paint event.
+     *
+     * Returns the set of tiles that are already in memory at the
+     * time of the request. To grab new tiles as they are loaded,
+     * use the tileLoadedSignalFn parameter and call this function again.
+     * Alternatively connect to the tileFinished-signal.
      *
      * @param requestInput is a set of TileCoords that is requested.
      *
      * @param tileLoadedSignalFn is a function that will get called whenever
-     *        a tile is loaded, will be called later in time,
-     *        can be called from another thread. This function
-     *        will be called once for each tile that was loaded successfully.
+     * a tile is loaded, will be called later in time,
+     * can be called from another thread. This function
+     * will be called once for each tile that was loaded successfully.
      *
-     *        This function is only called if a tile is successfully loaded.
+     * This function is only called if a tile is successfully loaded.
      *
-     *        If this argument is set to null, the missing tiles will not be loaded.
+     * If this argument is set to null, the missing tiles will not be loaded.
+     *
+     * @param loadMissingTiles can be set to 'false' to force the
+     * TileLoader to NOT load tiles that are requested but not loaded.
+     * This means missing tiles will NOT be loaded in the future.
      *
      * @return Returns a RequestTilesResult object containing
-     *         the resulting map of tiles. The returned set of
-     *         data will always be a subset of all currently loaded tiles.
+     * the resulting map of tiles. The returned set of
+     * data will always be a subset of requested tiles and all currently loaded tiles.
      */
     QScopedPointer<Bach::RequestTilesResult> requestTiles(
         const std::set<TileCoord> &requestInput,
         TileLoadedCallbackFn tileLoadedSignalFn,
         bool loadMissingTiles);
-
+    // Overload where we don't need to pass any callback function.
     auto requestTiles(
         const std::set<TileCoord> &requestInput,
         bool loadMissingTiles)
@@ -154,11 +218,17 @@ public:
         return requestTiles(requestInput, nullptr, loadMissingTiles);
     }
 
+    // Overload where callback can get passed as nullptr and
+    // the TileLoader will not load missing tiles if the
+    // callback is nullptr.
     auto requestTiles(
         const std::set<TileCoord> &requestInput,
         TileLoadedCallbackFn tileLoadedSignalFn = nullptr)
     {
-        return requestTiles(requestInput, tileLoadedSignalFn, static_cast<bool>(tileLoadedSignalFn));
+        return requestTiles(
+            requestInput,
+            tileLoadedSignalFn,
+            static_cast<bool>(tileLoadedSignalFn));
     }
 
 private:
@@ -168,14 +238,29 @@ private:
      * TileCoords inputted.
      *
      * This function launches asynchronous jobs, does not block execution!
+     *
+     * @threadsafe
      */
     void queueTileLoadingJobs(
         const QVector<TileCoord> &input,
         TileLoadedCallbackFn signalFn);
 
+
+    // Thread-pool for the tile-loader worker threads.
     QThreadPool threadPool;
+    // Thread-pool for the tile-loader worker threads.
     QThreadPool &getThreadPool() { return threadPool; }
+
+    /*!
+     * @brief Loads the given tile from disk and inserts it
+     * into memory. This is a blocking call.
+     *
+     * @return Returns true if it was unable to load from disk
+     */
     bool loadFromDisk(TileCoord coord, TileLoadedCallbackFn signalFn);
+    /*!
+     * @brief Handles a network reply when a tile has been loaded from web.
+     */
     void networkReplyHandler(
         QNetworkReply* reply,
         TileCoord coord,
