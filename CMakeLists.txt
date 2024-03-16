@@ -10,7 +10,6 @@ set(CMAKE_AUTORCC ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-
 # We need to look for packages that are hard requirements for the code to run.
 find_package(Qt6 REQUIRED COMPONENTS Core Widgets Protobuf ProtobufTools Network)
 qt_standard_project_setup()
@@ -84,8 +83,7 @@ set(PROJECT_SOURCES
 
 qt_add_executable(application
     MANUAL_FINALIZATION
-    ${PROJECT_SOURCES}
-)
+    ${PROJECT_SOURCES})
 
 # Link our app to our library target.
 target_link_libraries(application PUBLIC maplib)
@@ -123,9 +121,6 @@ add_custom_command(
 qt_add_executable(cmd_example cmd_example.cpp)
 target_link_libraries(cmd_example PUBLIC maplib)
 
-
-
-
 # All testing related code goes in here
 if (BUILD_TESTS)
     # Find the necessary packages on the system.
@@ -138,13 +133,20 @@ if (BUILD_TESTS)
         tests/unit-tests/unittesting_tileloader.cpp
         tests/unit-tests/unittesting_rendering.cpp
         tests/unit-tests/unittesting_layerstyle.cpp
+        tests/unit-tests/unittesting_vectortile.cpp
+        tests/unit-tests/unittest_evaluator.cpp
+    )
+
+    qt_add_resources(unit_test "unitTestResources"
+        PREFIX "/"
+        FILES
+        unitTestResources/styleTest.json
+        unitTestResources/000testTile.pbf
+        unitTestResources/expressionTest.json
+        unitTestResources/loadTileFromCache_fails_on_broken_file.mvt
+        unitTestResources/loadTileFromCache_parses_cached_file_successfully.mvt
     )
     target_link_libraries(unit_test PUBLIC maplib Qt6::Test)
-    qt_add_resources(unit_test "unitTestResources"
-        FILES
-        "unitTestResources/loadTileFromCache_fails_on_broken_file.mvt"
-        "unitTestResources/loadTileFromCache_parses_cached_file_successfully.mvt"
-    )
 
     # Make sure we deploy the correct runtime dependencies to the test.
     win32_deploy(unit_test)

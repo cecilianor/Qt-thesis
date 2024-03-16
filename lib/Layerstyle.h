@@ -14,7 +14,7 @@
 #include <optional>
 
 /*
- *  all the layers styles forllow the maptiler layer style specification : https://docs.maptiler.com/gl-style-specification/layers/
+ *  all the layers styles follow the maptiler layer style specification : https://docs.maptiler.com/gl-style-specification/layers/
  */
 
 class AbstractLayereStyle
@@ -149,7 +149,7 @@ public:
     //bool m_textAllowOverlap = false;//Not used for first iteration
     //QString m_textAnchor = QString("center");//Not used for first iteration
     QVariant m_textField;
-    QFont m_textFont;
+    QStringList m_textFont;
     //bool m_textIgnorePlacement = false;//Not used for first iteration
     //QString m_textJustify = QString("center");//Not used for first iteration
     //bool m_textKeenUpright = true;//Not used for first iteration
@@ -217,5 +217,18 @@ public:
     QVector<AbstractLayereStyle*> m_layerStyles;
 
 };
+
+template <class T>
+inline T getStopOutput(QList<QPair<int, T>> list, int currentZoom)
+{
+    if(currentZoom <= list.begin()->first) return list.begin()->second;
+    for(int i = 0; i < list.size(); i++)
+    {
+        if(currentZoom <= list.at(i).first){
+            return list.at(i-1).second;
+        }
+    }
+    return list.last().second;
+}
 
 #endif // LAYERSTYLE_H
