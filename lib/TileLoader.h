@@ -73,11 +73,13 @@ signals:
 
 private:
     //QByteArray styleSheet;
-    QByteArray JSONTileURL;
-    QUrl tileURL;
+    //QByteArray JSONTileURL;
+    //QUrl tileURL;
     //NetworkController networkController;
 
+
     StyleSheet styleSheet;
+    QString pbfLinkTemplate;
     QNetworkAccessManager networkManager;
     bool useWeb = true;
     QString tileCacheDiskPath;
@@ -112,13 +114,6 @@ private:
     // We use unique-ptr here to let use the lock in const methods.
     std::unique_ptr<QMutex> _tileMemoryLock = std::make_unique<QMutex>();
     QMutexLocker<QMutex> createTileMemoryLocker() const { return QMutexLocker(_tileMemoryLock.get()); }
-
-public:
-
-
-    // Needed for loading tiles,
-    // probably not the best place to store it?
-    QString pbfLinkTemplate;
 
 public:
     using TileLoadedCallbackFn = std::function<void(TileCoord)>;
@@ -178,7 +173,8 @@ private:
         const QVector<TileCoord> &input,
         TileLoadedCallbackFn signalFn);
 
-    QThreadPool &getThreadPool() const { return *QThreadPool::globalInstance(); }
+    QThreadPool threadPool;
+    QThreadPool &getThreadPool() { return threadPool; }
     bool loadFromDisk(TileCoord coord, TileLoadedCallbackFn signalFn);
     void networkReplyHandler(
         QNetworkReply* reply,
@@ -194,12 +190,6 @@ private:
         TileCoord coord,
         const QByteArray &byteArray,
         TileLoadedCallbackFn signalFn);
-
-public:
-
-    // Caching
-    QString cacheForStyleSheet() const;
-    QString cacheForVectorTile(int z, int x, int y) const;
 };
 
 namespace Bach {

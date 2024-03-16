@@ -56,12 +56,12 @@ std::unique_ptr<TileLoader> TileLoader::newDummy(const QString &diskCachePath)
 
 QString TileLoader::getGeneralCacheFolder()
 {
-    QString basePath = QStandardPaths::writableLocation(QStandardPaths::GenericCacheLocation);
+    QString basePath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
 
     // Uncomment to store cache next to executable.
     //basePath = QCoreApplication::applicationDirPath();
 
-    return basePath + QDir::separator() + "cached_files";
+    return QDir::cleanPath(basePath + QDir::separator() + "cached_files");
 }
 
 QString TileLoader::getTileCacheFolder()

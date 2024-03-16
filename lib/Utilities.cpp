@@ -9,6 +9,7 @@
 bool Bach::writeNewFileHelper(const QString& path, const QByteArray &bytes)
 {
     auto fileInfo = QFileInfo{ path };
+    // Grab the directory part of this full filepath.
     QDir dir = fileInfo.dir();
 
     // QFile won't create our directories for us.
@@ -24,12 +25,20 @@ bool Bach::writeNewFileHelper(const QString& path, const QByteArray &bytes)
         return false;
     }
 
+    /* Possible improvement:
+     * It's conceivable that a thread might try to read a tile-file
+     * that is currently being written to by another thread.
+     *
+     * To solve this, we might want to introduce a .lock file
+     * solution whose presence determines whether a file is currently
+     * in use.
+     */
+
     if (!file.open(QFile::WriteOnly)) {
         qDebug() << "Tried writing to file. Failed to create new file.\n";
         return false;
     }
 
-    // Todo: make a lock file
     if (file.write(bytes) != bytes.length()) {
         qDebug() << "Tried writing to file. Didn't write the correct amount of bytes.\n";
         return false;
@@ -57,12 +66,9 @@ HttpResponse Bach::requestAndWait(const QString &url)
     QNetworkRequest request{ QUrl(url) };
 
     // Perform the GET request
-    // This will call the appropriate destroy functions
-    // on the reply object when the function ends.
+    QNetworkReply *reply = manager.get(QNetworkRequest{ QUrl{url} });
 
-    QNetworkReply *reply = manager.get(request);
-
-    // Creates an event loop to waits for the request to finish.
+    // Creates an event loop to wait for the request to finish.
     QEventLoop loop;
     QObject::connect(
         reply,
@@ -108,11 +114,12 @@ HttpResponse Bach::loadStyleSheetBytes(
     StyleSheetType type,
     const std::optional<QString> &mapTilerKey)
 {
+    // Create full path for the target stylesheet JSON file
     QString styleSheetCachePath =
         TileLoader::getGeneralCacheFolder() + QDir::separator() +
         "styleSheetCache.json";
 
-    // Try to load the style sheet from file. Download it from MapTiler if it's not foind.
+    // Try to load the style sheet from file first.
     {
         // We create scope for the QFile so that it doesn't interfere when we possibly write
         // to file later.
@@ -142,8 +149,7 @@ HttpResponse Bach::loadStyleSheetBytes(
         return webResponse;
 
     // From here we want try to write this stylesheet to disk cache.
-    // It's an error if we failed to open the file.
-
+    // If it failed, we consider the entire function a failure.
     bool writeSuccess = writeNewFileHelper(styleSheetCachePath, webResponse.response);
     if (!writeSuccess)
         return { {}, ResultType::unknownError };
@@ -153,14 +159,15 @@ HttpResponse Bach::loadStyleSheetBytes(
 
 ParsedLink Bach::getPbfLinkTemplate(const QJsonDocument &styleSheet, const QString &sourceType)
 {
-    ParsedLink tilesLinkResult = getTilesLinkFromStyleSheet(styleSheet, sourceType);
-    if (tilesLinkResult.resultType != ResultType::success) {
+    // First we need to find the URL to the tiles document.
+    ParsedLink tilesUrlResult = getTilesLinkFromStyleSheet(styleSheet, sourceType);
+    if (tilesUrlResult.resultType != ResultType::success) {
         qWarning() << "";
-        return {QString(), tilesLinkResult.resultType};
+        return {QString(), tilesUrlResult.resultType};
     }
 
     // Grab link to the XYZ PBF tile format based on the tiles.json link
-    return getPbfLinkFromTileSheet(tilesLinkResult.link);
+    return getPbfLinkFromTileSheet(tilesUrlResult.link);
 }
 
 ParsedLink Bach::getTilesLinkFromStyleSheet(

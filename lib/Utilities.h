@@ -136,7 +136,7 @@ namespace Bach {
      *
      * Created directory will not be removed in the case that writing to file fails.
      *
-     * @param path is the path to the file. Must contain filename, cannot be directory.
+     * @param path is the path to the file. Must contain filename, cannot be directory only.
      * @param Takes the byte-array to write.
      * @return true if success, false if failed.
      */
@@ -156,7 +156,7 @@ namespace Bach {
      * It waits for the response before
      * returning the result.
      *
-     * Should only be used during startup of the program.
+     * Should only be used during startup of the program, preferably.
      *
      * This is a re-entrant function.
      * \return
@@ -192,6 +192,16 @@ namespace Bach {
         const QJsonDocument &styleSheet,
         const QString &sourceType);
 
+    /*!
+     * \brief getPbfLinkTemplate
+     * Finds the PBF link template from the stylesheet JSON.
+     *
+     * \param styleSheet
+     * \param sourceType
+     * \return Returns the string that can be turned into the URL.
+     * This string will have patterns {z}/{x}/{y} where the tile indices
+     * need to be inserted.
+     */
     ParsedLink getPbfLinkTemplate(const QJsonDocument &styleSheet, const QString &sourceType);
 
     /*!

@@ -11,6 +11,7 @@
 #include <QNetworkReply>
 #include <QDir>
 
+// Helper function to let us do early shutdown during startup.
 [[noreturn]] void earlyShutdown(const QString &msg = "")
 {
     if (msg != "") {
@@ -26,12 +27,14 @@
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+    QCoreApplication::setApplicationName("qt_thesis_app");
+
+    qWarning() << "Current file cache can be found in: " << TileLoader::getGeneralCacheFolder();
 
     // Read key from file.
     std::optional<QString> mapTilerKeyResult = Bach::readMapTilerKey("key.txt");
     bool hasMapTilerKey = mapTilerKeyResult.has_value();
     if (!hasMapTilerKey) {
-        // Add developer comments to QDebug, not to the end user/client.
         qWarning() << "Reading of the MapTiler key failed. " <<
                       "App will attempt to only use local cache.";
     }
@@ -53,22 +56,23 @@ int main(int argc, char *argv[])
     QJsonDocument styleSheetJson = QJsonDocument::fromJson(
         styleSheetBytes.response,
         &parseError);
+    // No stylesheet, so we shut down.
     if (parseError.error != QJsonParseError::NoError) {
         earlyShutdown("Unable to parse stylesheet raw data into JSON.");
     }
 
     // Parse the stylesheet into data we can render.
     std::optional<StyleSheet> parsedStyleSheetResult = StyleSheet::fromJson(styleSheetJson);
+    // If we can't parse the stylesheet, we can't render, so we shut down.
     if (!parsedStyleSheetResult.has_value()) {
         qWarning() << "Unable to parse stylesheet JSON into a parsed StyleSheet object.";
         earlyShutdown();
     }
     StyleSheet &styleSheet = parsedStyleSheetResult.value();
 
-    // First we load useful links from the stylesheet. We only care about this is if we
-    // are online (have a MapTiler key)
 
-    // We only want to get the pbfLink if we can connect to internet.
+    // Load useful links from the stylesheet. We only care about this is if we
+    // are online (have a MapTiler key)
 
     // Tracks whether we will be using web stuff.
     bool useWeb = hasMapTilerKey;
@@ -95,6 +99,9 @@ int main(int argc, char *argv[])
 
     // Creates the Widget that displays the map.
     auto *mapWidget = new MapWidget;
+    // Set up the function that forwards requests from the
+    // MapWidget into the TileLoader. This lambda does the
+    // two components together.
     mapWidget->requestTilesFn = [&](auto input, auto signal) {
         return tileLoader.requestTiles(input, signal, true);
     };
