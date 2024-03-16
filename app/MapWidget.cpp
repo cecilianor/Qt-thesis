@@ -54,7 +54,7 @@ void MapWidget::paintEvent(QPaintEvent* event)
     };
 
     // Request tiles
-    auto requestResult = requestTilesFn(
+    QScopedPointer<Bach::RequestTilesResult> requestResult = requestTilesFn(
         tilesRequested,
         signalFn);
 
@@ -66,7 +66,7 @@ void MapWidget::paintEvent(QPaintEvent* event)
         getViewportZoomLevel(),
         getMapZoomLevel(),
         requestResult->map(),
-        styleSheet,
+        requestResult->styleSheet(),
         isShowingDebug());
 }
 

@@ -7,6 +7,7 @@
 #include <QJsonArray>
 #include <QMutex>
 #include <QMutexLocker>
+#include <QNetworkAccessManager>
 #include <QThreadPool>
 
 #include <set>
@@ -15,8 +16,6 @@
 #include <map>
 
 #include "TileCoord.h"
-#include "NetworkController.h"
-#include "Utilities.h"
 #include "VectorTiles.h"
 #include "RequestTilesResult.h"
 
@@ -36,13 +35,25 @@ class TileLoader : public QObject
 {
     Q_OBJECT
 
-public:
+private:
+    // Please use the static creator functions.
+    // This constructor alone will not guarantee you a functional
+    // TileLoader object.
     TileLoader();
-    TileLoader(QString tileCacheDiskPath, bool useWeb);
+public:
+
     ~TileLoader(){};
 
     static QString getGeneralCacheFolder();
     static QString getTileCacheFolder();
+
+    static std::unique_ptr<TileLoader> fromPbfLink(
+        const QString &pbfUrlTemplate,
+        StyleSheet&& styleSheet);
+    static std::unique_ptr<TileLoader> newLocalOnly(StyleSheet&& styleSheet);
+    // We can't return by value, because TileLoader is a QObject and therefore
+    // doesn't support move-semantics.
+    static std::unique_ptr<TileLoader> newDummy(const QString &diskCachePath);
 
     /*!
      * @brief Gets the full file-path of a given tile.
@@ -61,11 +72,12 @@ signals:
     void tileFinished(TileCoord);
 
 private:
-    QByteArray styleSheet;
+    //QByteArray styleSheet;
     QByteArray JSONTileURL;
     QUrl tileURL;
-    NetworkController networkController;
+    //NetworkController networkController;
 
+    StyleSheet styleSheet;
     QNetworkAccessManager networkManager;
     bool useWeb = true;
     QString tileCacheDiskPath;
@@ -85,7 +97,7 @@ private:
             StoredTile temp;
             temp.state = Bach::LoadedTileState::Pending;
             return temp;
-        };
+        }
     };
     /* This contains our memory tile-cache.
      *
@@ -107,14 +119,6 @@ public:
     // Needed for loading tiles,
     // probably not the best place to store it?
     QString pbfLinkTemplate;
-
-public:
-    // Functionality making different requests
-    ParsedLink getTilesLink(const QJsonDocument & styleSheet, QString sourceType);
-    ParsedLink getPBFLink (const QString & tileSheetUrl);
-    ParsedLink getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType);
-    QString setPbfLink(const TileCoord &tileCoord, const QString &pbfLinkTemplate);
-    HttpResponse downloadTile(const QString &pbfLink);
 
 public:
     using TileLoadedCallbackFn = std::function<void(TileCoord)>;

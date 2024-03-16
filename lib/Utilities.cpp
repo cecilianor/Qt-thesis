@@ -6,6 +6,38 @@
 
 #include "TileLoader.h"
 
+bool Bach::writeNewFileHelper(const QString& path, const QByteArray &bytes)
+{
+    auto fileInfo = QFileInfo{ path };
+    QDir dir = fileInfo.dir();
+
+    // QFile won't create our directories for us.
+    // We gotta make them ourselves.
+    if (!dir.exists() && !dir.mkpath(dir.absolutePath())) {
+        qDebug() << "Tried writing to file. Creating parent directory failed.\n";
+        return false;
+    }
+
+    QFile file { fileInfo.absoluteFilePath() };
+    if (file.exists()) {
+        qDebug() << "Tried writing to file. File already exists.\n";
+        return false;
+    }
+
+    if (!file.open(QFile::WriteOnly)) {
+        qDebug() << "Tried writing to file. Failed to create new file.\n";
+        return false;
+    }
+
+    // Todo: make a lock file
+    if (file.write(bytes) != bytes.length()) {
+        qDebug() << "Tried writing to file. Didn't write the correct amount of bytes.\n";
+        return false;
+    }
+
+    return true;
+}
+
 std::optional<QString> Bach::readMapTilerKey(const QString &filePath)
 {
     QFile file(filePath);
@@ -81,17 +113,22 @@ HttpResponse Bach::loadStyleSheetBytes(
         "styleSheetCache.json";
 
     // Try to load the style sheet from file. Download it from MapTiler if it's not foind.
-    QFile file { styleSheetCachePath };
-    if (file.exists() && file.open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        qDebug() << "Loading stylesheet from cache. Reading from file...\n";
+        // We create scope for the QFile so that it doesn't interfere when we possibly write
+        // to file later.
+        QFile file { styleSheetCachePath };
+        if (file.exists() && file.open(QIODevice::ReadOnly | QIODevice::Text))
+        {
+            qDebug() << "Loading stylesheet from cache. Reading from file...\n";
 
-        // Potential bugs:
-        // What if the cache file got garbled at some step before here? There could potentially be
-        // more errors here. Note that the stylesheet is only written to the cached file
-        // in the first place if the original HTTP request had not-empty data on the expected form.
-        return { file.readAll(), ResultType::success }; // Kinda strange signature here, but it must be this way to match its original implementation.
+            // Potential bugs:
+            // What if the cache file got garbled at some step before here? There could potentially be
+            // more errors here. Note that the stylesheet is only written to the cached file
+            // in the first place if the original HTTP request had not-empty data on the expected form.
+            return { file.readAll(), ResultType::success }; // Kinda strange signature here, but it must be this way to match its original implementation.
+        }
     }
+
 
     // If we got here, we need to try loading from web.
 
@@ -106,12 +143,99 @@ HttpResponse Bach::loadStyleSheetBytes(
 
     // From here we want try to write this stylesheet to disk cache.
     // It's an error if we failed to open the file.
-    if (!file.open(QIODevice::WriteOnly))
-        return { {}, ResultType::unknownError };
 
-    // Write to file while checking that we wrote the correct amount.
-    if (file.write(webResponse.response) != webResponse.response.size())
+    bool writeSuccess = writeNewFileHelper(styleSheetCachePath, webResponse.response);
+    if (!writeSuccess)
         return { {}, ResultType::unknownError };
 
     return webResponse;
+}
+
+ParsedLink Bach::getPbfLinkTemplate(const QJsonDocument &styleSheet, const QString &sourceType)
+{
+    ParsedLink tilesLinkResult = getTilesLinkFromStyleSheet(styleSheet, sourceType);
+    if (tilesLinkResult.resultType != ResultType::success) {
+        qWarning() << "";
+        return {QString(), tilesLinkResult.resultType};
+    }
+
+    // Grab link to the XYZ PBF tile format based on the tiles.json link
+    return getPbfLinkFromTileSheet(tilesLinkResult.link);
+}
+
+ParsedLink Bach::getTilesLinkFromStyleSheet(
+    const QJsonDocument &styleSheet,
+    const QString &sourceType)
+{
+    // Convert stylesheet to a Json Object.
+    QJsonObject jsonObject = styleSheet.object();
+
+    if (jsonObject.contains("sources") && jsonObject["sources"].isObject()) {
+        QJsonObject sourcesObject = jsonObject["sources"].toObject();
+
+        if (sourcesObject.contains(sourceType) && sourcesObject[sourceType].isObject()) {
+            QJsonObject maptilerObject = sourcesObject[sourceType].toObject();
+
+            // Return the tile sheet if the url to it was found.
+            if (maptilerObject.contains("url")) {
+                QString link = maptilerObject["url"].toString();
+                return {link, ResultType::success};
+            } else {
+                qWarning() << PrintResultTypeInfo(ResultType::tileSheetNotFound);
+                return {QString(), ResultType::tileSheetNotFound};
+            }
+        } else {
+            qWarning() << PrintResultTypeInfo(ResultType::unknownSourceType);
+            return {QString(), ResultType::unknownSourceType};
+        }
+    } else {
+        qWarning() << "The stylesheet doesn't contain 'sources' field like it should.\n"
+                   << "Check if MapTiler API has been updated to store map sources differently.\n";
+        return {QString(), ResultType::parseError};
+    }
+
+    qWarning() << PrintResultTypeInfo(ResultType::unknownError);
+    return {QString(), ResultType::unknownError};
+}
+
+ParsedLink Bach::getPbfLinkFromTileSheet(const QString &tileSheetUrl)
+{
+    HttpResponse response = requestAndWait(tileSheetUrl);
+    if (response.resultType != ResultType::success) {
+        qWarning() << "Error: " << PrintResultTypeInfo(response.resultType);
+        return { QString(), response.resultType };
+    }
+
+    // Parse the tilesheet
+    QJsonParseError parseError;
+    QJsonDocument tilesSheet = QJsonDocument::fromJson(response.response, &parseError);
+
+    if (parseError.error != QJsonParseError::NoError) {
+        qWarning() << "Parse error at" << parseError.offset << ":" << parseError.errorString();
+        return { QString(), ResultType::parseError };
+    }
+
+    if (tilesSheet.isObject()) {
+        QJsonObject jsonObject = tilesSheet.object();
+        //qDebug() << "A JSON object was found. It is the following: \n" << jsonObject;
+        if(jsonObject.contains("tiles") && jsonObject["tiles"].isArray()) {
+            QJsonArray tilesArray = jsonObject["tiles"].toArray();
+
+            for (const QJsonValueRef &tileValue : tilesArray) {
+                QString tileLink = tileValue.toString();
+                //qDebug() << "\n\t" <<"Link to PBF tiles: " << tileLink <<"\n";
+                return { tileLink, ResultType::success };
+            }
+        }
+        else {
+            qWarning() << "No 'tiles' array was found in the JSON object...";
+        }
+    } else if (tilesSheet.isArray()) {
+        //The else if branch is just used for testing. Do NOT pushto final version!!
+        qWarning() << "A JSON array was found. The current functionality doesn't support this...";
+    }
+    else {
+        qWarning() << "There is an unknown error with the loaded JSON data...";
+    }
+    return { QString(), ResultType::unknownError };
 }

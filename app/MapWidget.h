@@ -8,9 +8,7 @@
 #include <functional>
 #include <set>
 
-#include "VectorTiles.h"
 #include "TileCoord.h"
-#include "Layerstyle.h"
 #include "RequestTilesResult.h"
 
 /* Widget class responsible for displaying the actual map.
@@ -72,9 +70,6 @@ public:
             const std::set<TileCoord>&,
             std::function<void(TileCoord)>);
     std::function<RequestTilesFnT> requestTilesFn;
-
-    // Temporary. This probably does not belong here.
-    StyleSheet styleSheet;
 
 private:
     // Zoom level of viewport

@@ -565,3 +565,10 @@ void StyleSheet::parseSheet(const QJsonDocument &styleSheet)
     }
 }
 
+std::optional<StyleSheet> StyleSheet::fromJson(const QJsonDocument& input)
+{
+    StyleSheet out;
+    out.parseSheet(input);
+    return out;
+}
+

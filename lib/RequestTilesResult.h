@@ -5,6 +5,7 @@
 
 #include <TileCoord.h>
 #include <VectorTiles.h>
+#include <Layerstyle.h>
 
 namespace Bach {
     /*!
@@ -21,6 +22,7 @@ namespace Bach {
         virtual ~RequestTilesResult() {}
         // Returns the map of returned tiles.
         virtual const QMap<TileCoord, const VectorTile*> &map() const = 0;
+        virtual const StyleSheet &styleSheet() const = 0;
     };
 }
 

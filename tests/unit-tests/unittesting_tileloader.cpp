@@ -12,7 +12,8 @@ QTEST_MAIN(UnitTesting)
 // This include needs to match the name of this .cpp file.
 
 // Try to get a key that's correct
-void UnitTesting::readKey_returns_success_when_valid_key() {
+void UnitTesting::readKey_returns_success_when_valid_key()
+{
     std::optional<QString> keyFromFileResult = Bach::readMapTilerKey("testkey.txt");
     QVERIFY2(keyFromFileResult.has_value(), "Unable to load MapTiler key from file.");
 
@@ -51,7 +52,8 @@ void UnitTesting::getStyleSheet_returns_success_on_supported_stylesheet()
 
 // Get a non-supported stylesheet
 // Note that this specific test will fail if an illegal key is provided
-void UnitTesting::getStyleSheet_returns_failure_on_unsupported_stylesheet() {
+void UnitTesting::getStyleSheet_returns_failure_on_unsupported_stylesheet()
+{
     std::optional<QString> keyFromFileResult = Bach::readMapTilerKey("testkey.txt");
     QVERIFY2(keyFromFileResult.has_value(), "Unable to load MapTiler key from file.");
 
@@ -63,10 +65,8 @@ void UnitTesting::getStyleSheet_returns_failure_on_unsupported_stylesheet() {
 }
 
 // Test the getTilesLink function with a valid style sheet containing the specified source type
-void UnitTesting::getTilesLink_valid_style_sheet_returns_success() {
-    // Create a TileLoader instance
-    TileLoader tileLoader;
-
+void UnitTesting::getTilesLink_valid_style_sheet_returns_success()
+{
     // Create a valid JSON style sheet with the specified source type
     QJsonObject sourcesObject;
     QJsonObject sourceTypeObject;
@@ -77,7 +77,7 @@ void UnitTesting::getTilesLink_valid_style_sheet_returns_success() {
     QJsonDocument styleSheet(jsonObject);
 
     // Call the function with the valid style sheet and source type
-    ParsedLink parsedLink = tileLoader.getTilesLink(styleSheet, "maptiler_planet");
+    ParsedLink parsedLink = Bach::getTilesLinkFromStyleSheet(styleSheet, "maptiler_planet");
 
     // Verify that the parsed link and result type are as expected
     QCOMPARE(parsedLink.link, QString("https://example.com/tiles"));
@@ -85,9 +85,9 @@ void UnitTesting::getTilesLink_valid_style_sheet_returns_success() {
 }
 
 // Test the getTilesLink function with an unknown source type
-void UnitTesting::getTilesLink_unknown_source_type_returns_unknown_source_type_error() {
-    // Create a TileLoader instance
-    TileLoader tileLoader;
+void UnitTesting::getTilesLink_unknown_source_type_returns_unknown_source_type_error()
+{
+
     QString unknownType = ("random_string");
     // Create a valid JSON style sheet with a different source type
     QJsonObject sourcesObject;
@@ -99,17 +99,15 @@ void UnitTesting::getTilesLink_unknown_source_type_returns_unknown_source_type_e
     QJsonDocument styleSheet(jsonObject);
 
     // Call the function with the style sheet and an unknown source type
-    ParsedLink parsedLink = tileLoader.getTilesLink(styleSheet, unknownType);
+    ParsedLink parsedLink = Bach::getTilesLinkFromStyleSheet(styleSheet, unknownType);
 
     // Verify that the result type is unknown source type
     QCOMPARE(parsedLink.resultType, ResultType::unknownSourceType);
 }
 
 // Test the getTilesLink function with a style sheet missing the URL for the specified source type
-void UnitTesting::getTilesLink_missing_url_returns_tile_sheet_not_found_error() {
-    // Create a TileLoader instance
-    TileLoader tileLoader;
-
+void UnitTesting::getTilesLink_missing_url_returns_tile_sheet_not_found_error()
+{
     // Create a valid JSON style sheet missing the URL for the specified source type
     QJsonObject sourcesObject;
     QJsonObject sourceTypeObject;
@@ -119,7 +117,7 @@ void UnitTesting::getTilesLink_missing_url_returns_tile_sheet_not_found_error() 
     QJsonDocument styleSheet(jsonObject);
 
     // Call the function with the style sheet
-    ParsedLink parsedLink = tileLoader.getTilesLink(styleSheet, "maptiler_planet");
+    ParsedLink parsedLink = Bach::getTilesLinkFromStyleSheet(styleSheet, "maptiler_planet");
 
     // Verify that the result type is tile sheet not found
     QCOMPARE(parsedLink.resultType, ResultType::tileSheetNotFound);
@@ -175,7 +173,8 @@ void UnitTesting::loadTileFromCache_fails_on_broken_file()
         inputFileBytes);
     QVERIFY2(writeToCacheResult == true, "Unable to write input file into tile cache.");
 
-    TileLoader tileLoader(tempDir.path(), false);
+    auto tileLoaderPtr = TileLoader::newDummy(tempDir.path());
+    TileLoader &tileLoader = *tileLoaderPtr;
 
     QEventLoop loop;
     QObject::connect(
@@ -229,9 +228,8 @@ void UnitTesting::loadTileFromCache_parses_cached_file_successfully()
         inputFileBytes);
     QVERIFY2(writeToCacheResult == true, "Unable to write input file into tile cache.");
 
-    TileLoader tileLoader(
-        tempDir.path(),
-        false);
+    auto tileLoaderPtr = TileLoader::newDummy(tempDir.path());
+    TileLoader &tileLoader = *tileLoaderPtr;
 
     QEventLoop loop;
 
@@ -258,7 +256,6 @@ void UnitTesting::loadTileFromCache_parses_cached_file_successfully()
 
     loop.exec();
 
-
     auto tileStateResult = tileLoader.getTileState(expectedCoord);
     QVERIFY2(
         tileStateResult.has_value(),
@@ -271,7 +268,8 @@ void UnitTesting::loadTileFromCache_parses_cached_file_successfully()
 
 void UnitTesting::check_new_tileLoader_has_no_tiles()
 {
-    TileLoader tileLoader;
+    auto tileLoaderPtr = TileLoader::newDummy("");
+    TileLoader &tileLoader = *tileLoaderPtr;
     auto result = tileLoader.requestTiles({});
     auto &map = result->map();
     QVERIFY(map.size() == 0);

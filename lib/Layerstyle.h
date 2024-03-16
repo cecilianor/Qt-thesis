@@ -11,6 +11,8 @@
 #include <QJsonArray>
 #include <QPen>
 
+#include <optional>
+
 /*
  *  all the layers styles forllow the maptiler layer style specification : https://docs.maptiler.com/gl-style-specification/layers/
  */
@@ -205,6 +207,8 @@ class StyleSheet
 public:
     StyleSheet(){};
     ~StyleSheet();
+    static std::optional<StyleSheet> fromJson(const QJsonDocument&);
+
     void parseSheet(const QJsonDocument &styleSheet);
     QString m_id;
     int m_version;
