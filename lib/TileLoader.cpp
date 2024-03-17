@@ -206,7 +206,7 @@ bool TileLoader::loadFromDisk(TileCoord coord, TileLoadedCallbackFn signalFn)
 
     // Now we need to insert the tile into the tile-memory
     // and NOT insert it into disk cache.
-    insertTile(coord, bytes, signalFn);
+    insertIntoTileMemory(coord, bytes, signalFn);
 
     // Return success if we found the file.
     return true;
@@ -242,7 +242,16 @@ void TileLoader::networkReplyHandler(
     // which means we are on the GUI thread. We need to dispatch the result of
     // the reply onto a new thread. This is because parsing will block
     // GUI responsiveness.
-    queueTileParsing(coord, bytes, signalFn);
+
+    // Create async jobs to insert tile into memory
+    getThreadPool().start([=]() {
+        insertIntoTileMemory(coord, bytes, signalFn);
+    });
+
+    // Also insert into disk cache.
+    getThreadPool().start([=]() {
+        writeTileToDisk(coord, bytes);
+    });
 }
 
 void TileLoader::loadFromWeb(TileCoord coord, TileLoadedCallbackFn signalFn)
@@ -300,35 +309,14 @@ void TileLoader::queueTileLoadingJobs(
     getThreadPool().start(asyncJob);
 }
 
-void TileLoader::queueTileParsing(
-    TileCoord coord,
-    QByteArray bytes,
-    TileLoadedCallbackFn signalFn)
-{
-    getThreadPool().start([=]() {
-        insertTile(coord, bytes, signalFn);
-    });
-
-    getThreadPool().start([=]() {
-        writeTileToDisk(coord, bytes);
-    });
-}
-
-void TileLoader::insertTile(
+void TileLoader::insertIntoTileMemory(
     TileCoord coord,
     const QByteArray &bytes,
     TileLoadedCallbackFn signalFn)
 {
-    // Try parsing the bytes into our tile.
-    std::optional<VectorTile> newTileResult = Bach::tileFromByteArray(bytes);
-
-    if (!newTileResult.has_value()) {
-        qDebug() << "Error when parsing tile " << coord.toString();
-
-        // Insert into the common storage.
-        QMutexLocker lock = createTileMemoryLocker();
-
-        auto tileIt = tileMemory.find(coord);
+    // Check iterator to see if it's fine to access
+    // this tile-memory element.
+    auto checkIterator = [&](auto tileIt) {
         if (tileIt == tileMemory.end() || tileIt->second.state != Bach::LoadedTileState::Pending) {
             // Error because tile needs to exist and be pending
             // before we insert it.
@@ -336,6 +324,24 @@ void TileLoader::insertTile(
                 "TileLoader error: Tile " <<
                 coord.toString() <<
                 " needs to be in pending state before insertion.";
+            return false;
+        }
+        return true;
+    };
+
+    // Try parsing the bytes into our tile.
+    std::optional<VectorTile> newTileResult = Bach::tileFromByteArray(bytes);
+
+    // If we failed to parse our tile,
+    // mark the memory as parsing failed.
+    if (!newTileResult.has_value()) {
+        qDebug() << "Error when parsing tile " << coord.toString();
+
+        // Insert into the tile memory storage.
+        QMutexLocker lock = createTileMemoryLocker();
+
+        auto tileIt = tileMemory.find(coord);
+        if (!checkIterator(tileIt)) {
             return;
         } else {
             StoredTile &memoryItem = tileIt->second;
@@ -351,14 +357,11 @@ void TileLoader::insertTile(
     // Create a scope for our mutex lock.
     {
         QMutexLocker lock = createTileMemoryLocker();
-
         auto tileIt = tileMemory.find(coord);
-        if (tileIt == tileMemory.end() || tileIt->second.state != Bach::LoadedTileState::Pending) {
-            // Error because tile needs to exist and be pending
-            // before we insert it.
-            qDebug() << "Error. Tile " << coord.toString() << " needs to be in pending state before insertion.";
+        if (!checkIterator(tileIt)) {
             return;
         } else {
+            // Mark our tile as OK and insert the Tile data.
             StoredTile &memoryItem = tileIt->second;
             memoryItem.tile = std::move(allocatedTile);
             memoryItem.state = Bach::LoadedTileState::Ok;

@@ -46,8 +46,16 @@ private:
     // TileLoader object.
     TileLoader();
 public:
-
+    // We disallow implicit copying.
+    TileLoader(const TileLoader&) = delete;
+    // Inheriting from QObject makes our class non-movable.
+    TileLoader(TileLoader&&) = delete;
     ~TileLoader(){};
+
+    // Disallow copying.
+    TileLoader& operator=(const TileLoader&) = delete;
+    // Our class is non-movable.
+    TileLoader& operator=(TileLoader&&) = delete;
 
     // Returns the path to the general cache storage for the application.
     static QString getGeneralCacheFolder();
@@ -265,13 +273,24 @@ private:
         QNetworkReply* reply,
         TileCoord coord,
         TileLoadedCallbackFn signalFn);
+    /*!
+     * \brief Starts the async process to load a tile from web.
+     * This boots an async task, returns immediately.
+     * Tile will be loaded later when network request is done.
+     * Tile will then be inserted into memory
+     * and into disk cache when done.
+     */
     void loadFromWeb(TileCoord coord, TileLoadedCallbackFn signalFn);
+    /*!
+     * \brief Immediately writes a tile to disk cache.
+     */
     void writeTileToDisk(TileCoord coord, const QByteArray &bytes);
-    void queueTileParsing(
-        TileCoord coord,
-        QByteArray byteArray,
-        TileLoadedCallbackFn signalFn);
-    void insertTile(
+
+    /*!
+     * \brief Parses byte-array and inserts into tile memory.
+     * @threadsafe
+     */
+    void insertIntoTileMemory(
         TileCoord coord,
         const QByteArray &byteArray,
         TileLoadedCallbackFn signalFn);
@@ -285,6 +304,11 @@ namespace Bach {
         TileCoord coord,
         const QByteArray &bytes);
 
+    /*!
+     * \brief Gives you the file-path subpath for a cache folder.
+     *
+     * An example is "z0/x0/y0.mvt"
+     */
     QString tileDiskCacheSubPath(TileCoord coord);
 }
 
