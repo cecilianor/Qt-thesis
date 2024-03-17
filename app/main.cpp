@@ -15,7 +15,7 @@
 [[noreturn]] void earlyShutdown(const QString &msg = "")
 {
     if (msg != "") {
-        qWarning() << msg;
+        qCritical() << msg;
     }
     QMessageBox::critical(
         nullptr,
@@ -48,7 +48,6 @@ int main(int argc, char *argv[])
         mapTilerKeyResult);
     // If loading the style sheet failed, there is nothing to display. Shut down.
     if (styleSheetBytes.resultType != ResultType::success) {
-        qCritical() << "Unable to load stylesheet from disk/web.";
         earlyShutdown("Unable to load stylesheet from disk/web.");
     }
 
@@ -58,7 +57,6 @@ int main(int argc, char *argv[])
         &parseError);
     // No stylesheet, so we shut down.
     if (parseError.error != QJsonParseError::NoError) {
-        qCritical() << "Unable to parse stylesheet data into JSON.";
         earlyShutdown("Unable to parse stylesheet raw data into JSON.");
     }
 
@@ -66,8 +64,7 @@ int main(int argc, char *argv[])
     std::optional<StyleSheet> parsedStyleSheetResult = StyleSheet::fromJson(styleSheetJson);
     // If the stylesheet can't be parsed, there is nothing to render. Shut down.
     if (!parsedStyleSheetResult.has_value()) {
-        qCritical() << "Unable to parse stylesheet JSON into a parsed StyleSheet object.";
-        earlyShutdown();
+        earlyShutdown("Unable to parse stylesheet JSON into a parsed StyleSheet object.");
     }
     StyleSheet &styleSheet = parsedStyleSheetResult.value();
 
