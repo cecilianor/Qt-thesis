@@ -15,13 +15,13 @@ bool Bach::writeNewFileHelper(const QString& path, const QByteArray &bytes)
     // QFile won't create our directories for us.
     // We gotta make them ourselves.
     if (!dir.exists() && !dir.mkpath(dir.absolutePath())) {
-        qDebug() << "Tried writing to file. Creating parent directory failed.\n";
+        qCritical() << "writeNewFileHelper tried writing to file. Creating parent directory failed.\n";
         return false;
     }
 
     QFile file { fileInfo.absoluteFilePath() };
     if (file.exists()) {
-        qDebug() << "Tried writing to file. File already exists.\n";
+        qCritical() << " writeNewFileHelper tried writing to file. File already exists.\n";
         return false;
     }
 
@@ -35,12 +35,12 @@ bool Bach::writeNewFileHelper(const QString& path, const QByteArray &bytes)
      */
 
     if (!file.open(QFile::WriteOnly)) {
-        qDebug() << "Tried writing to file. Failed to create new file.\n";
+        qCritical() << "writeNewFileHelper tried writing to file. Failed to create new file.\n";
         return false;
     }
 
     if (file.write(bytes) != bytes.length()) {
-        qDebug() << "Tried writing to file. Didn't write the correct amount of bytes.\n";
+        qCritical() << " writeNewFileHelper tried writing to file. Couldn't write the correct amount of bytes.\n";
         return false;
     }
 

@@ -320,7 +320,7 @@ void TileLoader::insertIntoTileMemory(
         if (tileIt == tileMemory.end() || tileIt->second.state != Bach::LoadedTileState::Pending) {
             // Error because tile needs to exist and be pending
             // before we insert it.
-            qDebug() <<
+            qWarning() <<
                 "TileLoader error: Tile " <<
                 coord.toString() <<
                 " needs to be in pending state before insertion.";
@@ -335,7 +335,7 @@ void TileLoader::insertIntoTileMemory(
     // If we failed to parse our tile,
     // mark the memory as parsing failed.
     if (!newTileResult.has_value()) {
-        qDebug() << "Error when parsing tile " << coord.toString();
+        qCritical() << "Error when parsing tile " << coord.toString();
 
         // Insert into the tile memory storage.
         QMutexLocker lock = createTileMemoryLocker();
