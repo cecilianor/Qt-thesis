@@ -29,7 +29,7 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     QCoreApplication::setApplicationName("qt_thesis_app");
 
-    qWarning() << "Current file cache can be found in: " << TileLoader::getGeneralCacheFolder();
+    qDebug() << "Current file cache can be found in: " << TileLoader::getGeneralCacheFolder();
 
     // Read key from file.
     std::optional<QString> mapTilerKeyResult = Bach::readMapTilerKey("key.txt");
@@ -46,9 +46,9 @@ int main(int argc, char *argv[])
     HttpResponse styleSheetBytes = Bach::loadStyleSheetBytes(
         styleSheetType,
         mapTilerKeyResult);
-    // If we couldn't load the style sheet, we can't display anything.
-    // So we quit.
+    // If loading the style sheet failed, there is nothing to display. Shut down.
     if (styleSheetBytes.resultType != ResultType::success) {
+        qCritical() << "Unable to load stylesheet from disk/web.";
         earlyShutdown("Unable to load stylesheet from disk/web.");
     }
 
@@ -58,23 +58,24 @@ int main(int argc, char *argv[])
         &parseError);
     // No stylesheet, so we shut down.
     if (parseError.error != QJsonParseError::NoError) {
+        qCritical() << "Unable to parse stylesheet data into JSON.";
         earlyShutdown("Unable to parse stylesheet raw data into JSON.");
     }
 
     // Parse the stylesheet into data we can render.
     std::optional<StyleSheet> parsedStyleSheetResult = StyleSheet::fromJson(styleSheetJson);
-    // If we can't parse the stylesheet, we can't render, so we shut down.
+    // If the stylesheet can't be parsed, there is nothing to render. Shut down.
     if (!parsedStyleSheetResult.has_value()) {
-        qWarning() << "Unable to parse stylesheet JSON into a parsed StyleSheet object.";
+        qCritical() << "Unable to parse stylesheet JSON into a parsed StyleSheet object.";
         earlyShutdown();
     }
     StyleSheet &styleSheet = parsedStyleSheetResult.value();
 
 
-    // Load useful links from the stylesheet. We only care about this is if we
-    // are online (have a MapTiler key)
+    // Load useful links from the stylesheet.
+    // This only matters if one is online and has a MapTiler key.
 
-    // Tracks whether we will be using web stuff.
+    // Tracks whether or not to download data from web.
     bool useWeb = hasMapTilerKey;
     QString pbfUrlTemplate;
     if (useWeb) {
