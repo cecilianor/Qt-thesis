@@ -296,18 +296,38 @@ private:
         TileLoadedCallbackFn signalFn);
 };
 
+/*!
+ * \namespace Bach
+ *
+ * \brief This namespace stores custom functionality used for the bachelor thesis
+ * project: Setting of links to the external MapTiler API and caching functionalitssy.
+ */
 namespace Bach {
     QString setPbfLink(TileCoord tileCoord, const QString &pbfLinkTemplate);
 
+/*!
+     * \brief writeTileToDiskCache writes tile information to the disk cache.
+     * \param basePath refers to the basic/root path to where the cached data is stored.
+     * \param coord is the z (zoom), x, and y coordinates of a tile.
+     * \param bytes is the tile data passed as a byte array.
+     * \return true if caching the tile was successful, false otherwise.
+     */
     bool writeTileToDiskCache(
         const QString& basePath,
         TileCoord coord,
         const QByteArray &bytes);
 
     /*!
-     * \brief Gives you the file-path subpath for a cache folder.
+     * \brief tileDiskCacheSubPath finds the file-path subpath for a cache folder.
      *
-     * An example is "z0/x0/y0.mvt"
+     * An example of one of these paths is "z0/x0/y0.mvt"
+     *
+     * \param coord is a z, x, y coordinate, where all values are integers.
+     * These values represent the XYZ tile coordinate.
+     *
+     * z is always in the range [0, 16] and represents zoom level.
+     * x and y must be in the range [0, tilecount-1], where tilecount = 2^zoom.
+     * \return the subpath that was found.
      */
     QString tileDiskCacheSubPath(TileCoord coord);
 }
