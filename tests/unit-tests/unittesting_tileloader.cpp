@@ -159,6 +159,7 @@ void UnitTesting::loadTileFromCache_fails_on_broken_file()
 {
     const TileCoord expectedCoord = {0, 0, 0};
 
+    // Create a unique temporary directory for this test.
     Bach::UnitTesting::TempDir tempDir;
 
     // Write our input file to the tile cache.
