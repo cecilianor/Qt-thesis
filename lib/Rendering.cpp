@@ -345,13 +345,16 @@ static bool isLayerHidden(const AbstractLayereStyle &layerStyle, int mapZoom)
 }
 
 // Determines whether a feature should be included when rendering this layer-style.
+// Returns true if the feature should be included.
 static bool includeFeature(
     const AbstractLayereStyle &layerStyle,
     const AbstractLayerFeature &feature,
     int mapZoom,
     double vpZoom)
 {
-    return !Evaluator::resolveExpression(
+    if (layerStyle.m_filter.isEmpty())
+        return true;
+    return Evaluator::resolveExpression(
         layerStyle.m_filter,
         &feature,
         mapZoom,
@@ -399,8 +402,7 @@ static void paintSingleTile(
                     continue;
                 const auto& feature = *static_cast<const PolygonFeature*>(abstractFeature);
 
-                // Tests whether the feature should be rendered at all based on possible expression.
-                if (includeFeature(layerStyle, feature, mapZoom, vpZoom))
+                if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
                     continue;
 
                 // Render the feature in question.
@@ -425,7 +427,7 @@ static void paintSingleTile(
                 const auto &feature = *static_cast<const LineFeature*>(abstractFeature);
 
                 // Tests whether the feature should be rendered at all based on possible expression.
-                if (includeFeature(layerStyle, feature, mapZoom, vpZoom))
+                if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
                     continue;
 
                 // Render the feature in question.
