@@ -131,7 +131,7 @@ public:
 namespace Bach {
     inline QString testDataDir = "testdata/";
 
-    std::optional<VectorTile> tileFromByteArray(QByteArray bytes);
+    std::optional<VectorTile> tileFromByteArray(const QByteArray &bytes);
 }
 
 #endif // VECTORTILES_H

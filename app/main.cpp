@@ -1,105 +1,111 @@
 #include <QApplication>
 #include <QMessageBox>
+#include <QFile>
+#include <QStandardPaths>
+#include <QDir>
 
 #include "MainWindow.h"
 #include "TileLoader.h"
 #include "Utilities.h"
 
+#include <QNetworkReply>
+#include <QDir>
+
+// Helper function to let us do early shutdown during startup.
+[[noreturn]] void earlyShutdown(const QString &msg = "")
+{
+    if (msg != "") {
+        qCritical() << msg;
+    }
+    QMessageBox::critical(
+        nullptr,
+        "Unexpected error.",
+        "Application will now quit.");
+    std::exit(EXIT_FAILURE);
+}
+
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+    QCoreApplication::setApplicationName("qt_thesis_app");
 
-    // Gets different URLs to download PBF tiles.
-    TileLoader tileLoader;
+    qDebug() << "Current file cache can be found in: " << TileLoader::getGeneralCacheFolder();
+
+    // Read key from file.
+    std::optional<QString> mapTilerKeyResult = Bach::readMapTilerKey("key.txt");
+    bool hasMapTilerKey = mapTilerKeyResult.has_value();
+    if (!hasMapTilerKey) {
+        qWarning() << "Reading of the MapTiler key failed. " <<
+                      "App will attempt to only use local cache.";
+    }
+
     // The style sheet type to load (can be many different types).
-    auto StyleSheetType = StyleSheetType::basic_v2;
+    auto styleSheetType = StyleSheetType::basic_v2;
 
-     // Read key from file.
-    QString mapTilerKey = tileLoader.readKey("key.txt");
-    if(mapTilerKey == "") {
-        // If we couldn't load the key, display an error box.
-        QMessageBox::critical(
-            nullptr,
-            "Internal Error",
-            "Internal error. Contact support if the error persists. The application will now shut down.");
-        // Add developer comments to QDebug, not to the end user/client.
-        qWarning() << "Reading of the MapTiler key failed...";
-        return EXIT_FAILURE;
-    }
-
-    // Tries to load the stylesheet.
-    auto styleSheetBytes = tileLoader.loadStyleSheetFromWeb(mapTilerKey, StyleSheetType);
-    qDebug() << "Loading stylesheet from MapTiler...\n";
+    // Load stylesheet raw data from disk/web.
+    HttpResponse styleSheetBytes = Bach::loadStyleSheetBytes(
+        styleSheetType,
+        mapTilerKeyResult);
+    // If loading the style sheet failed, there is nothing to display. Shut down.
     if (styleSheetBytes.resultType != ResultType::success) {
-        qWarning() << "There was an error loading stylesheet: " << PrintResultTypeInfo(styleSheetBytes.resultType);
-        QMessageBox::critical(
-            nullptr,
-            "Map Loading Bytesheet Failed",
-            "The map failed to load. Contact support if the error persists. The application will now shut down.");
-        return EXIT_FAILURE;
+        earlyShutdown("Unable to load stylesheet from disk/web.");
     }
-    qDebug() << "Loading stylesheet from Maptiler completed without issues.\n";
 
-    // Gets the link template where we have to switch out x, y,z in the link.
-    auto pbfLinkTemplate = tileLoader.getPbfLinkTemplate(styleSheetBytes.response, "maptiler_planet");
-    qDebug() << "Getting the link to download PPF tiles from MapTiler...\n";
-    if (pbfLinkTemplate.resultType != ResultType::success) {
-        qWarning() << "Loading tiles failed: There was an error getting PBF link template: " << PrintResultTypeInfo(pbfLinkTemplate.resultType);
-        QMessageBox::critical(
-            nullptr,
-            "Map Loading Tiles Failed",
-            "The map failed to load. Contact support if the error persists. The application will now shut down.");
-        return EXIT_FAILURE;
+    QJsonParseError parseError;
+    QJsonDocument styleSheetJson = QJsonDocument::fromJson(
+        styleSheetBytes.response,
+        &parseError);
+    // No stylesheet, so we shut down.
+    if (parseError.error != QJsonParseError::NoError) {
+        earlyShutdown("Unable to parse stylesheet raw data into JSON.");
     }
-    qDebug() << "Getting PBF link completed without issues.\n";
+
+    // Parse the stylesheet into data we can render.
+    std::optional<StyleSheet> parsedStyleSheetResult = StyleSheet::fromJson(styleSheetJson);
+    // If the stylesheet can't be parsed, there is nothing to render. Shut down.
+    if (!parsedStyleSheetResult.has_value()) {
+        earlyShutdown("Unable to parse stylesheet JSON into a parsed StyleSheet object.");
+    }
+    StyleSheet &styleSheet = parsedStyleSheetResult.value();
+
+
+    // Load useful links from the stylesheet.
+    // This only matters if one is online and has a MapTiler key.
+
+    // Tracks whether or not to download data from web.
+    bool useWeb = hasMapTilerKey;
+    QString pbfUrlTemplate;
+    if (useWeb) {
+        auto pbfUrlTemplateResult = Bach::getPbfLinkTemplate(styleSheetJson, "maptiler_planet");
+        if (pbfUrlTemplateResult.resultType != ResultType::success)
+            useWeb = false;
+        else
+            pbfUrlTemplate = pbfUrlTemplateResult.link;
+    }
+
+    // Create our TileLoader based on whether we can do web
+    // or not.
+    std::unique_ptr<TileLoader> tileLoaderPtr;
+    if (useWeb) {
+        tileLoaderPtr = TileLoader::fromPbfLink(
+            pbfUrlTemplate,
+            std::move(styleSheet));
+    } else {
+        tileLoaderPtr = TileLoader::newLocalOnly(std::move(styleSheet));
+    }
+    TileLoader &tileLoader = *tileLoaderPtr;
+
     // Creates the Widget that displays the map.
     auto *mapWidget = new MapWidget;
-    auto &styleSheet = mapWidget->styleSheet;
-    auto &tileStorage = mapWidget->tileStorage;
-
-
-    /// REFACTOR HERE. Cecilia will discuss on an upcoming meeting how to handle this differently.
-    // Parses the bytes that form the stylesheet into a json-document object.
-    QJsonParseError parseError;
-    auto styleSheetJsonDoc = QJsonDocument::fromJson(styleSheetBytes.response, &parseError);
-    if (parseError.error != QJsonParseError::NoError) {
-        QMessageBox::critical(
-            nullptr,
-            "Critical failure",
-            QString("Error when parsing stylesheet as JSON. Parse error at 1%: 2%")
-                .arg(parseError.offset)
-                .arg(parseError.errorString()));
-        return EXIT_FAILURE;
-    }
-    // Then finally parse the JSonDocument into our StyleSheet.
-    styleSheet.parseSheet(styleSheetJsonDoc);
-    /// REFACTOR END
-
-    auto downloadTile = [&](TileCoord tile) -> VectorTile {
-        auto tileLink = tileLoader.downloadTile(Bach::setPbfLink(tile, pbfLinkTemplate.link));
-
-        if (tileLink.resultType !=ResultType::success) {
-            qWarning() << "Error when downloading tile in downloadTile lambda: "
-                       << PrintResultTypeInfo(tileLink.resultType) << '\n';
-            std::abort();
-        } else {
-            auto result = Bach::tileFromByteArray(
-                tileLoader.downloadTile(
-                    Bach::setPbfLink(tile, pbfLinkTemplate.link)).response);
-            if (!result.has_value()) {
-                std::abort();
-                qWarning() << "Error: No data was generated by Bach::tileFromByteArray.\n";
-            }
-            return result.value();
-        }
+    // Set up the function that forwards requests from the
+    // MapWidget into the TileLoader. This lambda does the
+    // two components together.
+    mapWidget->requestTilesFn = [&](auto input, auto signal) {
+        return tileLoader.requestTiles(input, signal, true);
     };
 
-    // Download tiles, or load them from disk, then insert into the tile-storage map.
-    auto tile000 = downloadTile({0, 0, 0});
-    tileStorage.insert({0, 0, 0}, &tile000);
-
     // Main window setup
-    auto app = Bach::MainWindow(mapWidget, downloadTile);
+    auto app = Bach::MainWindow(mapWidget);
     app.show();
 
     return a.exec();

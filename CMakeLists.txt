@@ -11,7 +11,7 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # We need to look for packages that are hard requirements for the code to run.
-find_package(Qt6 REQUIRED COMPONENTS Core Widgets Protobuf Network)
+find_package(Qt6 REQUIRED COMPONENTS Core Widgets Protobuf ProtobufTools Network)
 qt_standard_project_setup()
 
 
@@ -44,12 +44,11 @@ qt_add_library(maplib STATIC
     lib/Layerstyle.cpp
     lib/TileLoader.h
     lib/TileLoader.cpp
-    lib/NetworkController.h
-    lib/NetworkController.cpp
     lib/Evaluator.h
     lib/Evaluator.cpp
     lib/Utilities.h
-    )
+    lib/Utilities.cpp
+    lib/RequestTilesResult.h)
 
 # Qt containers by default don't include asserts (i.e out of bounds checks) in their containers
 # under the RelWithDebInfo config. We enforce that they do to help us catch bugs.
@@ -80,10 +79,9 @@ set(PROJECT_SOURCES
     app/MainWindow.h
     app/MainWindow.cpp)
 
-    qt_add_executable(application
+qt_add_executable(application
     MANUAL_FINALIZATION
-    ${PROJECT_SOURCES}
-    )
+    ${PROJECT_SOURCES})
 
 # Link our app to our library target.
 target_link_libraries(application PUBLIC maplib)
@@ -143,6 +141,8 @@ if (BUILD_TESTS)
         unitTestResources/styleTest.json
         unitTestResources/000testTile.pbf
         unitTestResources/expressionTest.json
+        unitTestResources/loadTileFromCache_fails_on_broken_file.mvt
+        unitTestResources/loadTileFromCache_parses_cached_file_successfully.mvt
     )
     target_link_libraries(unit_test PUBLIC maplib Qt6::Test)
 

@@ -5,6 +5,8 @@
 #include <QString>
 #include <QByteArray>
 
+#include <optional>
+
 /*!
  * @brief The StyleSheetType enum covers the basic style sheets provided by MapTiler.
  *
@@ -122,5 +124,29 @@ struct ParsedLink {
     QString link;
     ResultType resultType;
 };
+
+namespace Bach {
+    bool writeNewFileHelper(const QString& path, const QByteArray &bytes);
+
+    std::optional<QString> readMapTilerKey(const QString &filePath);
+
+    HttpResponse requestAndWait(const QString &url);
+
+    HttpResponse requestStyleSheetFromWeb(StyleSheetType type, const QString &key);
+
+    HttpResponse loadStyleSheetBytes(
+        StyleSheetType type,
+        const std::optional<QString> &mapTilerKey);
+
+    ParsedLink getTilesLinkFromStyleSheet(
+        const QJsonDocument &styleSheet,
+        const QString &sourceType);
+
+    ParsedLink getPbfLinkTemplate(
+        const QJsonDocument &styleSheet,
+        const QString &sourceType);
+
+    ParsedLink getPbfLinkFromTileSheet(const QString &tileSheetUrl);
+}
 
 #endif // UTILITIES_H

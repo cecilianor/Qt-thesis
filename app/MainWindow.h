@@ -26,17 +26,10 @@ namespace Bach {
          */
         using ParentType = QMainWindow;
 
-        MainWindow(MapWidget*, std::function<VectorTile(TileCoord)>&&);
+        MainWindow(MapWidget*);
 
         void resizeEvent(QResizeEvent*) override;
         void showEvent(QShowEvent*) override;
-        void keyPressEvent(QKeyEvent *event) override {
-            if (event->key() == Qt::Key::Key_R) {
-                mapWidget->loadNewTiles(loadTileFn);
-                return;
-            }
-            ParentType::keyPressEvent(event);
-        }
 
         /* Updates the positions of the floating control widgets (zoom, panning...)
          *

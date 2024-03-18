@@ -668,7 +668,7 @@ AbstractLayereStyle* AbstractLayereStyle::fromJson(const QJsonObject &json)
     QJsonValue layout = json.value("layout");
     if(layout != QJsonValue::Undefined){
         newLayer->m_visibility = (layout.toObject().contains("visibility")) ? layout.toObject().value("visibility").toString() : "none";
-    }else{
+    } else {
         newLayer->m_visibility = QString("none");
     }
 
@@ -686,9 +686,9 @@ AbstractLayereStyle* AbstractLayereStyle::fromJson(const QJsonObject &json)
 
 StyleSheet::~StyleSheet()
 {
-    for(auto layer : m_layerStyles) {
-        delete layer;
-    }
+    //for(auto layer : m_layerStyles) {
+        //delete layer;
+    //}
 }
 
 /*Parses the entire style sheet and populates the layers array of the StyleSheet object.
@@ -708,5 +708,12 @@ void StyleSheet::parseSheet(const QJsonDocument &styleSheet)
     for(const auto &layer : layers){
         m_layerStyles.append(AbstractLayereStyle::fromJson(layer.toObject()));
     }
+}
+
+std::optional<StyleSheet> StyleSheet::fromJson(const QJsonDocument& input)
+{
+    StyleSheet out;
+    out.parseSheet(input);
+    return out;
 }
 

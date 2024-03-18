@@ -2,13 +2,14 @@
 #define MAPWIDGET_H
 
 #include <QWidget>
+#include <QScopedPointer>
+
 
 #include <functional>
-#include <memory>
+#include <set>
 
-#include "VectorTiles.h"
 #include "TileCoord.h"
-#include "Layerstyle.h"
+#include "RequestTilesResult.h"
 
 /* Widget class responsible for displaying the actual map.
  * Should be used as a smaller widget within a larger Widget hierarchy.
@@ -52,12 +53,23 @@ public:
      */
     double getPanStepAmount() const;
 
-    void loadNewTiles(const std::function<VectorTile(TileCoord)> &fn);
-
-    // Temporary. This probably does not belong here.
-    QMap<TileCoord, const VectorTile*> tileStorage;
-    // Temporary. This probably does not belong here.
-    StyleSheet styleSheet;
+    /*! Function signature of the tile-request callback.
+     *
+     * Returns a ScopedPointer containing a RequestTilesResult object.
+     * RequestTilesResult object contains map of returned tiles.
+     * May have custom logic in destructor.
+     * MapWidget should release this object as early as possible.
+     *
+     * \param First parameter is a set of TileCoordinates to request.
+     *
+     * \param Second parameter is a callback to signal when a tile is loaded later.
+     *        For this widget, it will signal the widget to redraw itself with the new result.
+     */
+    using RequestTilesFnT =
+        QScopedPointer<Bach::RequestTilesResult>(
+            const std::set<TileCoord>&,
+            std::function<void(TileCoord)>);
+    std::function<RequestTilesFnT> requestTilesFn;
 
 private:
     // Zoom level of viewport

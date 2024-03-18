@@ -30,6 +30,7 @@ struct TileCoord {
     // in order to allow using this type as a key in QMap
     bool operator<(const TileCoord &other) const;
     bool operator==(const TileCoord &other) const;
+    bool operator!=(const TileCoord &other) const;
 };
 
 #endif

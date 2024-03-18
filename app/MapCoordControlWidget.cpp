@@ -97,17 +97,6 @@ void MapCoordControlWidget::setupInputFields(QBoxLayout* outerLayout)
 
 void MapCoordControlWidget::setupButtons(QBoxLayout *outerLayout, MapWidget *mapWidget)
 {
-    // Setup the load tiles button
-    {
-        auto btn = new QPushButton("Load tiles", this);
-        QObject::connect(
-            btn,
-            &QPushButton::clicked,
-            this,
-            [this] { emit loadNewTiles(); });
-        outerLayout->addWidget(btn);
-    }
-
     // Setup the debug lines toggle switch
     {
         auto name = getShowingDebugBtnLabel(mapWidget);
@@ -125,6 +114,8 @@ void MapCoordControlWidget::setupButtons(QBoxLayout *outerLayout, MapWidget *map
             });
     }
 
+
+    // Create buttons to move the viewport to Nydalen.
     {
         auto btn = new QPushButton("Nydalen", this);
         outerLayout->addWidget(btn);
@@ -134,10 +125,11 @@ void MapCoordControlWidget::setupButtons(QBoxLayout *outerLayout, MapWidget *map
             mapWidget,
             [=]() {
                 auto [x, y] = Bach::lonLatToWorldNormCoordDegrees(10.765248, 59.949584413);
-                mapWidget->setViewport(x, y, 11);
+                mapWidget->setViewport(x, y, 12);
             });
     }
 
+    // Create buttons to move the viewport to Gjøvik.
     {
         auto btn = new QPushButton("Gjøvik", this);
         outerLayout->addWidget(btn);
@@ -147,7 +139,7 @@ void MapCoordControlWidget::setupButtons(QBoxLayout *outerLayout, MapWidget *map
             mapWidget,
             [=]() {
                 auto [x, y] = Bach::lonLatToWorldNormCoordDegrees(10.683791293772392, 60.79004068859685);
-                mapWidget->setViewport(x, y, 11);
+                mapWidget->setViewport(x, y, 12);
             });
     }
 }

@@ -1,45 +1,215 @@
-#ifndef GETTILEURL_H
-#define GETTILEURL_H
+#ifndef TILELOADER_H
+#define TILELOADER_H
 
 #include <QObject>
 #include <QUrl>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QMutex>
+#include <QMutexLocker>
+#include <QNetworkAccessManager>
+#include <QThreadPool>
+
+#include <set>
+#include <functional>
+#include <memory>
+#include <map>
 
 #include "TileCoord.h"
-#include "NetworkController.h"
-#include "Utilities.h"
+#include "VectorTiles.h"
+#include "RequestTilesResult.h"
 
-class TileLoader
-{
-private:
-    QByteArray styleSheet;
-    QByteArray JSONTileURL;
-    QUrl tileURL;
-    NetworkController networkController;
-
-public:
-    // Constructor and destructor
-    TileLoader();
-    ~TileLoader(){};
-
-    // Functionality making different requests
-    HttpResponse getStylesheet(StyleSheetType type, QString key);
-    ParsedLink getTilesLink(const QJsonDocument & styleSheet, QString sourceType);
-    ParsedLink getPBFLink (const QString & tileSheetUrl);
-
-    HttpResponse loadStyleSheetFromWeb(const QString &mapTilerKey, StyleSheetType &StyleSheetType);
-    ParsedLink getPbfLinkTemplate(const QByteArray &styleSheetBytes, const QString sourceType);
-    QString setPbfLink(const TileCoord &tileCoord, const QString &pbfLinkTemplate);
-    HttpResponse downloadTile(const QString &pbfLink);
-
-    // Key reader
-    QString readKey(QString tilePath);
-};
+class UnitTesting;
 
 namespace Bach {
-    QString setPbfLink(const TileCoord &tileCoord, const QString &pbfLinkTemplate);
+    enum class LoadedTileState {
+        Ok,
+        Pending,
+        ParsingFailed,
+        Cancelled,
+        UnknownError
+    };
+}
+
+/*!
+ * \class System for loading, storing and caching map-tiles.
+ *
+ * Can be used to load tiles for the MapWidget.
+ */
+class TileLoader : public QObject
+{
+    Q_OBJECT
+
+private:
+    // Use the static creator functions.
+    // This constructor alone will not guarantee you a functional
+    // TileLoader object.
+    TileLoader();
+public:
+    // We disallow implicit copying.
+    TileLoader(const TileLoader&) = delete;
+    // Inheriting from QObject makes our class non-movable.
+    TileLoader(TileLoader&&) = delete;
+    ~TileLoader(){};
+
+    // Disallow copying.
+    TileLoader& operator=(const TileLoader&) = delete;
+    // Our class is non-movable.
+    TileLoader& operator=(TileLoader&&) = delete;
+
+    // Returns the path to the general cache storage for the application.
+    static QString getGeneralCacheFolder();
+    // Returns the path to the tile cache storage for the application.
+    // This guaranteed to be a subfolder of the general cache.
+    static QString getTileCacheFolder();
+
+
+    // We can't return by value below, because TileLoader is a QObject and therefore
+    // doesn't support move-semantics.
+    static std::unique_ptr<TileLoader> fromPbfLink(
+        const QString &pbfUrlTemplate,
+        StyleSheet&& styleSheet);
+
+    static std::unique_ptr<TileLoader> newLocalOnly(StyleSheet&& styleSheet);
+
+    static std::unique_ptr<TileLoader> newDummy(const QString &diskCachePath);
+
+    QString getTileDiskPath(TileCoord coord);
+
+    std::optional<Bach::LoadedTileState> getTileState(TileCoord) const;
+
+signals:
+    /*!
+     * @brief Gets signalled whenever a tile is finished loading,
+     * the coordinates of said tile. Will not be signalled if the
+     * tile loading process is cancelled.
+     */
+    void tileFinished(TileCoord);
+
+private:
+    StyleSheet styleSheet;
+
+    QString pbfLinkTemplate;
+
+    QNetworkAccessManager networkManager;
+
+    // Controls whether the TileLoader should try to access
+    // web when loading.
+    bool useWeb = true;
+
+    // Directory path to tile cache storage.
+    QString tileCacheDiskPath;
+
+    struct StoredTile {
+        // Current loading-state of this tile.
+        Bach::LoadedTileState state = {};
+
+        // Stores the final tile data.
+        //
+        // We use std::unique_ptr over QScopedPointer
+        // because QScopedPointer doesn't support move semantics.
+        std::unique_ptr<VectorTile> tile;
+
+        // Tells us whether this tile is safe to return to
+        // rendering.
+        bool isReadyToRender() const
+        {
+            return state == Bach::LoadedTileState::Ok;
+        }
+
+        // Creates a new tile-item with a pending state.
+        static StoredTile newPending()
+        {
+            StoredTile temp;
+            temp.state = Bach::LoadedTileState::Pending;
+            return temp;
+        }
+    };
+    /* This contains our memory tile-cache.
+     *
+     * IMPORTANT! Only use when 'tileMemoryLock' is locked!
+     *
+     * We had to use std::map because QMap doesn't support move semantics,
+     * which interferes with our automated resource cleanup.
+     */
+    std::map<TileCoord, StoredTile> tileMemory;
+
+    // We use unique-ptr here to let use the lock in const methods.
+    std::unique_ptr<QMutex> _tileMemoryLock = std::make_unique<QMutex>();
+
+    // Generates the scoped lock for our tile-memory.
+    // Will block if mutex is already held.
+    QMutexLocker<QMutex> createTileMemoryLocker() const { return QMutexLocker(_tileMemoryLock.get()); }
+
+public:
+    // Function signature of the tile-loaded
+    // callback passed into 'requestTiles'.
+    using TileLoadedCallbackFn = std::function<void(TileCoord)>;
+
+    QScopedPointer<Bach::RequestTilesResult> requestTiles(
+        const std::set<TileCoord> &requestInput,
+        TileLoadedCallbackFn tileLoadedSignalFn,
+        bool loadMissingTiles);
+    // Overload where we don't need to pass any callback function.
+    auto requestTiles(
+        const std::set<TileCoord> &requestInput,
+        bool loadMissingTiles)
+    {
+        return requestTiles(requestInput, nullptr, loadMissingTiles);
+    }
+
+    // Overload where callback can get passed as nullptr and
+    // the TileLoader will not load missing tiles if the
+    // callback is nullptr.
+    auto requestTiles(
+        const std::set<TileCoord> &requestInput,
+        TileLoadedCallbackFn tileLoadedSignalFn = nullptr)
+    {
+        return requestTiles(
+            requestInput,
+            tileLoadedSignalFn,
+            static_cast<bool>(tileLoadedSignalFn));
+    }
+
+private:
+    void queueTileLoadingJobs(
+        const QVector<TileCoord> &input,
+        TileLoadedCallbackFn signalFn);
+
+    // Thread-pool for the tile-loader worker threads.
+    QThreadPool threadPool;
+    // Thread-pool for the tile-loader worker threads.
+    QThreadPool &getThreadPool() { return threadPool; }
+
+    bool loadFromDisk(TileCoord coord, TileLoadedCallbackFn signalFn);
+    void networkReplyHandler(
+        QNetworkReply* reply,
+        TileCoord coord,
+        TileLoadedCallbackFn signalFn);
+    void loadFromWeb(TileCoord coord, TileLoadedCallbackFn signalFn);
+    void writeTileToDisk(TileCoord coord, const QByteArray &bytes);
+    void insertIntoTileMemory(
+        TileCoord coord,
+        const QByteArray &byteArray,
+        TileLoadedCallbackFn signalFn);
+};
+
+/*!
+ * \namespace Bach
+ *
+ * \brief This namespace stores custom functionality used for the bachelor thesis
+ * project: Setting of links to the external MapTiler API and caching functionalitssy.
+ */
+namespace Bach {
+    QString setPbfLink(TileCoord tileCoord, const QString &pbfLinkTemplate);
+
+    bool writeTileToDiskCache(
+        const QString& basePath,
+        TileCoord coord,
+        const QByteArray &bytes);
+
+    QString tileDiskCacheSubPath(TileCoord coord);
 }
 
 
-#endif // GETTILEURL_H
+#endif // TILELOADER_H
