@@ -1,6 +1,3 @@
-#include "unittesting.h"
-#include "Evaluator.h"
-#include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
@@ -10,6 +7,17 @@
 
 #include "Evaluator.h"
 
+class UnitTesting : public QObject
+{
+    Q_OBJECT
+
+private slots:
+    void resolveExpression_returns_basic_values();
+
+};
+
+QTEST_MAIN(UnitTesting)
+#include "unittest_evaluator.moc"
 
 void testGetExpression(const QJsonObject &expressionObject, PolygonFeature *feature)
 {

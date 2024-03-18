@@ -3,6 +3,19 @@
 
 #include "Layerstyle.h"
 
+class UnitTesting : public QObject
+{
+    Q_OBJECT
+
+private slots:
+    /* Layerstyle tests */
+    void getStopOutput_returns_basic_values();
+    void parseSheet_returns_basic_values();
+};
+
+QTEST_MAIN(UnitTesting)
+#include "unittesting_layerstyle.moc"
+// This include needs to match the name of this .cpp file.
 //Test the functionality of the function to determine stopoutputs.
 void UnitTesting::getStopOutput_returns_basic_values(){
     QList<QPair<int, float>> stops({{4,0.8},{9, 1.1}, {11, 1.75}, {18, 2.5},{22, 2.72}});

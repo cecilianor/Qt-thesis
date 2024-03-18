@@ -3,8 +3,19 @@
 
 #include "VectorTiles.h"
 
+class UnitTesting : public QObject
+{
+    Q_OBJECT
 
-void testLayer(const TileLayer &layer, QString expectedName, int expectedExtent, int expectedNumberOfFeatures, int expectedVersion){
+private slots:
+    void tileFromByteArray_returns_basic_values();
+};
+
+QTEST_MAIN(UnitTesting)
+#include "unittesting_vectortile.moc"
+
+void testLayer(const TileLayer &layer, QString expectedName, int expectedExtent,
+               int expectedNumberOfFeatures, int expectedVersion){
     QString errorMessage;
     errorMessage = QString("The layer name does not match, expected %1 but got %2")
                        .arg(expectedName)
@@ -30,8 +41,6 @@ void testLayer(const TileLayer &layer, QString expectedName, int expectedExtent,
 }
 
 void testTileLayers(const VectorTile tile){
-
-
     int expectedNumberOfLayers = 6;
     QString errorMessage = QString("The number of layers in the tile does not match, expected %1 but got %2")
                                 .arg(expectedNumberOfLayers)

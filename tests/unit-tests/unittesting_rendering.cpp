@@ -3,6 +3,22 @@
 
 #include "Rendering.h"
 
+class UnitTesting : public QObject
+{
+    Q_OBJECT
+
+private slots:
+    /* Rendering tests
+     */
+    void longLatToWorldNormCoordDegrees_returns_expected_basic_values();
+    void calcVisibleTiles_returns_expected_basic_cases();
+    void calcViewportSizeNorm_returns_expected_basic_cases();
+    void calcMapZoomLevelForTileSizePixels_returns_expected_basic_values();
+};
+
+QTEST_MAIN(UnitTesting)
+#include "unittesting_rendering.moc"
+
 void UnitTesting::calcViewportSizeNorm_returns_expected_basic_cases()
 {
     constexpr auto epsilon = 0.001;
