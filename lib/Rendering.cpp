@@ -412,6 +412,13 @@ static QString getTextContent(
     return text.value<QString>();
 }
 
+static bool isOverlapping(QRect &textRect, QVector<QRect> &rectList){
+    for(const auto& rect : rectList){
+        if(rect.intersects(textRect)) return true;
+    }
+    return false;
+}
+
 
 static void paintSingleTileFeature_Point(
     QPainter &painter,
@@ -420,7 +427,8 @@ static void paintSingleTileFeature_Point(
     int mapZoom,
     double vpZoom,
     const QTransform &transformIn,
-    int tileSize)
+    int tileSize,
+    QVector<QRect> &rects)
 {
 
     //if there is no text to draw, exit the function
@@ -434,24 +442,25 @@ static void paintSingleTileFeature_Point(
     }else{
         return;
     }
-    auto pen = painter.pen();
+    //auto pen = painter.pen();
 
-    pen.setColor(getTextColor(layerStyle, feature, mapZoom, vpZoom));
 
-    painter.setPen(pen);
+
+    //pen.setColor(getTextColor(layerStyle, feature, mapZoom, vpZoom));
+
+    //painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);
-    QRect boundingRect =  painter.fontMetrics().boundingRect(textToDraw);
+
 
 
     int textSize = getTextSize(layerStyle, feature, mapZoom, vpZoom);
     if(tileSize < 12) return;
     QFont textFont = QFont(layerStyle.m_textFont, textSize);
-    painter.setFont(textFont);
+    //painter.setFont(textFont);
     painter.setOpacity(getTextOpacity(layerStyle, feature, mapZoom, vpZoom));
+    //QRect boundingRect =  painter.fontMetrics().boundingRect(textToDraw);
 
-    painter.setRenderHints(QPainter::Antialiasing, false);
-
-
+    painter.setRenderHints(QPainter::Antialiasing, true);
 
     auto const& coordinates = feature.points().at(0);
     QTransform transform = {};
@@ -459,9 +468,27 @@ static void paintSingleTileFeature_Point(
     transform.scale(tileSize, tileSize);
     auto  newCoordinates = transform.map(coordinates);
 
-    auto actualNewCoordinates = QPoint(newCoordinates.x() - boundingRect.width()/2, newCoordinates.y() + boundingRect.height()/4);
+    //painter.drawText(actualNewCoordinates,textToDraw);
 
-    painter.drawText(actualNewCoordinates,textToDraw);
+
+    // Create a QPainterPath
+    QPainterPath textPath;
+    // Position and text to add to the path
+
+    // Draw outline
+    QPen outlinePen(Qt::white, 3); // Outline color and width
+
+    QRect boundingRect = textPath.boundingRect().toRect();
+    auto actualNewCoordinates = QPoint(newCoordinates.x() - boundingRect.width()/2, newCoordinates.y() + boundingRect.height()/4);
+    textPath.addText(actualNewCoordinates, textFont, textToDraw);
+
+
+    boundingRect.translate(actualNewCoordinates);
+    if(isOverlapping(boundingRect, rects)) return;
+    rects.append(boundingRect);
+    painter.strokePath(textPath, outlinePen);
+    // Fill text
+    painter.fillPath(textPath, getTextColor(layerStyle, feature, mapZoom, vpZoom)); // Fill color
 }
 
 // Determines whether this layer is hidden.
@@ -504,6 +531,8 @@ static void paintSingleTile(
     const QTransform &transformIn,
     int tileSize)
 {
+
+    QVector<QRect> textRects;
     // We start by iterating over each layer style, it determines the order
     // at which we draw the elements of the map.
     for (auto const& abstractLayerStyle : styleSheet.m_layerStyles) {
@@ -593,7 +622,8 @@ static void paintSingleTile(
                      mapZoom,
                      vpZoom,
                      transformIn,
-                     tileSize);
+                     tileSize,
+                     textRects);
                  painter.restore();
              }
         }
@@ -717,7 +747,7 @@ void Bach::paintTiles(
         auto tileIt = tileContainer.find(tileCoord);
         if (tileIt != tileContainer.end()) {
             auto const& tileData = **tileIt;
-            if(tileCoord == TileCoord({2,2,2})){
+            if(tileCoord == TileCoord({2,2,1})){
                 int i = 0;
             }
             painter.save();

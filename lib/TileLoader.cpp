@@ -87,7 +87,7 @@ QString TileLoader::getGeneralCacheFolder()
     QString basePath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
 
     // Uncomment to store cache next to executable.
-    //basePath = QCoreApplication::applicationDirPath();
+    basePath = QCoreApplication::applicationDirPath();
 
     return QDir::cleanPath(basePath + QDir::separator() + "cached_files");
 }
