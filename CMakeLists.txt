@@ -121,21 +121,13 @@ target_link_libraries(cmd_example PUBLIC maplib)
 
 # All testing related code goes in here
 if (BUILD_TESTS)
+    set(CMAKE_AUTOMOC ON)
     # Find the necessary packages on the system.
     find_package(Qt6 REQUIRED COMPONENTS Test)
 
-    # This is our first test executable.
-    qt_add_executable(
-        unit_test
-        tests/unit-tests/unittesting.h
-        tests/unit-tests/unittesting_tileloader.cpp
-        tests/unit-tests/unittesting_rendering.cpp
-        tests/unit-tests/unittesting_layerstyle.cpp
-        tests/unit-tests/unittesting_vectortile.cpp
-        tests/unit-tests/unittest_evaluator.cpp
-    )
-
-    qt_add_resources(unit_test "unitTestResources"
+    # Add the first test executable: tileloader test
+    qt_add_executable(tileloader_test tests/unit-tests/unittesting_tileloader.cpp)
+    qt_add_resources(tileloader_test "unitTestResources"
         PREFIX "/"
         FILES
         unitTestResources/styleTest.json
@@ -144,13 +136,49 @@ if (BUILD_TESTS)
         unitTestResources/loadTileFromCache_fails_on_broken_file.mvt
         unitTestResources/loadTileFromCache_parses_cached_file_successfully.mvt
     )
-    target_link_libraries(unit_test PUBLIC maplib Qt6::Test)
+    target_link_libraries(tileloader_test PUBLIC maplib Qt6::Test)
+
+    # Add the second executable: rendering unit test
+    qt_add_executable(render_test tests/unit-tests/unittesting_rendering.cpp)
+    qt_add_resources(render_test "unitTestResources")
+    target_link_libraries(render_test PUBLIC maplib Qt6::Test)
+
+    # Add the third executable: layerstyle test
+    qt_add_executable(layerstyle_test tests/unit-tests/unittesting_layerstyle.cpp)
+    qt_add_resources(layerstyle_test "unitTestResources"
+        PREFIX "/"
+        FILES
+        unitTestResources/styleTest.json
+    )
+    target_link_libraries(layerstyle_test PUBLIC maplib Qt6::Test)
+
+
+    # Add the fourth executable: vectortile test
+    qt_add_executable(vectortile_test tests/unit-tests/unittesting_vectortile.cpp)
+    qt_add_resources(vectortile_test "unitTestResources"
+        PREFIX "/"
+        FILES
+        unitTestResources/000testTile.pbf
+    )
+    target_link_libraries(vectortile_test PUBLIC maplib Qt6::Test)
+
+    # Add the fifth executable: evaluator test
+    qt_add_executable(evaluator_test tests/unit-tests/unittest_evaluator.cpp)
+    qt_add_resources(evaluator_test "unitTestResources")
+    target_link_libraries(evaluator_test PUBLIC maplib Qt6::Test)
 
     # Make sure we deploy the correct runtime dependencies to the test.
-    win32_deploy(unit_test)
+    #win32_deploy(tileloader_test)
+    #win32_deploy(render_test)
+    #win32_deploy(layerstyle_test)
+    #win32_deploy(vectortile_test)
+    #win32_deploy(evaluator_test)
 
-    # Adds our executable to CTest.
+    # Add executables to CTest.
     enable_testing()
-    add_test(NAME MyTest COMMAND unit_test)
-
+    add_test(NAME TileLoaderTest COMMAND tileloader_test)
+    add_test(NAME RenderTest COMMAND render_test)
+    add_test(NAME LayerStyleTest COMMAND layerstyle_test)
+    add_test(NAME VectorTileTest COMMAND vectortile_test)
+    add_test(NAME EvaluatorTest COMMAND evaluator_test)
 endif()
