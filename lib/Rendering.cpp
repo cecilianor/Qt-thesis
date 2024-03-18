@@ -412,7 +412,7 @@ static QString getTextContent(
     return text.value<QString>();
 }
 
-static bool isOverlapping(QRect &textRect, QVector<QRect> &rectList){
+static bool isOverlapping(const QRect &textRect, QVector<QRect> &rectList){
     for(const auto& rect : rectList){
         if(rect.intersects(textRect)) return true;
     }
@@ -454,7 +454,6 @@ static void paintSingleTileFeature_Point(
 
 
     int textSize = getTextSize(layerStyle, feature, mapZoom, vpZoom);
-    if(tileSize < 12) return;
     QFont textFont = QFont(layerStyle.m_textFont, textSize);
     //painter.setFont(textFont);
     painter.setOpacity(getTextOpacity(layerStyle, feature, mapZoom, vpZoom));
@@ -466,26 +465,38 @@ static void paintSingleTileFeature_Point(
     QTransform transform = {};
     transform.scale(1 / 4096.0, 1 / 4096.0);
     transform.scale(tileSize, tileSize);
-    auto  newCoordinates = transform.map(coordinates);
+    auto newCoordinates = transform.map(coordinates);
 
     //painter.drawText(actualNewCoordinates,textToDraw);
 
+    const int outlineSize = 3;
 
     // Create a QPainterPath
     QPainterPath textPath;
+    // Create the path with no offset first.
+    textPath.addText({}, textFont, textToDraw);
+
+    QRectF boundingRect = textPath.boundingRect().toRect();
+    boundingRect.setWidth(boundingRect.width() + 2 * outlineSize);
+    boundingRect.setHeight(boundingRect.height() + 2 * outlineSize);
+    qreal textCenteringOffsetX = -boundingRect.width() / 2.;
+    qreal textCenteringOffsetY = boundingRect.height() / 2.;
+
+    textPath.translate({
+                        textCenteringOffsetX,
+                        textCenteringOffsetY});
+    textPath.translate(newCoordinates);
+    boundingRect.translate({
+                        textCenteringOffsetX,
+                        textCenteringOffsetY});
+    boundingRect.translate(newCoordinates);
     // Position and text to add to the path
 
     // Draw outline
-    QPen outlinePen(Qt::white, 3); // Outline color and width
+    QPen outlinePen(Qt::white, outlineSize); // Outline color and width
 
-    QRect boundingRect = textPath.boundingRect().toRect();
-    auto actualNewCoordinates = QPoint(newCoordinates.x() - boundingRect.width()/2, newCoordinates.y() + boundingRect.height()/4);
-    textPath.addText(actualNewCoordinates, textFont, textToDraw);
-
-
-    boundingRect.translate(actualNewCoordinates);
-    if(isOverlapping(boundingRect, rects)) return;
-    rects.append(boundingRect);
+    if(isOverlapping(boundingRect.toRect(), rects)) return;
+    rects.append(boundingRect.toRect());
     painter.strokePath(textPath, outlinePen);
     // Fill text
     painter.fillPath(textPath, getTextColor(layerStyle, feature, mapZoom, vpZoom)); // Fill color
