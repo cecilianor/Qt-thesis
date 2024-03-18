@@ -1,12 +1,12 @@
+#include <QJsonDocument>
+#include <QObject>
 #include <QTest>
+#include <QTimer>
 
-#include "unittesting.h"
 #include "TileLoader.h"
 #include "Utilities.h"
 
-#include <QObject>
-#include <QJsonDocument>
-#include <QTimer>
+class UnitTesting : public QObject
 
 QTEST_MAIN(UnitTesting)
 // This include needs to match the name of this .cpp file.

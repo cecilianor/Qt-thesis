@@ -4,6 +4,11 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
+#include <QFile>
+#include <QObject>
+#include <QTest>
+
+#include "Evaluator.h"
 
 
 void testGetExpression(const QJsonObject &expressionObject, PolygonFeature *feature)
