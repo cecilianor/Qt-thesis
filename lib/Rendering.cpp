@@ -620,12 +620,8 @@ static void paintSingleTile(
                  const auto &feature = *static_cast<const PointFeature*>(abstractFeature);
 
                  // Tests whether the feature should be rendered at all based on possible expression.
-                 if (includeFeature(layerStyle, feature, mapZoom, vpZoom))
+                 if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
                      continue;
-                 if(feature.fetureMetaData.contains("name") && feature.fetureMetaData["name"] == "Australia")
-                 {
-                     auto x = 1;
-                 }
                  // Render the feature in question.
                  painter.save();
                  paintSingleTileFeature_Point(
