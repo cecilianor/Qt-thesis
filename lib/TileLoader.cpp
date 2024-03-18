@@ -288,6 +288,7 @@ bool TileLoader::loadFromDisk(TileCoord coord, TileLoadedCallbackFn signalFn)
 
 /*!
  * \brief Immediately writes a tile to disk cache.
+ *
  */
 void TileLoader::writeTileToDisk(TileCoord coord, const QByteArray &bytes) {
     // TODO unused return value of this function.
@@ -476,6 +477,11 @@ void TileLoader::insertIntoTileMemory(
 
 /*!
  * \brief writeTileToDiskCache writes tile information to the disk cache.
+ *
+ * This is a useful helper function that allows us to write tests
+ * that preload a tile-cache for a TileLoader to read. It's used by
+ * TileLoader internally, and from the unit tests.
+ *
  * \param basePath refers to the basic/root path to where the cached data is stored.
  * \param coord is the z (zoom), x, and y coordinates of a tile.
  * \param bytes is the tile data passed as a byte array.
