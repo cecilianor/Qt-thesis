@@ -126,92 +126,26 @@ struct ParsedLink {
 };
 
 namespace Bach {
-    /*!
-     * @brief Helper function to write a byte array to disk.
-     * This function will automatically establish any necessary
-     * parent directories, unlike the standard QFile::open.
-     *
-     * This function will only succeed if it was able to establish the path
-     * This function will only succeed if the file did not already exist.
-     *
-     * Created directory will not be removed in the case that writing to file fails.
-     *
-     * @param path is the path to the file. Must contain filename, cannot be directory only.
-     * @param Takes the byte-array to write.
-     * @return true if success, false if failed.
-     */
     bool writeNewFileHelper(const QString& path, const QByteArray &bytes);
 
-    /*!
-     * @brief Reads MapTiler key from file.
-     * @param filePath is the relative path + filename that's storing the key.
-     * @return The key if successfully read from file.
-     */
     std::optional<QString> readMapTilerKey(const QString &filePath);
 
-    /*!
-     * \brief Helper function to make a network request.
-     * This function makes a simple GET request to the URL supplied.
-     *
-     * It waits for the response before
-     * returning the result.
-     *
-     * Should only be used during startup of the program, preferably.
-     *
-     * This is a re-entrant function.
-     * \return
-     */
     HttpResponse requestAndWait(const QString &url);
 
-    /*!
-     * @brief Makes a blocking network request to get a stylesheet from MapTiler
-     * @param type The style of the stylesheet
-     * @param key The MapTiler key.
-     * @return The response from MapTiler.
-     */
     HttpResponse requestStyleSheetFromWeb(StyleSheetType type, const QString &key);
 
-    /*!
-     * \brief Loads the bytes of the stylesheet.
-     * Will attempt to load from cache first, then try downloading from web.
-     * If loaded from web, it will then try to write the result to disk cache.
-     * This is a blocking and re-entrant function.
-     *
-     */
     HttpResponse loadStyleSheetBytes(
         StyleSheetType type,
         const std::optional<QString> &mapTilerKey);
 
-    /*!
-     * @brief TileURL::getTilesLink grabs a link to a mapTiler tile sheet
-     * @param styleSheet is the stylesheet to get the link from
-     * @param sourceType is the map source type passed as a QString
-     * @return link as a string
-     */
     ParsedLink getTilesLinkFromStyleSheet(
         const QJsonDocument &styleSheet,
         const QString &sourceType);
 
-    /*!
-     * \brief getPbfLinkTemplate
-     * Finds the PBF link template from the stylesheet JSON.
-     *
-     * \param styleSheet
-     * \param sourceType
-     * \return Returns the string that can be turned into the URL.
-     * This string will have patterns {z}/{x}/{y} where the tile indices
-     * need to be inserted.
-     */
-    ParsedLink getPbfLinkTemplate(const QJsonDocument &styleSheet, const QString &sourceType);
+    ParsedLink getPbfLinkTemplate(
+        const QJsonDocument &styleSheet,
+        const QString &sourceType);
 
-    /*!
-     * @brief TileURL::getPBFLink gets a PBF link based on the url to a tile sheet.
-     *
-     * The function returns either a success message or an error message and error code.
-     *
-     * @param tileSheetUrl the link/url to the stylesheet.
-     * @return The link to PBF tiles.
-     */
     ParsedLink getPbfLinkFromTileSheet(const QString &tileSheetUrl);
 }
 

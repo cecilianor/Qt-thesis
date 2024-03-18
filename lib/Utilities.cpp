@@ -6,6 +6,20 @@
 
 #include "TileLoader.h"
 
+/*!
+ * \brief Helper function to write a byte array to disk.
+ * This function will automatically establish any necessary
+ * parent directories, unlike the standard QFile::open.
+ *
+ * This function will only succeed if it was able to establish the path
+ * This function will only succeed if the file did not already exist.
+ *
+ * Created directory will not be removed in the case that writing to file fails.
+ *
+ * \param path is the path to the file. Must contain filename, cannot be directory only.
+ * \param Takes the byte-array to write.
+ * \return true if success, false if failed.
+ */
 bool Bach::writeNewFileHelper(const QString& path, const QByteArray &bytes)
 {
     auto fileInfo = QFileInfo{ path };
@@ -47,6 +61,11 @@ bool Bach::writeNewFileHelper(const QString& path, const QByteArray &bytes)
     return true;
 }
 
+/*!
+ * \brief Reads MapTiler key from file.
+ * \param filePath is the relative path + filename that's storing the key.
+ * \return The key if successfully read from file.
+ */
 std::optional<QString> Bach::readMapTilerKey(const QString &filePath)
 {
     QFile file(filePath);
@@ -60,10 +79,21 @@ std::optional<QString> Bach::readMapTilerKey(const QString &filePath)
     return in.readAll().trimmed();
 }
 
+/*!
+ * \brief Helper function to make a network request.
+ * This function makes a simple GET request to the URL supplied.
+ *
+ * It waits for the response before
+ * returning the result.
+ *
+ * Should only be used during startup of the program, preferably.
+ *
+ * This is a re-entrant function.
+ * \return Returns the response error code and the byte-array.
+ */
 HttpResponse Bach::requestAndWait(const QString &url)
 {
     QNetworkAccessManager manager;
-    QNetworkRequest request{ QUrl(url) };
 
     // Perform the GET request
     QNetworkReply *reply = manager.get(QNetworkRequest{ QUrl{url} });
@@ -80,22 +110,28 @@ HttpResponse Bach::requestAndWait(const QString &url)
     // Checks for errors.
     if (reply->error() != QNetworkReply::NoError) {
         qWarning() << "Error in file NetworkController.cpp: " << reply->errorString() << '\n';
-        return {QByteArray(), ResultType::networkError};
+        return { QByteArray(), ResultType::networkError };
     }
 
     // Processes the response.
     QByteArray responseData = reply->readAll();
     if (responseData.length() == 0) {
         qWarning() << "No data was returned from the external source";
-        return {QByteArray(), ResultType::noData};
+        return { QByteArray(), ResultType::noData };
     }
 
     // Deletes the reply.
     reply->deleteLater();
     // Returns response data if everything was successful.
-    return {responseData, ResultType::success};
+    return { responseData, ResultType::success };
 }
 
+/*!
+ * \brief Makes a blocking network request to get a stylesheet from MapTiler
+ * \param type The style of the stylesheet
+ * \param key The MapTiler key.
+ * \return The byte array response from MapTiler.
+ */
 HttpResponse Bach::requestStyleSheetFromWeb(StyleSheetType type, const QString &key)
 {
     switch(type) {
@@ -110,6 +146,12 @@ HttpResponse Bach::requestStyleSheetFromWeb(StyleSheetType type, const QString &
     }
 }
 
+/*!
+ * \brief Loads the bytes of the stylesheet.
+ * Will attempt to load from cache first, then try downloading from web.
+ * If loaded from web, it will then try to write the result to disk cache.
+ * This is a blocking and re-entrant function.
+ */
 HttpResponse Bach::loadStyleSheetBytes(
     StyleSheetType type,
     const std::optional<QString> &mapTilerKey)
@@ -157,7 +199,19 @@ HttpResponse Bach::loadStyleSheetBytes(
     return webResponse;
 }
 
-ParsedLink Bach::getPbfLinkTemplate(const QJsonDocument &styleSheet, const QString &sourceType)
+/*!
+ * \brief getPbfLinkTemplate
+ * Finds the PBF link template from the stylesheet JSON.
+ *
+ * \param styleSheet
+ * \param sourceType
+ * \return Returns the string that can be turned into the URL.
+ * This string will have patterns {z}/{x}/{y} where the tile indices
+ * need to be inserted.
+ */
+ParsedLink Bach::getPbfLinkTemplate(
+    const QJsonDocument &styleSheet,
+    const QString &sourceType)
 {
     // First we need to find the URL to the tiles document.
     ParsedLink tilesUrlResult = getTilesLinkFromStyleSheet(styleSheet, sourceType);
@@ -170,6 +224,12 @@ ParsedLink Bach::getPbfLinkTemplate(const QJsonDocument &styleSheet, const QStri
     return getPbfLinkFromTileSheet(tilesUrlResult.link);
 }
 
+/*!
+ * @brief Finds the to a mapTiler tilesheet given a stylesheet
+ * @param styleSheet is the stylesheet to get the link from
+ * @param sourceType is the map source type passed as a QString
+ * @return link as a string
+ */
 ParsedLink Bach::getTilesLinkFromStyleSheet(
     const QJsonDocument &styleSheet,
     const QString &sourceType)
@@ -205,6 +265,14 @@ ParsedLink Bach::getTilesLinkFromStyleSheet(
     return {QString(), ResultType::unknownError};
 }
 
+/*!
+ * \brief Gets a PBF link based on the url to a tile sheet.
+ *
+ * The function returns either a success message or an error message and error code.
+ *
+ * \param tileSheetUrl the link/url to the stylesheet.
+ * \return The link to PBF tiles.
+ */
 ParsedLink Bach::getPbfLinkFromTileSheet(const QString &tileSheetUrl)
 {
     HttpResponse response = requestAndWait(tileSheetUrl);

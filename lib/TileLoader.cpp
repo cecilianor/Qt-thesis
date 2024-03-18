@@ -19,6 +19,20 @@ TileLoader::TileLoader() :
 
 }
 
+/*!
+ * \brief Create a new TileLoader instance by utilizing a
+ * PBF URL template. The TileLoader will then use this URL
+ * to download tiles from the web.
+ *
+ * \param The URL template for downloading PBF files.
+ * The function expects this URL to contain the patterns
+ * {x}, {y} and {z} (including curly braces). The TileLoader will
+ * then insert the actual Tile-coordinates into the URL.
+ *
+ * \param The stylesheet to pass on to the MapWidget.
+ *
+ * \return The constructed TileLoader instance.
+ */
 std::unique_ptr<TileLoader> TileLoader::fromPbfLink(
     const QString &pbfUrlTemplate,
     StyleSheet&& styleSheet)
@@ -36,6 +50,12 @@ std::unique_ptr<TileLoader> TileLoader::fromPbfLink(
     return out;
 }
 
+/*!
+ * \brief
+ * Local-only alternative to 'fromPbfLink' function.
+ * Creates a TileLoader that can not access the web and will
+ * only try to load from cache.
+ */
 std::unique_ptr<TileLoader> TileLoader::newLocalOnly(StyleSheet&& styleSheet)
 {
     auto out = std::unique_ptr<TileLoader>(new TileLoader());
@@ -45,6 +65,14 @@ std::unique_ptr<TileLoader> TileLoader::newLocalOnly(StyleSheet&& styleSheet)
     return out;
 }
 
+/*!
+ * \brief Creates an incomplete TileLoader without any stylesheet to pass onto
+ * rendering. This TileLoader should never be used when it needs to render anything.
+ *
+ * This function is mostly used for testing purposes.
+ *
+ * \param Takes the directory path to read/write cache into.
+ */
 std::unique_ptr<TileLoader> TileLoader::newDummy(const QString &diskCachePath)
 {
     auto out = std::unique_ptr<TileLoader>(new TileLoader());
@@ -69,6 +97,12 @@ QString TileLoader::getTileCacheFolder()
     return getGeneralCacheFolder() + QDir::separator() + "tiles";
 }
 
+/*!
+ * \brief Loads the tile-state of a given tile, if it has been loaded in some form.
+ * Mostly used in tests to see if tiles were put into correct state.
+ *
+ * \threadsafe
+ */
 std::optional<Bach::LoadedTileState> TileLoader::getTileState(TileCoord coord) const
 {
     auto tileLock = createTileMemoryLocker();
@@ -104,11 +138,45 @@ QString Bach::setPbfLink(TileCoord tileCoord, const QString &pbfLinkTemplate)
     return copy;
 }
 
+/*!
+ * \brief Gets the full file-path of a given tile, whether it exists or not.
+ */
 QString TileLoader::getTileDiskPath(TileCoord coord)
 {
     return tileCacheDiskPath + QDir::separator() + Bach::tileDiskCacheSubPath(coord);
 }
 
+/*!
+ * \brief Grabs loaded tiles, and enqueues loading tiles that are missing
+ * onto bakground thread(s).
+ *
+ * This function does not block and is not re-entrant as
+ * this may get called from a QWidget paint event.
+ *
+ * Returns the set of tiles that are already in memory at the
+ * time of the request. To grab new tiles as they are loaded,
+ * use the tileLoadedSignalFn parameter and call this function again.
+ * Alternatively connect to the tileFinished-signal.
+ *
+ * \param requestInput is a set of TileCoords that is requested.
+ *
+ * \param tileLoadedSignalFn is a function that will get called whenever
+ * a tile is loaded, will be called later in time,
+ * can be called from another thread. This function
+ * will be called once for each tile that was loaded successfully.
+ *
+ * This function is only called if a tile is successfully loaded.
+ *
+ * If this argument is set to null, the missing tiles will not be loaded.
+ *
+ * \param loadMissingTiles can be set to 'false' to force the
+ * TileLoader to NOT load tiles that are requested but not loaded.
+ * This means missing tiles will NOT be loaded in the future.
+ *
+ * \return Returns a RequestTilesResult object containing
+ * the resulting map of tiles. The returned set of
+ * data will always be a subset of requested tiles and all currently loaded tiles.
+ */
 QScopedPointer<Bach::RequestTilesResult> TileLoader::requestTiles(
     const std::set<TileCoord> &input,
     TileLoadedCallbackFn signalFn,
@@ -182,6 +250,12 @@ QScopedPointer<Bach::RequestTilesResult> TileLoader::requestTiles(
     return QScopedPointer<Bach::RequestTilesResult>{ out };
 }
 
+/*!
+ * \brief Loads the given tile from disk and inserts it
+ * into memory. This is a blocking call.
+ *
+ * \return Returns true if it was unable to load from disk
+ */
 bool TileLoader::loadFromDisk(TileCoord coord, TileLoadedCallbackFn signalFn)
 {
     // Check if it's in disk.
@@ -212,11 +286,17 @@ bool TileLoader::loadFromDisk(TileCoord coord, TileLoadedCallbackFn signalFn)
     return true;
 }
 
+/*!
+ * \brief Immediately writes a tile to disk cache.
+ */
 void TileLoader::writeTileToDisk(TileCoord coord, const QByteArray &bytes) {
     // TODO unused return value of this function.
     Bach::writeTileToDiskCache(tileCacheDiskPath, coord, bytes);
 }
 
+/*!
+ * \brief Handles a network reply when a tile has been loaded from web.
+ */
 void TileLoader::networkReplyHandler(
     QNetworkReply* reply,
     TileCoord coord,
@@ -254,6 +334,13 @@ void TileLoader::networkReplyHandler(
     });
 }
 
+/*!
+ * \brief Starts the async process to load a tile from web.
+ * This boots an async task, returns immediately.
+ * Tile will be loaded later when network request is done.
+ * Tile will then be inserted into memory
+ * and into disk cache when done.
+ */
 void TileLoader::loadFromWeb(TileCoord coord, TileLoadedCallbackFn signalFn)
 {
     // Load the URL for this particular tile.
@@ -280,8 +367,15 @@ void TileLoader::loadFromWeb(TileCoord coord, TileLoadedCallbackFn signalFn)
         job);
 }
 
-// This function should not block!
-// Offload all work to background thread(s)!
+/*!
+ * \brief
+ * Loads the list of tiles into memory, corresponding to the list of
+ * TileCoords inputted.
+ *
+ * This function launches asynchronous jobs, does not block execution!
+ *
+ * \threadsafe
+ */
 void TileLoader::queueTileLoadingJobs(
     const QVector<TileCoord> &input,
     TileLoadedCallbackFn signalFn)
@@ -309,6 +403,10 @@ void TileLoader::queueTileLoadingJobs(
     getThreadPool().start(asyncJob);
 }
 
+/*!
+ * \brief Parses byte-array and inserts into tile memory.
+ * \threadsafe
+ */
 void TileLoader::insertIntoTileMemory(
     TileCoord coord,
     const QByteArray &bytes,
@@ -376,6 +474,13 @@ void TileLoader::insertIntoTileMemory(
         signalFn(coord);
 }
 
+/*!
+ * \brief writeTileToDiskCache writes tile information to the disk cache.
+ * \param basePath refers to the basic/root path to where the cached data is stored.
+ * \param coord is the z (zoom), x, and y coordinates of a tile.
+ * \param bytes is the tile data passed as a byte array.
+ * \return true if caching the tile was successful, false otherwise.
+ */
 bool Bach::writeTileToDiskCache(
     const QString& basePath,
     TileCoord coord,
@@ -385,13 +490,22 @@ bool Bach::writeTileToDiskCache(
     return Bach::writeNewFileHelper(fullPath, bytes);
 }
 
+
+/*!
+ * \brief tileDiskCacheSubPath finds the file-path subpath for a cache folder.
+ *
+ * An example of one of these paths is "z0/x0/y0.mvt"
+ *
+ * \param coord is a z, x, y coordinate, where all values are integers.
+ * These values represent the XYZ tile coordinate.
+ *
+ * z is always in the range [0, 16] and represents zoom level.
+ * x and y must be in the range [0, tilecount-1], where tilecount = 2^zoom.
+ * \return the subpath that was found.
+ */
 QString Bach::tileDiskCacheSubPath(TileCoord coord)
 {
-    QString fileDirPath =
-        QString("z%1") +
-        QString("x%2") +
-        QString("y%3.mvt");
-    fileDirPath = fileDirPath
+    QString fileDirPath = QString("z%1x%2y%3.mvt")
         .arg(coord.zoom)
         .arg(coord.x)
         .arg(coord.y);
