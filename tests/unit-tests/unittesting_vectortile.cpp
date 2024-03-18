@@ -1,4 +1,6 @@
-#include "unittesting.h"
+#include <QObject>
+#include <QTest>
+
 #include "VectorTiles.h"
 
 

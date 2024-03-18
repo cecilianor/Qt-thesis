@@ -1,4 +1,5 @@
-#include "unittesting.h"
+#include <QObject>
+#include <QTest>
 
 #include "Layerstyle.h"
 
