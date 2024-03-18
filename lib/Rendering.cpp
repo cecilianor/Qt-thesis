@@ -335,13 +335,142 @@ static void paintSingleTileFeature_Line(
     painter.drawPath(newPath);
 }
 
+static QColor getTextColor(
+    const SymbolLayerStyle &layerStyle,
+    const PointFeature &feature,
+    int mapZoom,
+    double vpZoom)
+{
+    QVariant color = layerStyle.getTextColorAtZoom(mapZoom);
+    // The layer style might return an expression, we need to resolve it.
+    if(color.typeId() == QMetaType::Type::QJsonArray){
+        color = Evaluator::resolveExpression(
+            color.toJsonArray(),
+            &feature,
+            mapZoom,
+            vpZoom);
+    }
+    return color.value<QColor>();
+}
+
+
+static int getTextSize(
+    const SymbolLayerStyle &layerStyle,
+    const PointFeature &feature,
+    int mapZoom,
+    double vpZoom)
+{
+    QVariant size = layerStyle.getTextSizeAtZoom(mapZoom);
+    // The layer style might return an expression, we need to resolve it.
+    if(size.typeId() == QMetaType::Type::QJsonArray){
+        size = Evaluator::resolveExpression(
+            size.toJsonArray(),
+            &feature,
+            mapZoom,
+            vpZoom);
+    }
+    return size.value<int>();
+}
+
+static float getTextOpacity(
+    const SymbolLayerStyle &layerStyle,
+    const PointFeature &feature,
+    int mapZoom,
+    double vpZoom)
+{
+    QVariant opacity = layerStyle.getTextOpacityAtZoom(mapZoom);
+    // The layer style might return an expression, we need to resolve it.
+    if(opacity.typeId() == QMetaType::Type::QJsonArray){
+        opacity = Evaluator::resolveExpression(
+            opacity.toJsonArray(),
+            &feature,
+            mapZoom,
+            vpZoom);
+    }
+    return opacity.value<float>();
+}
+
+
+static QString getTextContent(
+    const SymbolLayerStyle &layerStyle,
+    const PointFeature &feature,
+    int mapZoom,
+    double vpZoom)
+{
+    QVariant text = layerStyle.m_textField;
+    // The layer style might return an expression, we need to resolve it.
+    if(text.typeId() == QMetaType::Type::QJsonArray){
+        text = Evaluator::resolveExpression(
+            text.toJsonArray(),
+            &feature,
+            mapZoom,
+            vpZoom);
+    }else if(text.typeId() != QMetaType::Type::QString)
+    {
+        text = "";
+    }
+    return text.value<QString>();
+}
+
+
+static void paintSingleTileFeature_Point(
+    QPainter &painter,
+    const PointFeature &feature,
+    const SymbolLayerStyle &layerStyle,
+    int mapZoom,
+    double vpZoom,
+    const QTransform &transformIn,
+    int tileSize)
+{
+
+    //if there is no text to draw, exit the function
+    QString text = getTextContent(layerStyle, feature, mapZoom, vpZoom);
+    if(text == "") return;
+    text.remove("{");
+    text.remove("}");
+    QString textToDraw;
+    if(feature.fetureMetaData.contains(text)){
+         textToDraw = feature.fetureMetaData[text].value<QString>();
+    }else{
+        return;
+    }
+    auto pen = painter.pen();
+
+    pen.setColor(getTextColor(layerStyle, feature, mapZoom, vpZoom));
+
+    painter.setPen(pen);
+    painter.setBrush(Qt::NoBrush);
+    QRect boundingRect =  painter.fontMetrics().boundingRect(textToDraw);
+
+
+    int textSize = getTextSize(layerStyle, feature, mapZoom, vpZoom);
+    if(tileSize < 12) return;
+    QFont textFont = QFont(layerStyle.m_textFont, textSize);
+    painter.setFont(textFont);
+    painter.setOpacity(getTextOpacity(layerStyle, feature, mapZoom, vpZoom));
+
+    painter.setRenderHints(QPainter::Antialiasing, false);
+
+
+
+    auto const& coordinates = feature.points().at(0);
+    QTransform transform = {};
+    transform.scale(1 / 4096.0, 1 / 4096.0);
+    transform.scale(tileSize, tileSize);
+    auto  newCoordinates = transform.map(coordinates);
+
+    auto actualNewCoordinates = QPoint(newCoordinates.x() - boundingRect.width()/2, newCoordinates.y() + boundingRect.height()/4);
+
+    painter.drawText(actualNewCoordinates,textToDraw);
+}
+
 // Determines whether this layer is hidden.
 static bool isLayerHidden(const AbstractLayereStyle &layerStyle, int mapZoom)
 {
     return
         layerStyle.m_visibility == "none" ||
         layerStyle.m_maxZoom < mapZoom ||
-        layerStyle.m_minZoom > mapZoom;
+        layerStyle.m_minZoom >= mapZoom;
 }
 
 // Determines whether a feature should be included when rendering this layer-style.
@@ -372,7 +501,8 @@ static void paintSingleTile(
     int mapZoom,
     double vpZoom,
     const StyleSheet &styleSheet,
-    const QTransform &transformIn)
+    const QTransform &transformIn,
+    int tileSize)
 {
     // We start by iterating over each layer style, it determines the order
     // at which we draw the elements of the map.
@@ -414,8 +544,7 @@ static void paintSingleTile(
                     transformIn);
                 painter.restore();
             }
-        }
-        else if (abstractLayerStyle->type() == AbstractLayereStyle::LayerType::line) {
+        } else if (abstractLayerStyle->type() == AbstractLayereStyle::LayerType::line) {
             auto const& layerStyle = *static_cast<LineLayerStyle const*>(abstractLayerStyle);
 
             // Iterate over all the features, and filter out anything that is not fill.
@@ -439,6 +568,34 @@ static void paintSingleTile(
                     transformIn);
                 painter.restore();
             }
+        } else if(abstractLayerStyle->type() == AbstractLayereStyle::LayerType::symbol){
+             auto const& layerStyle = *static_cast<const SymbolLayerStyle *>(abstractLayerStyle);
+
+             // Iterate over all the features, and filter out anything that is not fill.
+             for (auto const& abstractFeature : layer.m_features) {
+                 if (abstractFeature->type() != AbstractLayerFeature::featureType::point)
+                     continue;
+                 const auto &feature = *static_cast<const PointFeature*>(abstractFeature);
+
+                 // Tests whether the feature should be rendered at all based on possible expression.
+                 if (includeFeature(layerStyle, feature, mapZoom, vpZoom))
+                     continue;
+                 if(feature.fetureMetaData.contains("name") && feature.fetureMetaData["name"] == "Australia")
+                 {
+                     auto x = 1;
+                 }
+                 // Render the feature in question.
+                 painter.save();
+                 paintSingleTileFeature_Point(
+                     painter,
+                     feature,
+                     layerStyle,
+                     mapZoom,
+                     vpZoom,
+                     transformIn,
+                     tileSize);
+                 painter.restore();
+             }
         }
     }
 }
@@ -560,7 +717,9 @@ void Bach::paintTiles(
         auto tileIt = tileContainer.find(tileCoord);
         if (tileIt != tileContainer.end()) {
             auto const& tileData = **tileIt;
-
+            if(tileCoord == TileCoord({2,2,2})){
+                int i = 0;
+            }
             painter.save();
 
             // We create a clip rect around our tile, as to only render into
@@ -578,7 +737,8 @@ void Bach::paintTiles(
                 mapZoomLevel,
                 viewportZoomLevel,
                 styleSheet,
-                geometryTransform);
+                geometryTransform,
+                tileSizePixels);
 
             painter.restore();
         }
