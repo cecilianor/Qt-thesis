@@ -403,22 +403,18 @@ void testCompoundExpression(const QJsonObject &expressionObject, PolygonFeature 
     feature->fetureMetaData.clear();
     feature->fetureMetaData.insert("class", "motorway");
 
-
     expectedInterpolationResult = 0.5;
     result = Evaluator::resolveExpression(expression, feature, 0, 0);
     errorMessage = QString("Wrong result from \"interpolate\" function for zoom level 0, expected %1 but got %2")
                        .arg(expectedInterpolationResult)
                        .arg(result.toDouble());
     QVERIFY2(result.toDouble() == expectedInterpolationResult, errorMessage.toUtf8());
-
-
     expectedInterpolationResult =1 + (1*1.5/4);
     result = Evaluator::resolveExpression(expression, feature, 7, 0);
     errorMessage = QString("Wrong result from \"interpolate\" function for zoom level 7, expected %1 but got %2")
                        .arg(expectedInterpolationResult)
                        .arg(result.toDouble());
     QVERIFY2(result.toDouble() == expectedInterpolationResult, errorMessage.toUtf8());
-
 
     feature->fetureMetaData.insert("brunnel", "bridge");
     expectedInterpolationResult =1 + (1*(-1.)/4);
@@ -452,7 +448,6 @@ void testCompoundExpression(const QJsonObject &expressionObject, PolygonFeature 
                        .arg(result.toDouble());
     QVERIFY2(result.toDouble() == expectedInterpolationResult, errorMessage.toUtf8());
 
-
     expectedInterpolationResult =2+(2*14./4);
     result = Evaluator::resolveExpression(expression, feature, 18, 0);
     errorMessage = QString("Wrong result from \"interpolate\" function for zoom level 18, expected %1 but got %2")
@@ -466,14 +461,10 @@ void testCompoundExpression(const QJsonObject &expressionObject, PolygonFeature 
                        .arg(expectedInterpolationResult)
                        .arg(result.toDouble());
     QVERIFY2(result.toDouble() == expectedInterpolationResult, errorMessage.toUtf8());
-
-
-
 }
 
 void UnitTesting::resolveExpression_returns_basic_values()
 {
-
     //Check that the file exists.
     QString path = ":/unitTestResources/expressionTest.json";
     bool fileExist = QFile::exists(path);
