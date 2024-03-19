@@ -36,8 +36,6 @@ void testLayer(const TileLayer &layer, QString expectedName, int expectedExtent,
                        .arg(expectedVersion)
                        .arg(layer.version());
     QVERIFY2(layer.version() == expectedVersion, errorMessage.toUtf8());
-
-
 }
 
 void testTileLayers(const VectorTile tile){
@@ -70,9 +68,6 @@ void testTileLayers(const VectorTile tile){
     errorMessage = QString("the tile is missing layer: water_name");
     QVERIFY2(tile.m_layers.contains("water_name") == true, errorMessage.toUtf8());
     testLayer(*tile.m_layers["water_name"], "water_name", 4096, 7, 2);
-
-
-
 }
 
 void UnitTesting::tileFromByteArray_returns_basic_values()
@@ -93,5 +88,4 @@ void UnitTesting::tileFromByteArray_returns_basic_values()
     QString readError = "Could not read file data";
     QVERIFY2(tile != std::nullopt, readError.toUtf8());
     testTileLayers(tile.value());
-
 }

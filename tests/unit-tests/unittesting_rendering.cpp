@@ -82,6 +82,7 @@ void UnitTesting::calcMapZoomLevelForTileSizePixels_returns_expected_basic_value
         {   { 1024, 256, 0.0, 128},
             3 },
     };
+
     for (int i = 0; i < testItems.size(); i++) {
         const auto &item = testItems[i];
         const auto &input = item.input;

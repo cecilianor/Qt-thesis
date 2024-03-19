@@ -28,10 +28,7 @@ void UnitTesting::getStopOutput_returns_basic_values(){
                             .arg(value.second)
                             .arg(result);
         QVERIFY2(result == value.second, errorMsg.toUtf8());
-
     }
-
-
 }
 
 
@@ -66,7 +63,6 @@ void testBackgroundLayerStyle(AbstractLayereStyle *layerStyle)
                     .arg(expectedMaxZoom)
                     .arg(backgroundStyle.m_maxZoom);
     QVERIFY2(backgroundStyle.m_maxZoom == expectedMaxZoom, testError.toUtf8());
-
 
     QColor expectedColorForStop1 = QColor::fromHslF(60/359.,20/100.,85/100.);
     QColor expectedColorForStop2 = QColor::fromHslF(60/359.,24/100.,90/100.);
@@ -152,11 +148,9 @@ void testFillLyerStyle(AbstractLayereStyle *layerStyle)
                     .arg(filllayerStyle.m_antialias);
     QVERIFY2(filllayerStyle.m_antialias == expectedAntiAliasing, testError.toUtf8());
 
-
     testError =  QString("The fill color variable type is not correct at zoom %1").arg(1);
     QVariant colorVariant = filllayerStyle.getFillColorAtZoom(1);
     QVERIFY2(colorVariant.typeId() == QMetaType::Type::QColor, testError.toUtf8());
-
 
     QColor fillColor = colorVariant.value<QColor>();
     hueMatch = fillColor.hslHue() == expectedColor.hslHue();
@@ -170,8 +164,6 @@ void testFillLyerStyle(AbstractLayereStyle *layerStyle)
         .arg(expectedFilterSize)
         .arg(filllayerStyle.m_filter.size());
     QVERIFY2(filllayerStyle.m_filter.size() == expectedFilterSize, testError.toUtf8());
-
-
 }
 
 void testLineLayerStyle(AbstractLayereStyle *layerStyle)
@@ -268,14 +260,10 @@ void testLineLayerStyle(AbstractLayereStyle *layerStyle)
                     .arg(expectedFilterSize)
                     .arg(lineLyaerStyle.m_filter.size());
     QVERIFY2(lineLyaerStyle.m_filter.size() == expectedFilterSize, testError.toUtf8());
-
-
 }
-
 
 void testPointLayerStyle(AbstractLayereStyle *layerStyle)
 {
-
     QString testError;
     QString expectedId = "Airport labels";
     QString expectedSource = "maptiler_planet";
@@ -382,7 +370,6 @@ void testPointLayerStyle(AbstractLayereStyle *layerStyle)
                     .arg(expectedFilterSize)
                     .arg(symbolLayerStyle.m_filter.size());
     QVERIFY2(symbolLayerStyle.m_filter.size() == expectedFilterSize, testError.toUtf8());
-
 }
 
 void testNotImplementedLayerStyle(AbstractLayereStyle *layerStyle)
@@ -390,7 +377,6 @@ void testNotImplementedLayerStyle(AbstractLayereStyle *layerStyle)
      QString testError;
     testError = QString("The layer style is expected to be of type NotImpleneted");
      QVERIFY2(layerStyle->type() == AbstractLayereStyle::LayerType::notImplemented, testError.toUtf8());
-
 }
 
 
@@ -459,5 +445,4 @@ void UnitTesting::parseSheet_returns_basic_values()
     testLineLayerStyle(sheet.m_layerStyles.at(2));
     testPointLayerStyle(sheet.m_layerStyles.at(3));
     testNotImplementedLayerStyle(sheet.m_layerStyles.at(4));
-
 }
