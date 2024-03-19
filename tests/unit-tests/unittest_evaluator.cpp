@@ -21,8 +21,10 @@ private slots:
     void resolveExpression_with_inequality_value();
     void resolveExpression_with_greater_than_value();
     void resolveExpression_with_all_value();
-    /*void resolveExpression_with_case_value(); // Test ON HOLD DUE TO FLOAT COMPARISON! */
-
+    /*void resolveExpression_with_case_value();         // Test ON HOLD DUE TO FLOAT COMPARISON! */
+    /*void resolveExpression_with_match_value();        // Test ON HOLD DUE TO FLOAT COMPARISON! */
+    /*void resolveExpression_with_interpolate_value();  // Test ON HOLD DUE TO FLOAT COMPARISON! */
+    /*void resolveExpression_with_compound_value();     // Test ON HOLD DUE TO FLOAT COMPARISON! */
 };
 
 QTEST_MAIN(UnitTesting)
@@ -420,6 +422,7 @@ void UnitTesting::resolveExpression_with_coalesce_value()
     file.close();
 }
 
+// ON HOLD DUE TO FLOAT COMPARISONS
 void testMatchExpression(const QJsonObject &expressionObject, PolygonFeature *feature)
 {
 
@@ -449,6 +452,7 @@ void testMatchExpression(const QJsonObject &expressionObject, PolygonFeature *fe
 
 }
 
+// ON HOLD DUE TO FLOAT COMPARISONS
 void testInterpolateExpression(const QJsonArray &expression, PolygonFeature *feature)
 {
     QString errorMessage;
@@ -523,6 +527,7 @@ void testInterpolateExpression(const QJsonArray &expression, PolygonFeature *fea
 
 }
 
+// ON HOLD DUE TO FLOAT COMPARISONS
 void testCompoundExpression(const QJsonObject &expressionObject, PolygonFeature *feature)
 {
     QString errorMessage;
@@ -626,6 +631,9 @@ void UnitTesting::resolveExpression_returns_basic_values()
     //testAllExpression(expressionsObject.value("all").toObject(), &testFeature);
     //testCaseExpression(expressionsObject.value("case").toObject(), &testFeature);
     //testCoalesceExpression(expressionsObject.value("coalesce").toObject(), &testFeature);
+
+    /* The following three tests need updating before use due to float comparisons.
+        They are currently ON-HOLD! */
     testMatchExpression(expressionsObject.value("match").toObject(), &testFeature);
     testInterpolateExpression(expressionsObject.value("interpolate").toArray(), &testFeature);
     testCompoundExpression(expressionsObject.value("compound").toObject(), &testFeature);
