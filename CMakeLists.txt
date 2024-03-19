@@ -127,12 +127,9 @@ if (BUILD_TESTS)
 
     # Add the first test executable: tileloader test
     qt_add_executable(tileloader_test tests/unit-tests/unittesting_tileloader.cpp)
-    qt_add_resources(tileloader_test "unitTestResources"
+    qt_add_resources(tileloader_test "unitTestResourcesTileLoader"
         PREFIX "/"
         FILES
-        unitTestResources/styleTest.json
-        unitTestResources/000testTile.pbf
-        unitTestResources/expressionTest.json
         unitTestResources/loadTileFromCache_fails_on_broken_file.mvt
         unitTestResources/loadTileFromCache_parses_cached_file_successfully.mvt
     )
@@ -140,12 +137,12 @@ if (BUILD_TESTS)
 
     # Add the second executable: rendering unit test
     qt_add_executable(render_test tests/unit-tests/unittesting_rendering.cpp)
-    qt_add_resources(render_test "unitTestResources")
+    qt_add_resources(render_test "unitTestResourcesRendering")
     target_link_libraries(render_test PUBLIC maplib Qt6::Test)
 
     # Add the third executable: layerstyle test
     qt_add_executable(layerstyle_test tests/unit-tests/unittesting_layerstyle.cpp)
-    qt_add_resources(layerstyle_test "unitTestResources"
+    qt_add_resources(layerstyle_test "unitTestResourcesLayerStyle"
         PREFIX "/"
         FILES
         unitTestResources/styleTest.json
@@ -155,7 +152,7 @@ if (BUILD_TESTS)
 
     # Add the fourth executable: vectortile test
     qt_add_executable(vectortile_test tests/unit-tests/unittesting_vectortile.cpp)
-    qt_add_resources(vectortile_test "unitTestResources"
+    qt_add_resources(vectortile_test "unitTestResourcesVectorTile"
         PREFIX "/"
         FILES
         unitTestResources/000testTile.pbf
@@ -164,7 +161,11 @@ if (BUILD_TESTS)
 
     # Add the fifth executable: evaluator test
     qt_add_executable(evaluator_test tests/unit-tests/unittest_evaluator.cpp)
-    qt_add_resources(evaluator_test "unitTestResources")
+    qt_add_resources(evaluator_test "unitTestResourcesEvaluator"
+        PREFIX "/"
+        FILES
+        unitTestResources/expressionTest.json
+        )
     target_link_libraries(evaluator_test PUBLIC maplib Qt6::Test)
 
     # Make sure we deploy the correct runtime dependencies to the test.
