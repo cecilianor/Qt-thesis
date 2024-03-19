@@ -15,6 +15,7 @@ private slots:
     void resolveExpression_returns_basic_values();
     void resolveExpression_with_get_value();
     void resolveExpression_with_has_value();
+    void resolveExpression_with_in_value();
 };
 
 QTEST_MAIN(UnitTesting)
@@ -96,19 +97,31 @@ void UnitTesting::resolveExpression_with_has_value() {
     QVERIFY2(result.toBool() == false, errorMessage.toUtf8());
 }
 
-void testinExpression(const QJsonObject &expressionObject, PolygonFeature *feature)
+// Test resolve expression function when the `in` value is passed in.
+// This function checks both for a valid (positive) and invalid (negative case).
+void UnitTesting::resolveExpression_with_in_value()
 {
+    QString path = ":/unitTestResources/expressionTest.json";
+    QFile file(path);
+    file.open(QIODevice::ReadOnly);
 
+    //Parse the json file into a QJsonDocument for further processing.
+    QJsonDocument doc;
+    QJsonParseError parseError;
+    doc = QJsonDocument::fromJson(file.readAll(), &parseError);
+
+    QJsonObject expressionObject = doc.object().value("in").toObject();
+
+    PolygonFeature feature;
 
     QString errorMessage;
     QJsonArray expression;
     QVariant result;
-    feature->fetureMetaData.clear();
-    feature->fetureMetaData.insert("class", "residential");
-
+    feature.fetureMetaData.clear();
+    feature.fetureMetaData.insert("class", "residential");
 
     expression = expressionObject.value("positive").toArray();
-    result = Evaluator::resolveExpression(expression, feature, 0, 0);
+    result = Evaluator::resolveExpression(expression, &feature, 0, 0);
     errorMessage = QString("\"in\" function returns empty result when a bool is expected");
     QVERIFY2(result.typeId() == QMetaType::Type::Bool, errorMessage.toUtf8());
     errorMessage = QString("Wrong result from \"in\" function, expected %1 but got %2")
@@ -117,15 +130,16 @@ void testinExpression(const QJsonObject &expressionObject, PolygonFeature *featu
     QVERIFY2(result.toBool() == true, errorMessage.toUtf8());
 
     expression = expressionObject.value("negative").toArray();
-    result = Evaluator::resolveExpression(expression, feature, 0, 0);
+    result = Evaluator::resolveExpression(expression, &feature, 0, 0);
     errorMessage = QString("\"in\" function returns empty result when a bool is expected");
     QVERIFY2(result.typeId() == QMetaType::Type::Bool, errorMessage.toUtf8());
     errorMessage = QString("Wrong result from \"in\" function, expected %1 but got %2")
                        .arg(false)
                        .arg(result.toBool());
     QVERIFY2(result.toBool() == false, errorMessage.toUtf8());
-
+    file.close();
 }
+
 void testEqualityExpression(const QJsonObject &expressionObject, PolygonFeature *feature)
 {
     QString errorMessage;
@@ -512,7 +526,7 @@ void UnitTesting::resolveExpression_returns_basic_values()
     PolygonFeature testFeature;
     //testGetExpression(expressionsObject.value("get").toObject(), &testFeature);
     //testHasExpression(expressionsObject.value("has").toObject(), &testFeature);
-    testinExpression(expressionsObject.value("in").toObject(), &testFeature);
+    //testinExpression(expressionsObject.value("in").toObject(), &testFeature);
     testEqualityExpression(expressionsObject.value("==").toObject(), &testFeature);
     testInequalityExpression(expressionsObject.value("!=").toObject(), &testFeature);
     testGreaterExpression(expressionsObject.value(">").toObject(), &testFeature);
