@@ -414,25 +414,19 @@ void UnitTesting::parseSheet_returns_basic_values()
     int expectedNumberOfLayers = 5;
 
     testError = QString("The style Sheet object id does not match, expected %1 but got %2")
-                    .arg(expectedId)
-                    .arg(sheet.m_id);
+                    .arg(expectedId, sheet.m_id);
     QVERIFY2(sheet.m_id == expectedId, testError.toUtf8());
 
     testError = QString("The style Sheet object version does not match, expected %1 but got %2")
-                    .arg(expectedVersion)
-                    .arg(sheet.m_version);
+                    .arg(expectedVersion, sheet.m_version);
     QVERIFY2(sheet.m_version == expectedVersion, testError.toUtf8());
 
-
     testError = QString("The style Sheet object name does not match, expected %1 but got %2")
-                    .arg(expectedName)
-                    .arg(sheet.m_name);
+                    .arg(expectedName, sheet.m_name);
     QVERIFY2(sheet.m_name == expectedName, testError.toUtf8());
 
-
     testError = QString("The style Sheet object does not contain the correct amount of layers, expected %1 but got %2")
-                    .arg(expectedNumberOfLayers)
-                    .arg(sheet.m_layerStyles.length());
+                    .arg(expectedNumberOfLayers, sheet.m_layerStyles.length());
     QVERIFY2(sheet.m_layerStyles.length() == expectedNumberOfLayers, testError.toUtf8());
 
     for(int i = 0; i < sheet.m_layerStyles.length(); i++){
