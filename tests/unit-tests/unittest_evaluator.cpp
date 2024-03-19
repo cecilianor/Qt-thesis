@@ -18,6 +18,7 @@ private slots:
     void resolveExpression_with_in_value();
     void resolveExpression_with_equals_value();
     void resolveExpression_with_inequality_value();
+    void resolveExpression_with_greater_than_value();
 };
 
 QTEST_MAIN(UnitTesting)
@@ -246,18 +247,31 @@ void UnitTesting::resolveExpression_with_inequality_value()
     file.close();
 }
 
-void testGreaterExpression(const QJsonObject &expressionObject, PolygonFeature *feature)
+// Test resolve expression function when the `>` expression object value is passed in.
+// This function checks both for a valid (positive) and invalid (negative case).
+void UnitTesting::resolveExpression_with_greater_than_value()
 {
+    QString path = ":/unitTestResources/expressionTest.json";
+    QFile file(path);
+    file.open(QIODevice::ReadOnly);
 
+    //Parse the json file into a QJsonDocument for further processing.
+    QJsonDocument doc;
+    QJsonParseError parseError;
+    doc = QJsonDocument::fromJson(file.readAll(), &parseError);
+
+    QJsonObject expressionObject = doc.object().value(">").toObject();
+
+    PolygonFeature feature;
     QString errorMessage;
     QJsonArray expression;
     QVariant result;
-    feature->fetureMetaData.clear();
-    feature->fetureMetaData.insert("intermittent", 1);
 
+    feature.fetureMetaData.clear();
+    feature.fetureMetaData.insert("intermittent", 1);
 
     expression = expressionObject.value("positive").toArray();
-    result = Evaluator::resolveExpression(expression, feature, 0, 0);
+    result = Evaluator::resolveExpression(expression, &feature, 0, 0);
     errorMessage = QString("\"greater\" function returns empty result when a bool is expected");
     QVERIFY2(result.typeId() == QMetaType::Type::Bool, errorMessage.toUtf8());
     errorMessage = QString("Wrong result from \"greater\" function, expected %1 but got %2")
@@ -266,7 +280,7 @@ void testGreaterExpression(const QJsonObject &expressionObject, PolygonFeature *
     QVERIFY2(result.toBool() == true, errorMessage.toUtf8());
 
     expression = expressionObject.value("negative").toArray();
-    result = Evaluator::resolveExpression(expression, feature, 0, 0);
+    result = Evaluator::resolveExpression(expression, &feature, 0, 0);
     errorMessage = QString("\"greater\" function returns empty result when a bool is expected");
     QVERIFY2(result.typeId() == QMetaType::Type::Bool, errorMessage.toUtf8());
     errorMessage = QString("Wrong result from \"greater\" function, expected %1 but got %2")
@@ -560,7 +574,7 @@ void UnitTesting::resolveExpression_returns_basic_values()
     //testinExpression(expressionsObject.value("in").toObject(), &testFeature);
     //testEqualityExpression(expressionsObject.value("==").toObject(), &testFeature);
     //testInequalityExpression(expressionsObject.value("!=").toObject(), &testFeature);
-    testGreaterExpression(expressionsObject.value(">").toObject(), &testFeature);
+    //testGreaterExpression(expressionsObject.value(">").toObject(), &testFeature);
     testAllExpression(expressionsObject.value("all").toObject(), &testFeature);
     testCaseExpression(expressionsObject.value("case").toObject(), &testFeature);
     testCoalesceExpression(expressionsObject.value("coalesce").toObject(), &testFeature);
