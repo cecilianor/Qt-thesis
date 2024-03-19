@@ -14,6 +14,7 @@ class UnitTesting : public QObject
 private slots:
     void resolveExpression_returns_basic_values();
     void resolveExpression_with_get_value();
+    void resolveExpression_with_has_value();
 };
 
 QTEST_MAIN(UnitTesting)
@@ -55,18 +56,29 @@ void UnitTesting::resolveExpression_with_get_value(){
     QVERIFY2(result.isValid() == false, errorMessage.toUtf8());
 }
 
-void testHasExpression(const QJsonObject &expressionObject, PolygonFeature *feature)
-{
+// Test resolve expression function when the `has` value is passed in.
+// This function checks both for a valid (positive) and invalid (negative case).
+void UnitTesting::resolveExpression_with_has_value() {
+    QString path = ":/unitTestResources/expressionTest.json";
+    QFile file(path);
+    file.open(QIODevice::ReadOnly);
+
+    //Parse the json file into a QJsonDocument for further processing.
+    QJsonDocument doc;
+    QJsonParseError parseError;
+    doc = QJsonDocument::fromJson(file.readAll(), &parseError);
+
+    QJsonObject expressionObject = doc.object().value("has").toObject();
 
     QString errorMessage;
     QJsonArray expression;
     QVariant result;
-    feature->fetureMetaData.clear();
-    feature->fetureMetaData.insert("subclass", "farm");
-
+    PolygonFeature feature;
+    feature.fetureMetaData.clear();
+    feature.fetureMetaData.insert("subclass", "farm");
 
     expression = expressionObject.value("positive").toArray();
-    result = Evaluator::resolveExpression(expression, feature, 0, 0);
+    result = Evaluator::resolveExpression(expression, &feature, 0, 0);
     errorMessage = QString("\"has\" function returns empty result when a bool is expected");
     QVERIFY2(result.typeId() == QMetaType::Type::Bool, errorMessage.toUtf8());
     errorMessage = QString("Wrong result from \"has\" function, expected %1 but got %2")
@@ -75,14 +87,13 @@ void testHasExpression(const QJsonObject &expressionObject, PolygonFeature *feat
     QVERIFY2(result.toBool() == true, errorMessage.toUtf8());
 
     expression = expressionObject.value("negative").toArray();
-    result = Evaluator::resolveExpression(expression, feature, 0, 0);
+    result = Evaluator::resolveExpression(expression, &feature, 0, 0);
     errorMessage = QString("\"has\" function returns empty result when a bool is expected");
     QVERIFY2(result.typeId() == QMetaType::Type::Bool, errorMessage.toUtf8());
     errorMessage = QString("Wrong result from \"has\" function, expected %1 but got %2")
                        .arg(false)
                        .arg(result.toBool());
     QVERIFY2(result.toBool() == false, errorMessage.toUtf8());
-
 }
 
 void testinExpression(const QJsonObject &expressionObject, PolygonFeature *feature)
@@ -500,7 +511,7 @@ void UnitTesting::resolveExpression_returns_basic_values()
     QJsonObject expressionsObject = doc.object();
     PolygonFeature testFeature;
     //testGetExpression(expressionsObject.value("get").toObject(), &testFeature);
-    testHasExpression(expressionsObject.value("has").toObject(), &testFeature);
+    //testHasExpression(expressionsObject.value("has").toObject(), &testFeature);
     testinExpression(expressionsObject.value("in").toObject(), &testFeature);
     testEqualityExpression(expressionsObject.value("==").toObject(), &testFeature);
     testInequalityExpression(expressionsObject.value("!=").toObject(), &testFeature);
