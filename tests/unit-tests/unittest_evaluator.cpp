@@ -13,35 +13,46 @@ class UnitTesting : public QObject
 
 private slots:
     void resolveExpression_returns_basic_values();
-
+    void resolveExpression_with_get_value();
 };
 
 QTEST_MAIN(UnitTesting)
 #include "unittest_evaluator.moc"
 
-void testGetExpression(const QJsonObject &expressionObject, PolygonFeature *feature)
-{
+// Test resolve expression function when the get value is passed in.
+// This function checks both for a valid (positive) and invalid (negative case).
+void UnitTesting::resolveExpression_with_get_value(){
+    QString path = ":/unitTestResources/expressionTest.json";
+    QFile file(path);
+    file.open(QIODevice::ReadOnly);
+
+    //Parse the json file into a QJsonDocument for further processing.
+    QJsonDocument doc;
+    QJsonParseError parseError;
+    doc = QJsonDocument::fromJson(file.readAll(), &parseError);
+
+    QJsonObject expressionObject = doc.object().value("get").toObject();
+
+    PolygonFeature testFeature;
     QString errorMessage;
     QJsonArray expression;
     QVariant result;
-    feature->fetureMetaData.clear();
-    feature->fetureMetaData.insert("class", "grass");
+    testFeature.fetureMetaData.clear();
+    testFeature.fetureMetaData.insert("class", "grass");
 
 
     expression = expressionObject.value("positive").toArray();
-    result = Evaluator::resolveExpression(expression, feature, 0, 0);
+    result = Evaluator::resolveExpression(expression, &testFeature, 0, 0);
     errorMessage = QString("\"get\" function returns empty result when a string is expected");
     QVERIFY2(result.typeId() == QMetaType::Type::QString, errorMessage.toUtf8());
     errorMessage = QString("Wrong result from \"get\" function, expected %1 but got %2")
-                       .arg("grass")
-                       .arg(result.toString());
+                       .arg("grass",result.toString());
     QVERIFY2(result.toString() == "grass", errorMessage.toUtf8());
 
     expression = expressionObject.value("negative").toArray();
-    result = Evaluator::resolveExpression(expression, feature, 0, 0);
+    result = Evaluator::resolveExpression(expression, &testFeature, 0, 0);
     errorMessage = QString("\"get\" function returns a valid variant when the result is expected to be non-valid");
     QVERIFY2(result.isValid() == false, errorMessage.toUtf8());
-
 }
 
 void testHasExpression(const QJsonObject &expressionObject, PolygonFeature *feature)
@@ -488,7 +499,7 @@ void UnitTesting::resolveExpression_returns_basic_values()
 
     QJsonObject expressionsObject = doc.object();
     PolygonFeature testFeature;
-    testGetExpression(expressionsObject.value("get").toObject(), &testFeature);
+    //testGetExpression(expressionsObject.value("get").toObject(), &testFeature);
     testHasExpression(expressionsObject.value("has").toObject(), &testFeature);
     testinExpression(expressionsObject.value("in").toObject(), &testFeature);
     testEqualityExpression(expressionsObject.value("==").toObject(), &testFeature);
