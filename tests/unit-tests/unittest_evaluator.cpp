@@ -13,6 +13,7 @@ class UnitTesting : public QObject
 
 private slots:
     void resolveExpression_returns_basic_values();
+    void resolveExpression_with_coalesce_value();
     void resolveExpression_with_get_value();
     void resolveExpression_with_has_value();
     void resolveExpression_with_in_value();
@@ -21,6 +22,7 @@ private slots:
     void resolveExpression_with_greater_than_value();
     void resolveExpression_with_all_value();
     /*void resolveExpression_with_case_value(); // Test ON HOLD DUE TO FLOAT COMPARISON! */
+
 };
 
 QTEST_MAIN(UnitTesting)
@@ -379,29 +381,43 @@ void UnitTesting::resolveExpression_with_case_value()
 }
 */
 
-void testCoalesceExpression(const QJsonObject &expressionObject, PolygonFeature *feature)
+// Test resolve expression function when the `coalesce` expression object value is passed in.
+// This function checks both for a valid (positive) and invalid (negative case).
+void UnitTesting::resolveExpression_with_coalesce_value()
 {
+    QString path = ":/unitTestResources/expressionTest.json";
+    QFile file(path);
+    file.open(QIODevice::ReadOnly);
+
+    //Parse the json file into a QJsonDocument for further processing.
+    QJsonDocument doc;
+    QJsonParseError parseError;
+    doc = QJsonDocument::fromJson(file.readAll(), &parseError);
+
+    QJsonObject expressionObject = doc.object().value("coalesce").toObject();
+
+    PolygonFeature feature;
 
     QString errorMessage;
     QJsonArray expression;
     QVariant result;
-    feature->fetureMetaData.clear();
-    feature->fetureMetaData.insert("class", "neighbourhood");
+
+    feature.fetureMetaData.clear();
+    feature.fetureMetaData.insert("class", "neighbourhood");
 
     expression = expressionObject.value("positive").toArray();
-    result = Evaluator::resolveExpression(expression, feature, 0, 0);
+    result = Evaluator::resolveExpression(expression, &feature, 0, 0);
     errorMessage = QString("\"coalesce\" function returns empty result when an int is expected");
     QVERIFY2(result.typeId() == QMetaType::Type::QString, errorMessage.toUtf8());
     errorMessage = QString("Wrong result from \"coalesce\" function, expected %1 but got %2")
-                       .arg("neighbourhood")
-                       .arg(result.toString());
+                       .arg("neighbourhood", result.toString());
     QVERIFY2(result.toString() == "neighbourhood", errorMessage.toUtf8());
 
     expression = expressionObject.value("negative").toArray();
-    result = Evaluator::resolveExpression(expression, feature, 0, 0);
+    result = Evaluator::resolveExpression(expression, &feature, 0, 0);
     errorMessage = QString("\"coalesce\" function returns a valid result when an empty variant is expected");
     QVERIFY2(result.isValid() == false, errorMessage.toUtf8());
-
+    file.close();
 }
 
 void testMatchExpression(const QJsonObject &expressionObject, PolygonFeature *feature)
@@ -609,7 +625,7 @@ void UnitTesting::resolveExpression_returns_basic_values()
     //testGreaterExpression(expressionsObject.value(">").toObject(), &testFeature);
     //testAllExpression(expressionsObject.value("all").toObject(), &testFeature);
     //testCaseExpression(expressionsObject.value("case").toObject(), &testFeature);
-    testCoalesceExpression(expressionsObject.value("coalesce").toObject(), &testFeature);
+    //testCoalesceExpression(expressionsObject.value("coalesce").toObject(), &testFeature);
     testMatchExpression(expressionsObject.value("match").toObject(), &testFeature);
     testInterpolateExpression(expressionsObject.value("interpolate").toArray(), &testFeature);
     testCompoundExpression(expressionsObject.value("compound").toObject(), &testFeature);
