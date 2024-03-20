@@ -13,19 +13,29 @@ class UnitTesting : public QObject
 
 private:
     const QString expressionTestPath = ":/unitTestResources/expressionTest.json";
-    QFile file{expressionTestPath}; // File used to test expressions.
+
+    // Opens and parses the test file.
+    bool openAndParseTestFile(QFile &testFile, QJsonDocument &doc) {
+        // Verify that the test file can be opened.
+        testFile.setFileName(expressionTestPath);
+        if(!testFile.open(QIODevice::ReadOnly))
+            return false;
+
+        // Verify that the test file got parsed correctly.
+        QJsonParseError parseError;
+        doc = QJsonDocument::fromJson(testFile.readAll(), &parseError);
+        if(parseError.error != QJsonParseError::NoError)
+            return false;
+
+        return true; // Everything went okay, return true.
+    }
+
+    // Cleanup at the end of each test.
+    void closeTestFile(QFile &testFile){
+        testFile.close();
+    }
 
 private slots:
-    // Initialization at the start of each test.
-    void init() {
-        QVERIFY2(file.open(QIODevice::ReadOnly),"Couldn't open expression test file at: "
-                                                     + expressionTestPath.toUtf8());
-    }
-    // Cleanup at the end of each test.
-    void cleanup(){
-        file.close();
-    }
-
     void resolveExpression_returns_basic_values();
     void resolveExpression_with_coalesce_value();
     void resolveExpression_with_get_value();
@@ -46,56 +56,57 @@ QTEST_MAIN(UnitTesting)
 
 // Test resolve expression function when the get value is passed in.
 // This function checks both for a valid (positive) and invalid (negative case).
-void UnitTesting::resolveExpression_with_get_value(){
-    //Parse the json file into a QJsonDocument for further processing.
+void UnitTesting::resolveExpression_with_get_value()
+{
+    QFile file;
     QJsonDocument doc;
-    QJsonParseError parseError;
-    doc = QJsonDocument::fromJson(file.readAll(), &parseError);
+    QVERIFY2(openAndParseTestFile(file, doc),
+             " Opening and parsing failed for: " + expressionTestPath.toUtf8());
 
-    QJsonObject expressionObject = doc.object().value("get").toObject();
-
-    PolygonFeature testFeature;
+    PolygonFeature feature;
     QString errorMessage;
     QJsonArray expression;
     QVariant result;
-    testFeature.fetureMetaData.clear();
-    testFeature.fetureMetaData.insert("class", "grass");
 
+    QJsonObject expressionObject = doc.object().value("get").toObject();
+    feature.fetureMetaData.insert("class", "grass");
 
     expression = expressionObject.value("positive").toArray();
-    result = Evaluator::resolveExpression(expression, &testFeature, 0, 0);
+    result = Evaluator::resolveExpression(expression, &feature, 0, 0);
     errorMessage = QString("\"get\" function returns empty result when a string is expected");
+
+
     QVERIFY2(result.typeId() == QMetaType::Type::QString, errorMessage.toUtf8());
     errorMessage = QString("Wrong result from \"get\" function, expected %1 but got %2")
                        .arg("grass",result.toString());
     QVERIFY2(result.toString() == "grass", errorMessage.toUtf8());
 
     expression = expressionObject.value("negative").toArray();
-    result = Evaluator::resolveExpression(expression, &testFeature, 0, 0);
+    result = Evaluator::resolveExpression(expression, &feature, 0, 0);
     errorMessage = QString("\"get\" function returns a valid variant when the result is expected to be non-valid");
     QVERIFY2(result.isValid() == false, errorMessage.toUtf8());
+    closeTestFile(file);
 }
 
 // Test resolve expression function when the `has` value is passed in.
 // This function checks both for a valid (positive) and invalid (negative case).
 void UnitTesting::resolveExpression_with_has_value() {
-    //Parse the json file into a QJsonDocument for further processing.
+    QFile file;
     QJsonDocument doc;
-    QJsonParseError parseError;
-    doc = QJsonDocument::fromJson(file.readAll(), &parseError);
+    QVERIFY2(openAndParseTestFile(file, doc),
+             " Opening and parsing failed for: " + expressionTestPath.toUtf8());
 
-    QJsonObject expressionObject = doc.object().value("has").toObject();
-
+    PolygonFeature feature;
     QString errorMessage;
     QJsonArray expression;
     QVariant result;
-    PolygonFeature feature;
-    feature.fetureMetaData.clear();
-    feature.fetureMetaData.insert("subclass", "farm");
 
+    QJsonObject expressionObject = doc.object().value("has").toObject();
+    feature.fetureMetaData.insert("subclass", "farm");
     expression = expressionObject.value("positive").toArray();
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
     errorMessage = QString("\"has\" function returns empty result when a bool is expected");
+
     QVERIFY2(result.typeId() == QMetaType::Type::Bool, errorMessage.toUtf8());
     errorMessage = QString("Wrong result from \"has\" function, expected %1 but got %2")
                        .arg(true)
@@ -110,30 +121,29 @@ void UnitTesting::resolveExpression_with_has_value() {
                        .arg(false)
                        .arg(result.toBool());
     QVERIFY2(result.toBool() == false, errorMessage.toUtf8());
+    closeTestFile(file);
 }
 
 // Test resolve expression function when the `in` value is passed in.
 // This function checks both for a valid (positive) and invalid (negative case).
 void UnitTesting::resolveExpression_with_in_value()
 {
-    //Parse the json file into a QJsonDocument for further processing.
+    QFile file;
     QJsonDocument doc;
-    QJsonParseError parseError;
-    doc = QJsonDocument::fromJson(file.readAll(), &parseError);
-
-    QJsonObject expressionObject = doc.object().value("in").toObject();
+    QVERIFY2(openAndParseTestFile(file, doc),
+             " Opening and parsing failed for: " + expressionTestPath.toUtf8());
 
     PolygonFeature feature;
-
     QString errorMessage;
     QJsonArray expression;
     QVariant result;
-    feature.fetureMetaData.clear();
-    feature.fetureMetaData.insert("class", "residential");
 
+    QJsonObject expressionObject = doc.object().value("in").toObject();
+    feature.fetureMetaData.insert("class", "residential");
     expression = expressionObject.value("positive").toArray();
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
     errorMessage = QString("\"in\" function returns empty result when a bool is expected");
+
     QVERIFY2(result.typeId() == QMetaType::Type::Bool, errorMessage.toUtf8());
     errorMessage = QString("Wrong result from \"in\" function, expected %1 but got %2")
                        .arg(true)
@@ -148,30 +158,30 @@ void UnitTesting::resolveExpression_with_in_value()
                        .arg(false)
                        .arg(result.toBool());
     QVERIFY2(result.toBool() == false, errorMessage.toUtf8());
+    closeTestFile(file);
 }
 
 // Test resolve expression function when the `==` expression object value is passed in.
 // This function checks both for a valid (positive) and invalid (negative case).
 void UnitTesting::resolveExpression_with_equals_value()
 {
-    //Parse the json file into a QJsonDocument for further processing.
+    QFile file;
     QJsonDocument doc;
-    QJsonParseError parseError;
-    doc = QJsonDocument::fromJson(file.readAll(), &parseError);
-
-    QJsonObject expressionObject = doc.object().value("==").toObject();
+    QVERIFY2(openAndParseTestFile(file, doc),
+             " Opening and parsing failed for: " + expressionTestPath.toUtf8());
 
     PolygonFeature feature;
     QString errorMessage;
     QJsonArray expression;
     QVariant result;
 
-    feature.fetureMetaData.clear();
+    QJsonObject expressionObject = doc.object().value("==").toObject();
     feature.fetureMetaData.insert("class", "neighbourhood");
 
     expression = expressionObject.value("positive").toArray();
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
     errorMessage = QString("\"equal\" function returns empty result when a bool is expected");
+
     QVERIFY2(result.typeId() == QMetaType::Type::Bool, errorMessage.toUtf8());
     errorMessage = QString("Wrong result from \"equal\" function, expected %1 but got %2")
                        .arg(true)
@@ -204,25 +214,24 @@ void UnitTesting::resolveExpression_with_equals_value()
                        .arg(false)
                        .arg(result.toBool());
     QVERIFY2(result.toBool() == false, errorMessage.toUtf8());
+    closeTestFile(file);
 }
 
 // Test resolve expression function when the `!=` expression object value is passed in.
 // This function checks both for a valid (positive) and invalid (negative case).
 void UnitTesting::resolveExpression_with_inequality_value()
 {
-    //Parse the json file into a QJsonDocument for further processing.
+    QFile file;
     QJsonDocument doc;
-    QJsonParseError parseError;
-    doc = QJsonDocument::fromJson(file.readAll(), &parseError);
-
-    QJsonObject expressionObject = doc.object().value("!=").toObject();
+    QVERIFY2(openAndParseTestFile(file, doc),
+             " Opening and parsing failed for: " + expressionTestPath.toUtf8());
 
     PolygonFeature feature;
     QString errorMessage;
     QJsonArray expression;
     QVariant result;
 
-    feature.fetureMetaData.clear();
+    QJsonObject expressionObject = doc.object().value("!=").toObject();
     feature.fetureMetaData.insert("class", "neighbourhood");
 
     expression = expressionObject.value("positive").toArray();
@@ -242,25 +251,24 @@ void UnitTesting::resolveExpression_with_inequality_value()
                        .arg(false)
                        .arg(result.toBool());
     QVERIFY2(result.toBool() == false, errorMessage.toUtf8());
+    closeTestFile(file);
 }
 
 // Test resolve expression function when the `>` expression object value is passed in.
 // This function checks both for a valid (positive) and invalid (negative case).
 void UnitTesting::resolveExpression_with_greater_than_value()
 {
-    //Parse the json file into a QJsonDocument for further processing.
+    QFile file;
     QJsonDocument doc;
-    QJsonParseError parseError;
-    doc = QJsonDocument::fromJson(file.readAll(), &parseError);
-
-    QJsonObject expressionObject = doc.object().value(">").toObject();
+    QVERIFY2(openAndParseTestFile(file, doc),
+             " Opening and parsing failed for: " + expressionTestPath.toUtf8());
 
     PolygonFeature feature;
     QString errorMessage;
     QJsonArray expression;
     QVariant result;
 
-    feature.fetureMetaData.clear();
+    QJsonObject expressionObject = doc.object().value(">").toObject();
     feature.fetureMetaData.insert("intermittent", 1);
 
     expression = expressionObject.value("positive").toArray();
@@ -280,25 +288,24 @@ void UnitTesting::resolveExpression_with_greater_than_value()
                        .arg(false)
                        .arg(result.toBool());
     QVERIFY2(result.toBool() == false, errorMessage.toUtf8());
+    closeTestFile(file);
 }
 
 // Test resolve expression function when the `all` expression object value is passed in.
 // This function checks both for a valid (positive) and invalid (negative case).
 void UnitTesting::resolveExpression_with_all_value()
 {
-    //Parse the json file into a QJsonDocument for further processing.
+    QFile file;
     QJsonDocument doc;
-    QJsonParseError parseError;
-    doc = QJsonDocument::fromJson(file.readAll(), &parseError);
-
-    QJsonObject expressionObject = doc.object().value("all").toObject();
+    QVERIFY2(openAndParseTestFile(file, doc),
+             " Opening and parsing failed for file: " + expressionTestPath.toUtf8());
 
     PolygonFeature feature;
     QString errorMessage;
     QJsonArray expression;
     QVariant result;
 
-    feature.fetureMetaData.clear();
+    QJsonObject expressionObject = doc.object().value("all").toObject();
     feature.fetureMetaData.insert("class", "neighbourhood");
     feature.fetureMetaData.insert("intermittent", 1);
     feature.fetureMetaData.insert("subclass", "farm");
@@ -318,6 +325,7 @@ void UnitTesting::resolveExpression_with_all_value()
     errorMessage = QString("Wrong result from \"all\" function, expected %1 but got %2")
                        .arg(false,result.toBool());
     QVERIFY2(result.toBool() == false, errorMessage.toUtf8());
+    closeTestFile(file);
 }
 
 // Test resolve expression function when the `case` expression object value is passed in.
@@ -326,18 +334,7 @@ void UnitTesting::resolveExpression_with_all_value()
 void UnitTesting::resolveExpression_with_case_value()
 {
     //Parse the json file into a QJsonDocument for further processing.
-    QJsonDocument doc;
-    QJsonParseError parseError;
-    doc = QJsonDocument::fromJson(file.readAll(), &parseError);
-
     QJsonObject expressionObject = doc.object().value("case").toObject();
-
-    PolygonFeature feature;
-    QString errorMessage;
-    QJsonArray expression;
-    QVariant result;
-
-    feature.fetureMetaData.clear();
     feature.fetureMetaData.insert("class", "neighbourhood");
 
     expression = expressionObject.value("positive").toArray();
@@ -357,6 +354,7 @@ void UnitTesting::resolveExpression_with_case_value()
                        .arg(20)
                        .arg(result.toDouble());
     QVERIFY2(result.toDouble() == 20, errorMessage.toUtf8());
+    closeTestFile(file);
 }
 */
 
@@ -364,20 +362,17 @@ void UnitTesting::resolveExpression_with_case_value()
 // This function checks both for a valid (positive) and invalid (negative case).
 void UnitTesting::resolveExpression_with_coalesce_value()
 {
-    //Parse the json file into a QJsonDocument for further processing.
+    QFile file;
     QJsonDocument doc;
-    QJsonParseError parseError;
-    doc = QJsonDocument::fromJson(file.readAll(), &parseError);
-
-    QJsonObject expressionObject = doc.object().value("coalesce").toObject();
+    QVERIFY2(openAndParseTestFile(file, doc),
+             " Opening and parsing failed for: " + expressionTestPath.toUtf8());
 
     PolygonFeature feature;
-
     QString errorMessage;
     QJsonArray expression;
     QVariant result;
 
-    feature.fetureMetaData.clear();
+    QJsonObject expressionObject = doc.object().value("coalesce").toObject();
     feature.fetureMetaData.insert("class", "neighbourhood");
 
     expression = expressionObject.value("positive").toArray();
@@ -392,11 +387,19 @@ void UnitTesting::resolveExpression_with_coalesce_value()
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
     errorMessage = QString("\"coalesce\" function returns a valid result when an empty variant is expected");
     QVERIFY2(result.isValid() == false, errorMessage.toUtf8());
+    closeTestFile(file);
 }
 
 // ON HOLD DUE TO FLOAT COMPARISONS
 void testMatchExpression(const QJsonObject &expressionObject, PolygonFeature *feature)
 {
+    /*
+    QFile file;
+    QJsonDocument doc;
+    QVERIFY2(openAndParseTestFile(file, doc),
+             " Opening and parsing failed for: " + expressionTestPath.toUtf8());
+    */
+
     QString errorMessage;
     QJsonArray expression;
     QVariant result;
@@ -420,6 +423,7 @@ void testMatchExpression(const QJsonObject &expressionObject, PolygonFeature *fe
                        .arg(4)
                        .arg(result.toDouble());
     QVERIFY2(result.toDouble() == 4, errorMessage.toUtf8());
+    //closeTestFile(file);
 }
 
 // ON HOLD DUE TO FLOAT COMPARISONS
@@ -591,7 +595,7 @@ void UnitTesting::resolveExpression_returns_basic_values()
     QVERIFY2(parseError.error == QJsonParseError::NoError, parErrorString.toUtf8());
 
     QJsonObject expressionsObject = doc.object();
-    PolygonFeature testFeature;
+
     //testGetExpression(expressionsObject.value("get").toObject(), &testFeature);
     //testHasExpression(expressionsObject.value("has").toObject(), &testFeature);
     //testinExpression(expressionsObject.value("in").toObject(), &testFeature);
@@ -604,7 +608,7 @@ void UnitTesting::resolveExpression_returns_basic_values()
 
     /* The following three tests need updating before use due to float comparisons.
         They are currently ON-HOLD! */
-    testMatchExpression(expressionsObject.value("match").toObject(), &testFeature);
-    testInterpolateExpression(expressionsObject.value("interpolate").toArray(), &testFeature);
-    testCompoundExpression(expressionsObject.value("compound").toObject(), &testFeature);
+    //testMatchExpression(expressionsObject.value("match").toObject(), &feature);
+    //testInterpolateExpression(expressionsObject.value("interpolate").toArray(), &feature);
+    //testCompoundExpression(expressionsObject.value("compound").toObject(), &feature);
 }
