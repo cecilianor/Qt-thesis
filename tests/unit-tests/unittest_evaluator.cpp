@@ -11,7 +11,21 @@ class UnitTesting : public QObject
 {
     Q_OBJECT
 
+private:
+    const QString expressionTestPath = ":/unitTestResources/expressionTest.json";
+    QFile file{expressionTestPath}; // File used to test expressions.
+
 private slots:
+    // Initialization at the start of each test.
+    void init() {
+        QVERIFY2(file.open(QIODevice::ReadOnly),"Couldn't open expression test file at: "
+                                                     + expressionTestPath.toUtf8());
+    }
+    // Cleanup at the end of each test.
+    void cleanup(){
+        file.close();
+    }
+
     void resolveExpression_returns_basic_values();
     void resolveExpression_with_coalesce_value();
     void resolveExpression_with_get_value();
@@ -33,10 +47,6 @@ QTEST_MAIN(UnitTesting)
 // Test resolve expression function when the get value is passed in.
 // This function checks both for a valid (positive) and invalid (negative case).
 void UnitTesting::resolveExpression_with_get_value(){
-    QString path = ":/unitTestResources/expressionTest.json";
-    QFile file(path);
-    file.open(QIODevice::ReadOnly);
-
     //Parse the json file into a QJsonDocument for further processing.
     QJsonDocument doc;
     QJsonParseError parseError;
@@ -69,10 +79,6 @@ void UnitTesting::resolveExpression_with_get_value(){
 // Test resolve expression function when the `has` value is passed in.
 // This function checks both for a valid (positive) and invalid (negative case).
 void UnitTesting::resolveExpression_with_has_value() {
-    QString path = ":/unitTestResources/expressionTest.json";
-    QFile file(path);
-    file.open(QIODevice::ReadOnly);
-
     //Parse the json file into a QJsonDocument for further processing.
     QJsonDocument doc;
     QJsonParseError parseError;
@@ -110,10 +116,6 @@ void UnitTesting::resolveExpression_with_has_value() {
 // This function checks both for a valid (positive) and invalid (negative case).
 void UnitTesting::resolveExpression_with_in_value()
 {
-    QString path = ":/unitTestResources/expressionTest.json";
-    QFile file(path);
-    file.open(QIODevice::ReadOnly);
-
     //Parse the json file into a QJsonDocument for further processing.
     QJsonDocument doc;
     QJsonParseError parseError;
@@ -146,17 +148,12 @@ void UnitTesting::resolveExpression_with_in_value()
                        .arg(false)
                        .arg(result.toBool());
     QVERIFY2(result.toBool() == false, errorMessage.toUtf8());
-    file.close();
 }
 
 // Test resolve expression function when the `==` expression object value is passed in.
 // This function checks both for a valid (positive) and invalid (negative case).
 void UnitTesting::resolveExpression_with_equals_value()
 {
-    QString path = ":/unitTestResources/expressionTest.json";
-    QFile file(path);
-    file.open(QIODevice::ReadOnly);
-
     //Parse the json file into a QJsonDocument for further processing.
     QJsonDocument doc;
     QJsonParseError parseError;
@@ -207,17 +204,12 @@ void UnitTesting::resolveExpression_with_equals_value()
                        .arg(false)
                        .arg(result.toBool());
     QVERIFY2(result.toBool() == false, errorMessage.toUtf8());
-    file.close();
 }
 
 // Test resolve expression function when the `!=` expression object value is passed in.
 // This function checks both for a valid (positive) and invalid (negative case).
 void UnitTesting::resolveExpression_with_inequality_value()
 {
-    QString path = ":/unitTestResources/expressionTest.json";
-    QFile file(path);
-    file.open(QIODevice::ReadOnly);
-
     //Parse the json file into a QJsonDocument for further processing.
     QJsonDocument doc;
     QJsonParseError parseError;
@@ -250,17 +242,12 @@ void UnitTesting::resolveExpression_with_inequality_value()
                        .arg(false)
                        .arg(result.toBool());
     QVERIFY2(result.toBool() == false, errorMessage.toUtf8());
-    file.close();
 }
 
 // Test resolve expression function when the `>` expression object value is passed in.
 // This function checks both for a valid (positive) and invalid (negative case).
 void UnitTesting::resolveExpression_with_greater_than_value()
 {
-    QString path = ":/unitTestResources/expressionTest.json";
-    QFile file(path);
-    file.open(QIODevice::ReadOnly);
-
     //Parse the json file into a QJsonDocument for further processing.
     QJsonDocument doc;
     QJsonParseError parseError;
@@ -299,10 +286,6 @@ void UnitTesting::resolveExpression_with_greater_than_value()
 // This function checks both for a valid (positive) and invalid (negative case).
 void UnitTesting::resolveExpression_with_all_value()
 {
-    QString path = ":/unitTestResources/expressionTest.json";
-    QFile file(path);
-    file.open(QIODevice::ReadOnly);
-
     //Parse the json file into a QJsonDocument for further processing.
     QJsonDocument doc;
     QJsonParseError parseError;
@@ -335,7 +318,6 @@ void UnitTesting::resolveExpression_with_all_value()
     errorMessage = QString("Wrong result from \"all\" function, expected %1 but got %2")
                        .arg(false,result.toBool());
     QVERIFY2(result.toBool() == false, errorMessage.toUtf8());
-    file.close();
 }
 
 // Test resolve expression function when the `case` expression object value is passed in.
@@ -343,10 +325,6 @@ void UnitTesting::resolveExpression_with_all_value()
 /* TEST ON HOLD DUE TO FLOAT AND INT COMPARISON OF VALUES
 void UnitTesting::resolveExpression_with_case_value()
 {
-    QString path = ":/unitTestResources/expressionTest.json";
-    QFile file(path);
-    file.open(QIODevice::ReadOnly);
-
     //Parse the json file into a QJsonDocument for further processing.
     QJsonDocument doc;
     QJsonParseError parseError;
@@ -379,7 +357,6 @@ void UnitTesting::resolveExpression_with_case_value()
                        .arg(20)
                        .arg(result.toDouble());
     QVERIFY2(result.toDouble() == 20, errorMessage.toUtf8());
-    file.close();
 }
 */
 
@@ -387,10 +364,6 @@ void UnitTesting::resolveExpression_with_case_value()
 // This function checks both for a valid (positive) and invalid (negative case).
 void UnitTesting::resolveExpression_with_coalesce_value()
 {
-    QString path = ":/unitTestResources/expressionTest.json";
-    QFile file(path);
-    file.open(QIODevice::ReadOnly);
-
     //Parse the json file into a QJsonDocument for further processing.
     QJsonDocument doc;
     QJsonParseError parseError;
@@ -419,13 +392,11 @@ void UnitTesting::resolveExpression_with_coalesce_value()
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
     errorMessage = QString("\"coalesce\" function returns a valid result when an empty variant is expected");
     QVERIFY2(result.isValid() == false, errorMessage.toUtf8());
-    file.close();
 }
 
 // ON HOLD DUE TO FLOAT COMPARISONS
 void testMatchExpression(const QJsonObject &expressionObject, PolygonFeature *feature)
 {
-
     QString errorMessage;
     QJsonArray expression;
     QVariant result;
@@ -449,7 +420,6 @@ void testMatchExpression(const QJsonObject &expressionObject, PolygonFeature *fe
                        .arg(4)
                        .arg(result.toDouble());
     QVERIFY2(result.toDouble() == 4, errorMessage.toUtf8());
-
 }
 
 // ON HOLD DUE TO FLOAT COMPARISONS
