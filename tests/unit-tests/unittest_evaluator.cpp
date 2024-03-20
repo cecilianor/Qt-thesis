@@ -35,6 +35,17 @@ private:
         testFile.close();
     }
 
+    // Checks if expected and gotten double floating point values are within 0.0001 of each other.
+    bool validDoubleRange(double double1, double double2)
+    {
+        auto epsilon = 0.0001;
+        if (std::abs(double1 - double2) > epsilon)
+            return false;
+        if (std::abs(double2 - double1) > epsilon)
+            return false;
+        return true;
+    }
+
 private slots:
     void resolveExpression_returns_basic_values();
     void resolveExpression_with_coalesce_value();
