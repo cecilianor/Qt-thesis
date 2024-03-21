@@ -4,7 +4,7 @@
 #include <QtTypes>
 #include <QString>
 #include <QColor>
-#include <Qimage>
+#include <QImage>
 #include <QFont>
 #include <QJsonDocument>
 #include <QJsonObject>
