@@ -60,10 +60,10 @@ void UnitTesting::getStyleSheet_returns_success_on_supported_stylesheet()
     QVERIFY2(keyFromFileResult.has_value(), "Unable to load MapTiler key from file.");
 
     HttpResponse styleSheetURL = Bach::requestStyleSheetFromWeb(
-        StyleSheetType::basic_v2,
+        MapType::BasicV2,
         keyFromFileResult.value());
 
-    QVERIFY(styleSheetURL.resultType == ResultType::success);
+    QVERIFY(styleSheetURL.resultType == ResultType::Success);
 }
 
 // Get a non-supported stylesheet
@@ -74,10 +74,10 @@ void UnitTesting::getStyleSheet_returns_failure_on_unsupported_stylesheet()
     QVERIFY2(keyFromFileResult.has_value(), "Unable to load MapTiler key from file.");
 
     HttpResponse styleSheetURL = Bach::requestStyleSheetFromWeb(
-        StyleSheetType::bright_v2,
+        MapType::BrightV2,
         keyFromFileResult.value());
 
-    QVERIFY(styleSheetURL.resultType == ResultType::noImplementation);
+    QVERIFY(styleSheetURL.resultType == ResultType::NoImplementation);
 }
 
 // Test the getTilesLink function with a valid style sheet containing the specified source type
@@ -97,7 +97,7 @@ void UnitTesting::getTilesLink_valid_style_sheet_returns_success()
 
     // Verify that the parsed link and result type are as expected
     QCOMPARE(parsedLink.link, QString("https://example.com/tiles"));
-    QCOMPARE(parsedLink.resultType, ResultType::success);
+    QCOMPARE(parsedLink.resultType, ResultType::Success);
 }
 
 // Test the getTilesLink function with an unknown source type
@@ -118,7 +118,7 @@ void UnitTesting::getTilesLink_unknown_source_type_returns_unknown_source_type_e
     ParsedLink parsedLink = Bach::getTilesLinkFromStyleSheet(styleSheet, unknownType);
 
     // Verify that the result type is unknown source type
-    QCOMPARE(parsedLink.resultType, ResultType::unknownSourceType);
+    QCOMPARE(parsedLink.resultType, ResultType::UnknownSourceType);
 }
 
 // Test the getTilesLink function with a style sheet missing the URL for the specified source type
@@ -136,7 +136,7 @@ void UnitTesting::getTilesLink_missing_url_returns_tile_sheet_not_found_error()
     ParsedLink parsedLink = Bach::getTilesLinkFromStyleSheet(styleSheet, "maptiler_planet");
 
     // Verify that the result type is tile sheet not found
-    QCOMPARE(parsedLink.resultType, ResultType::tileSheetNotFound);
+    QCOMPARE(parsedLink.resultType, ResultType::TileSheetNotFound);
 }
 
 namespace Bach::UnitTesting {

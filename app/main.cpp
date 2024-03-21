@@ -40,14 +40,14 @@ int main(int argc, char *argv[])
     }
 
     // The style sheet type to load (can be many different types).
-    auto styleSheetType = StyleSheetType::basic_v2;
+    auto styleSheetType = MapType::BasicV2;
 
     // Load stylesheet raw data from disk/web.
     HttpResponse styleSheetBytes = Bach::loadStyleSheetBytes(
         styleSheetType,
         mapTilerKeyResult);
     // If loading the style sheet failed, there is nothing to display. Shut down.
-    if (styleSheetBytes.resultType != ResultType::success) {
+    if (styleSheetBytes.resultType != ResultType::Success) {
         earlyShutdown("Unable to load stylesheet from disk/web.");
     }
 
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
     QString pbfUrlTemplate;
     if (useWeb) {
         auto pbfUrlTemplateResult = Bach::getPbfLinkTemplate(styleSheetJson, "maptiler_planet");
-        if (pbfUrlTemplateResult.resultType != ResultType::success)
+        if (pbfUrlTemplateResult.resultType != ResultType::Success)
             useWeb = false;
         else
             pbfUrlTemplate = pbfUrlTemplateResult.link;

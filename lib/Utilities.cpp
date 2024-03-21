@@ -110,20 +110,20 @@ HttpResponse Bach::requestAndWait(const QString &url)
     // Checks for errors.
     if (reply->error() != QNetworkReply::NoError) {
         qWarning() << "Error in file NetworkController.cpp: " << reply->errorString() << '\n';
-        return { QByteArray(), ResultType::networkError };
+        return { QByteArray(), ResultType::NetworkError };
     }
 
     // Processes the response.
     QByteArray responseData = reply->readAll();
     if (responseData.length() == 0) {
         qWarning() << "No data was returned from the external source";
-        return { QByteArray(), ResultType::noData };
+        return { QByteArray(), ResultType::NoData };
     }
 
     // Deletes the reply.
     reply->deleteLater();
     // Returns response data if everything was successful.
-    return { responseData, ResultType::success };
+    return { responseData, ResultType::Success };
 }
 
 /*!
@@ -132,16 +132,16 @@ HttpResponse Bach::requestAndWait(const QString &url)
  * \param key The MapTiler key.
  * \return The byte array response from MapTiler.
  */
-HttpResponse Bach::requestStyleSheetFromWeb(StyleSheetType type, const QString &key)
+HttpResponse Bach::requestStyleSheetFromWeb(MapType type, const QString &key)
 {
     switch(type) {
-        case (StyleSheetType::basic_v2) : {
+        case (MapType::BasicV2) : {
             QString url = "https://api.maptiler.com/maps/basic-v2/style.json?key=" + key;
             return Bach::requestAndWait(url);
         }
         default: {
-            qWarning() << "Error: " <<PrintResultTypeInfo(ResultType::noImplementation);
-            return {QByteArray(), ResultType::noImplementation};
+            qWarning() << "Error: " <<PrintResultTypeInfo(ResultType::NoImplementation);
+            return {QByteArray(), ResultType::NoImplementation};
         }
     }
 }
@@ -153,7 +153,7 @@ HttpResponse Bach::requestStyleSheetFromWeb(StyleSheetType type, const QString &
  * This is a blocking and re-entrant function.
  */
 HttpResponse Bach::loadStyleSheetBytes(
-    StyleSheetType type,
+    MapType type,
     const std::optional<QString> &mapTilerKey)
 {
     // Create full path for the target stylesheet JSON file
@@ -174,7 +174,7 @@ HttpResponse Bach::loadStyleSheetBytes(
             // What if the cache file got garbled at some step before here? There could potentially be
             // more errors here. Note that the stylesheet is only written to the cached file
             // in the first place if the original HTTP request had not-empty data on the expected form.
-            return { file.readAll(), ResultType::success }; // Kinda strange signature here, but it must be this way to match its original implementation.
+            return { file.readAll(), ResultType::Success }; // Kinda strange signature here, but it must be this way to match its original implementation.
         }
     }
 
@@ -183,18 +183,18 @@ HttpResponse Bach::loadStyleSheetBytes(
 
     // If we don't have any MapTiler key, we can't make a request.
     if (!mapTilerKey.has_value())
-        return { {}, ResultType::unknownError };
+        return { {}, ResultType::UnknownError };
 
     // Make and wait for the web request.
     HttpResponse webResponse = Bach::requestStyleSheetFromWeb(type, mapTilerKey.value());
-    if (webResponse.resultType != ResultType::success)
+    if (webResponse.resultType != ResultType::Success)
         return webResponse;
 
     // From here we want try to write this stylesheet to disk cache.
     // If it failed, we consider the entire function a failure.
     bool writeSuccess = writeNewFileHelper(styleSheetCachePath, webResponse.response);
     if (!writeSuccess)
-        return { {}, ResultType::unknownError };
+        return { {}, ResultType::UnknownError };
 
     return webResponse;
 }
@@ -215,7 +215,7 @@ ParsedLink Bach::getPbfLinkTemplate(
 {
     // First we need to find the URL to the tiles document.
     ParsedLink tilesUrlResult = getTilesLinkFromStyleSheet(styleSheet, sourceType);
-    if (tilesUrlResult.resultType != ResultType::success) {
+    if (tilesUrlResult.resultType != ResultType::Success) {
         qWarning() << "";
         return {QString(), tilesUrlResult.resultType};
     }
@@ -223,6 +223,14 @@ ParsedLink Bach::getPbfLinkTemplate(
     // Grab link to the XYZ PBF tile format based on the tiles.json link
     return getPbfLinkFromTileSheet(tilesUrlResult.link);
 }
+/*
+ParsedLink Bach::getPngTileLinkTemplate(
+    const QJsonDocument &tileSheet,
+    const QString &sourceType)
+{
+    ParsedLink PngTilesUrlResult = getTilesLinkFromTileSheet(tileSheet);
+}
+*/
 
 /*!
  * @brief Finds the to a mapTiler tilesheet given a stylesheet
@@ -246,23 +254,23 @@ ParsedLink Bach::getTilesLinkFromStyleSheet(
             // Return the tile sheet if the url to it was found.
             if (maptilerObject.contains("url")) {
                 QString link = maptilerObject["url"].toString();
-                return {link, ResultType::success};
+                return {link, ResultType::Success};
             } else {
-                qWarning() << PrintResultTypeInfo(ResultType::tileSheetNotFound);
-                return {QString(), ResultType::tileSheetNotFound};
+                qWarning() << PrintResultTypeInfo(ResultType::TileSheetNotFound);
+                return {QString(), ResultType::TileSheetNotFound};
             }
         } else {
-            qWarning() << PrintResultTypeInfo(ResultType::unknownSourceType);
-            return {QString(), ResultType::unknownSourceType};
+            qWarning() << PrintResultTypeInfo(ResultType::UnknownSourceType);
+            return {QString(), ResultType::UnknownSourceType};
         }
     } else {
         qWarning() << "The stylesheet doesn't contain 'sources' field like it should.\n"
                    << "Check if MapTiler API has been updated to store map sources differently.\n";
-        return {QString(), ResultType::parseError};
+        return {QString(), ResultType::ParseError};
     }
 
-    qWarning() << PrintResultTypeInfo(ResultType::unknownError);
-    return {QString(), ResultType::unknownError};
+    qWarning() << PrintResultTypeInfo(ResultType::UnknownError);
+    return {QString(), ResultType::UnknownError};
 }
 
 /*!
@@ -276,7 +284,7 @@ ParsedLink Bach::getTilesLinkFromStyleSheet(
 ParsedLink Bach::getPbfLinkFromTileSheet(const QString &tileSheetUrl)
 {
     HttpResponse response = requestAndWait(tileSheetUrl);
-    if (response.resultType != ResultType::success) {
+    if (response.resultType != ResultType::Success) {
         qWarning() << "Error: " << PrintResultTypeInfo(response.resultType);
         return { QString(), response.resultType };
     }
@@ -287,7 +295,7 @@ ParsedLink Bach::getPbfLinkFromTileSheet(const QString &tileSheetUrl)
 
     if (parseError.error != QJsonParseError::NoError) {
         qWarning() << "Parse error at" << parseError.offset << ":" << parseError.errorString();
-        return { QString(), ResultType::parseError };
+        return { QString(), ResultType::ParseError };
     }
 
     if (tilesSheet.isObject()) {
@@ -299,7 +307,7 @@ ParsedLink Bach::getPbfLinkFromTileSheet(const QString &tileSheetUrl)
             for (const QJsonValueRef &tileValue : tilesArray) {
                 QString tileLink = tileValue.toString();
                 //qDebug() << "\n\t" <<"Link to PBF tiles: " << tileLink <<"\n";
-                return { tileLink, ResultType::success };
+                return { tileLink, ResultType::Success };
             }
         }
         else {
@@ -312,5 +320,5 @@ ParsedLink Bach::getPbfLinkFromTileSheet(const QString &tileSheetUrl)
     else {
         qWarning() << "There is an unknown error with the loaded JSON data...";
     }
-    return { QString(), ResultType::unknownError };
+    return { QString(), ResultType::UnknownError };
 }
