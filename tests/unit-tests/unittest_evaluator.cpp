@@ -462,15 +462,17 @@ void UnitTesting::resolveExpression_with_interpolate_value()
     QVERIFY2(openAndParseTestFile(file, doc),
              " Opening and parsing failed for: " + expressionTestPath.toUtf8());
 
+    QJsonObject expressionsObject = doc.object();
+
     PolygonFeature feature;
     QString errorMessage;
     QJsonArray expression;
     QVariant result;
     bool validDoubleError=false; // Checks if double values are in a valid range
+    double expectedInterpolationResult;
 
-    float expectedInterpolationResult;
-    feature.fetureMetaData.clear();
     feature.fetureMetaData.insert("class", "neighbourhood");
+    expression = expressionsObject.value("interpolate").toArray();
 
     expectedInterpolationResult = 11;
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
@@ -481,59 +483,60 @@ void UnitTesting::resolveExpression_with_interpolate_value()
     QVERIFY2(validDoubleError, errorMessage.toUtf8());
 
     result = Evaluator::resolveExpression(expression, &feature, 3, 0);
-    errorMessage = QString("Wrong result from \"interpolate\" functionfor zoom level 3, expected %1 but got %2")
+    errorMessage = QString("Wrong result from \"interpolate\" function for zoom level 3, expected %1 but got %2")
                        .arg(expectedInterpolationResult, result.toDouble());
     validDoubleError = validDoubleRange(result.toDouble(), expectedInterpolationResult);
     QVERIFY2(validDoubleError, errorMessage.toUtf8());
 
     expectedInterpolationResult = 11 + (2.*2/5);
     result = Evaluator::resolveExpression(expression, &feature, 5, 0);
-    errorMessage = QString("Wrong result from \"interpolate\" functionfor zoom level 5, expected %1 but got %2")
+    errorMessage = QString("Wrong result from \"interpolate\" function for zoom level 5, expected %1 but got %2")
                        .arg(expectedInterpolationResult, result.toDouble());
     validDoubleError = validDoubleRange(result.toDouble(), expectedInterpolationResult);
     QVERIFY2(validDoubleError, errorMessage.toUtf8());
 
     expectedInterpolationResult = 11 + 4.*2/5;
     result = Evaluator::resolveExpression(expression, &feature, 7, 0);
-    errorMessage = QString("Wrong result from \"interpolate\" functionfor zoom level 7, expected %1 but got %2")
+    errorMessage = QString("Wrong result from \"interpolate\" function for zoom level 7, expected %1 but got %2")
                        .arg(expectedInterpolationResult, result.toDouble());
     validDoubleError = validDoubleRange(result.toDouble(), expectedInterpolationResult);
     QVERIFY2(validDoubleError, errorMessage.toUtf8());
 
     expectedInterpolationResult = 13 + 2.*3/3;
     result = Evaluator::resolveExpression(expression, &feature, 10, 0);
-    errorMessage = QString("Wrong result from \"interpolate\" functionfor zoom level 10, expected %1 but got %2")
+    errorMessage = QString("Wrong result from \"interpolate\" function for zoom level 10, expected %1 but got %2")
                        .arg(expectedInterpolationResult, result.toDouble());
     validDoubleError = validDoubleRange(result.toDouble(), expectedInterpolationResult);
     QVERIFY2(validDoubleError, errorMessage.toUtf8());
 
     expectedInterpolationResult = 16;
     result = Evaluator::resolveExpression(expression, &feature, 11, 0);
-    errorMessage = QString("Wrong result from \"interpolate\" functionfor zoom level 11, expected %1 but got %2")
+    errorMessage = QString("Wrong result from \"interpolate\" function for zoom level 11, expected %1 but got %2")
                        .arg(expectedInterpolationResult, result.toDouble());
     validDoubleError = validDoubleRange(result.toDouble(), expectedInterpolationResult);
     QVERIFY2(validDoubleError, errorMessage.toUtf8());
 
     expectedInterpolationResult = 16 + (2.*5/5);
     result = Evaluator::resolveExpression(expression, &feature, 13, 0);
-    errorMessage = QString("Wrong result from \"interpolate\" functionfor zoom level 13, expected %1 but got %2")
+    errorMessage = QString("Wrong result from \"interpolate\" function for zoom level 13, expected %1 but got %2")
                        .arg(expectedInterpolationResult, result.toDouble());
     validDoubleError = validDoubleRange(result.toDouble(), expectedInterpolationResult);
     QVERIFY2(validDoubleError, errorMessage.toUtf8());
 
     expectedInterpolationResult = 16 + (4.*5/5);
     result = Evaluator::resolveExpression(expression, &feature, 15, 0);
-    errorMessage = QString("Wrong result from \"interpolate\" functionfor zoom level 15, expected %1 but got %2")
+    errorMessage = QString("Wrong result from \"interpolate\" function for zoom level 15, expected %1 but got %2")
                        .arg(expectedInterpolationResult, result.toDouble());
     validDoubleError = validDoubleRange(result.toDouble(), expectedInterpolationResult);
     QVERIFY2(validDoubleError, errorMessage.toUtf8());
 
     expectedInterpolationResult = 21;
     result = Evaluator::resolveExpression(expression, &feature, 18, 0);
-    errorMessage = QString("Wrong result from \"interpolate\" functionfor zoom level 18, expected %1 but got %2")
+    errorMessage = QString("Wrong result from \"interpolate\" function for zoom level 18, expected %1 but got %2")
                        .arg(expectedInterpolationResult, result.toDouble());
     validDoubleError = validDoubleRange(result.toDouble(), expectedInterpolationResult);
     QVERIFY2(validDoubleError, errorMessage.toUtf8());
+    closeTestFile(file);
 }
 
 // Test resolve expression function when the `compound` expression object value is passed in.
@@ -548,14 +551,14 @@ void UnitTesting::resolveExpression_with_compound_value()
     PolygonFeature feature;
     QString errorMessage;
     QVariant result;
-    double validDoubleError;
+    bool validDoubleError=false;
+    double expectedInterpolationResult;
 
     QJsonObject expressionObject = doc.object().value("compound").toObject();
     QJsonArray expression = expressionObject.value("expression1").toArray();
 
     feature.fetureMetaData.insert("class", "motorway");
 
-    double expectedInterpolationResult;
     expectedInterpolationResult = 0.5;
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
     errorMessage = QString("Wrong result from \"interpolate\" function for zoom level 0, expected %1 but got %2")
@@ -623,6 +626,7 @@ void UnitTesting::resolveExpression_with_compound_value()
                        .arg(result.toDouble());
     validDoubleError = validDoubleRange(result.toDouble(), expectedInterpolationResult);
     QVERIFY2(validDoubleError, errorMessage.toUtf8());
+    closeTestFile(file);
 }
 
 void UnitTesting::resolveExpression_returns_basic_values()
