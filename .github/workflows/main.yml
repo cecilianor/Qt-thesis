@@ -21,12 +21,6 @@ jobs:
     # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
     runs-on: self-hosted
 
-    # Specify the Docker container you want to use
-    container:
-      image: ghcr.io/didgy74/qt_map_thesis_image:latest
-      # You can add options for the Docker run command if needed
-      # options: --option1 --option2
-
     steps:
     - uses: actions/checkout@v3
 
