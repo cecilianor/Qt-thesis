@@ -1,6 +1,23 @@
-#include "unittesting.h"
+#include <QObject>
+#include <QTest>
 
 #include "Rendering.h"
+
+class UnitTesting : public QObject
+{
+    Q_OBJECT
+
+private slots:
+    /* Rendering tests
+     */
+    void longLatToWorldNormCoordDegrees_returns_expected_basic_values();
+    void calcVisibleTiles_returns_expected_basic_cases();
+    void calcViewportSizeNorm_returns_expected_basic_cases();
+    void calcMapZoomLevelForTileSizePixels_returns_expected_basic_values();
+};
+
+QTEST_MAIN(UnitTesting)
+#include "unittesting_rendering.moc"
 
 void UnitTesting::calcViewportSizeNorm_returns_expected_basic_cases()
 {
@@ -65,6 +82,7 @@ void UnitTesting::calcMapZoomLevelForTileSizePixels_returns_expected_basic_value
         {   { 1024, 256, 0.0, 128},
             3 },
     };
+
     for (int i = 0; i < testItems.size(); i++) {
         const auto &item = testItems[i];
         const auto &input = item.input;

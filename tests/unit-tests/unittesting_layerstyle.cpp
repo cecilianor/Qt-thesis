@@ -1,7 +1,21 @@
-#include "unittesting.h"
+#include <QObject>
+#include <QTest>
 
 #include "Layerstyle.h"
 
+class UnitTesting : public QObject
+{
+    Q_OBJECT
+
+private slots:
+    /* Layerstyle tests */
+    void getStopOutput_returns_basic_values();
+    void parseSheet_returns_basic_values();
+};
+
+QTEST_MAIN(UnitTesting)
+#include "unittesting_layerstyle.moc"
+// This include needs to match the name of this .cpp file.
 //Test the functionality of the function to determine stopoutputs.
 void UnitTesting::getStopOutput_returns_basic_values(){
     QList<QPair<int, float>> stops({{4,0.8},{9, 1.1}, {11, 1.75}, {18, 2.5},{22, 2.72}});
@@ -14,10 +28,7 @@ void UnitTesting::getStopOutput_returns_basic_values(){
                             .arg(value.second)
                             .arg(result);
         QVERIFY2(result == value.second, errorMsg.toUtf8());
-
     }
-
-
 }
 
 
@@ -52,7 +63,6 @@ void testBackgroundLayerStyle(AbstractLayereStyle *layerStyle)
                     .arg(expectedMaxZoom)
                     .arg(backgroundStyle.m_maxZoom);
     QVERIFY2(backgroundStyle.m_maxZoom == expectedMaxZoom, testError.toUtf8());
-
 
     QColor expectedColorForStop1 = QColor::fromHslF(60/359.,20/100.,85/100.);
     QColor expectedColorForStop2 = QColor::fromHslF(60/359.,24/100.,90/100.);
@@ -138,11 +148,9 @@ void testFillLyerStyle(AbstractLayereStyle *layerStyle)
                     .arg(filllayerStyle.m_antialias);
     QVERIFY2(filllayerStyle.m_antialias == expectedAntiAliasing, testError.toUtf8());
 
-
     testError =  QString("The fill color variable type is not correct at zoom %1").arg(1);
     QVariant colorVariant = filllayerStyle.getFillColorAtZoom(1);
     QVERIFY2(colorVariant.typeId() == QMetaType::Type::QColor, testError.toUtf8());
-
 
     QColor fillColor = colorVariant.value<QColor>();
     hueMatch = fillColor.hslHue() == expectedColor.hslHue();
@@ -156,8 +164,6 @@ void testFillLyerStyle(AbstractLayereStyle *layerStyle)
         .arg(expectedFilterSize)
         .arg(filllayerStyle.m_filter.size());
     QVERIFY2(filllayerStyle.m_filter.size() == expectedFilterSize, testError.toUtf8());
-
-
 }
 
 void testLineLayerStyle(AbstractLayereStyle *layerStyle)
@@ -254,14 +260,10 @@ void testLineLayerStyle(AbstractLayereStyle *layerStyle)
                     .arg(expectedFilterSize)
                     .arg(lineLyaerStyle.m_filter.size());
     QVERIFY2(lineLyaerStyle.m_filter.size() == expectedFilterSize, testError.toUtf8());
-
-
 }
-
 
 void testPointLayerStyle(AbstractLayereStyle *layerStyle)
 {
-
     QString testError;
     QString expectedId = "Airport labels";
     QString expectedSource = "maptiler_planet";
@@ -368,7 +370,6 @@ void testPointLayerStyle(AbstractLayereStyle *layerStyle)
                     .arg(expectedFilterSize)
                     .arg(symbolLayerStyle.m_filter.size());
     QVERIFY2(symbolLayerStyle.m_filter.size() == expectedFilterSize, testError.toUtf8());
-
 }
 
 void testNotImplementedLayerStyle(AbstractLayereStyle *layerStyle)
@@ -376,7 +377,6 @@ void testNotImplementedLayerStyle(AbstractLayereStyle *layerStyle)
      QString testError;
     testError = QString("The layer style is expected to be of type NotImpleneted");
      QVERIFY2(layerStyle->type() == AbstractLayereStyle::LayerType::notImplemented, testError.toUtf8());
-
 }
 
 
@@ -414,25 +414,19 @@ void UnitTesting::parseSheet_returns_basic_values()
     int expectedNumberOfLayers = 5;
 
     testError = QString("The style Sheet object id does not match, expected %1 but got %2")
-                    .arg(expectedId)
-                    .arg(sheet.m_id);
+                    .arg(expectedId, sheet.m_id);
     QVERIFY2(sheet.m_id == expectedId, testError.toUtf8());
 
     testError = QString("The style Sheet object version does not match, expected %1 but got %2")
-                    .arg(expectedVersion)
-                    .arg(sheet.m_version);
+                    .arg(expectedVersion, sheet.m_version);
     QVERIFY2(sheet.m_version == expectedVersion, testError.toUtf8());
 
-
     testError = QString("The style Sheet object name does not match, expected %1 but got %2")
-                    .arg(expectedName)
-                    .arg(sheet.m_name);
+                    .arg(expectedName, sheet.m_name);
     QVERIFY2(sheet.m_name == expectedName, testError.toUtf8());
 
-
     testError = QString("The style Sheet object does not contain the correct amount of layers, expected %1 but got %2")
-                    .arg(expectedNumberOfLayers)
-                    .arg(sheet.m_layerStyles.length());
+                    .arg(expectedNumberOfLayers, sheet.m_layerStyles.length());
     QVERIFY2(sheet.m_layerStyles.length() == expectedNumberOfLayers, testError.toUtf8());
 
     for(int i = 0; i < sheet.m_layerStyles.length(); i++){
@@ -445,5 +439,4 @@ void UnitTesting::parseSheet_returns_basic_values()
     testLineLayerStyle(sheet.m_layerStyles.at(2));
     testPointLayerStyle(sheet.m_layerStyles.at(3));
     testNotImplementedLayerStyle(sheet.m_layerStyles.at(4));
-
 }

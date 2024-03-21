@@ -1,8 +1,21 @@
-#include "unittesting.h"
+#include <QObject>
+#include <QTest>
+
 #include "VectorTiles.h"
 
+class UnitTesting : public QObject
+{
+    Q_OBJECT
 
-void testLayer(const TileLayer &layer, QString expectedName, int expectedExtent, int expectedNumberOfFeatures, int expectedVersion){
+private slots:
+    void tileFromByteArray_returns_basic_values();
+};
+
+QTEST_MAIN(UnitTesting)
+#include "unittesting_vectortile.moc"
+
+void testLayer(const TileLayer &layer, QString expectedName, int expectedExtent,
+               int expectedNumberOfFeatures, int expectedVersion){
     QString errorMessage;
     errorMessage = QString("The layer name does not match, expected %1 but got %2")
                        .arg(expectedName)
@@ -23,13 +36,9 @@ void testLayer(const TileLayer &layer, QString expectedName, int expectedExtent,
                        .arg(expectedVersion)
                        .arg(layer.version());
     QVERIFY2(layer.version() == expectedVersion, errorMessage.toUtf8());
-
-
 }
 
 void testTileLayers(const VectorTile tile){
-
-
     int expectedNumberOfLayers = 6;
     QString errorMessage = QString("The number of layers in the tile does not match, expected %1 but got %2")
                                 .arg(expectedNumberOfLayers)
@@ -59,9 +68,6 @@ void testTileLayers(const VectorTile tile){
     errorMessage = QString("the tile is missing layer: water_name");
     QVERIFY2(tile.m_layers.contains("water_name") == true, errorMessage.toUtf8());
     testLayer(*tile.m_layers["water_name"], "water_name", 4096, 7, 2);
-
-
-
 }
 
 void UnitTesting::tileFromByteArray_returns_basic_values()
@@ -82,5 +88,4 @@ void UnitTesting::tileFromByteArray_returns_basic_values()
     QString readError = "Could not read file data";
     QVERIFY2(tile != std::nullopt, readError.toUtf8());
     testTileLayers(tile.value());
-
 }
