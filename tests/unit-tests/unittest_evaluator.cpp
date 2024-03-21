@@ -47,7 +47,6 @@ private:
     }
 
 private slots:
-    void resolveExpression_returns_basic_values();
     void resolveExpression_with_coalesce_value();
     void resolveExpression_with_get_value();
     void resolveExpression_with_has_value();
@@ -627,46 +626,4 @@ void UnitTesting::resolveExpression_with_compound_value()
     validDoubleError = validDoubleRange(result.toDouble(), expectedInterpolationResult);
     QVERIFY2(validDoubleError, errorMessage.toUtf8());
     closeTestFile(file);
-}
-
-void UnitTesting::resolveExpression_returns_basic_values()
-{
-    //Check that the file exists.
-    QString path = ":/unitTestResources/expressionTest.json";
-    bool fileExist = QFile::exists(path);
-    QString fileExistsError = "File \"" + path + "\" does not exist";
-    QVERIFY2(fileExist == true, fileExistsError.toUtf8());
-
-    //Open the json file and check that the operation was succesful.
-    QFile expressionFile(path);
-    bool fileOpened = expressionFile.open(QIODevice::ReadOnly);
-    QString fileOpenError = "Could not open file";
-    QVERIFY2(fileOpened == true, fileOpenError.toUtf8());
-
-    //Parse the json file into a QJsonDocument for further processing.
-    QJsonDocument doc;
-    QJsonParseError parseError;
-    doc = QJsonDocument::fromJson(expressionFile.readAll(), &parseError);
-
-    //Check for parsing errors.
-    QString parErrorString = "The Qt parser encountered an error";
-    QVERIFY2(parseError.error == QJsonParseError::NoError, parErrorString.toUtf8());
-
-    QJsonObject expressionsObject = doc.object();
-
-    //testGetExpression(expressionsObject.value("get").toObject(), &testFeature);
-    //testHasExpression(expressionsObject.value("has").toObject(), &testFeature);
-    //testinExpression(expressionsObject.value("in").toObject(), &testFeature);
-    //testEqualityExpression(expressionsObject.value("==").toObject(), &testFeature);
-    //testInequalityExpression(expressionsObject.value("!=").toObject(), &testFeature);
-    //testGreaterExpression(expressionsObject.value(">").toObject(), &testFeature);
-    //testAllExpression(expressionsObject.value("all").toObject(), &testFeature);
-    //testCaseExpression(expressionsObject.value("case").toObject(), &testFeature);
-    //testCoalesceExpression(expressionsObject.value("coalesce").toObject(), &testFeature);
-
-    /* The following three tests need updating before use due to float comparisons.
-        They are currently ON-HOLD! */
-    //testMatchExpression(expressionsObject.value("match").toObject(), &feature);
-    //testInterpolateExpression(expressionsObject.value("interpolate").toArray(), &feature);
-    //testCompoundExpression(expressionsObject.value("compound").toObject(), &feature);
 }
