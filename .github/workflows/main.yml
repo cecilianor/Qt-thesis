@@ -30,4 +30,16 @@ jobs:
     - name: Configure CMake
       # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
       # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_PREFIX_PATH="/qtbuild/qtbase"
+      run: cmake -B ${{github.workspace}}/build -DCMAKE_PREFIX_PATH="/qtbuild/qtbase" -DBUILD_TESTS=ON -G Ninja
+
+    - name: Build
+      working-directory: ${{github.workspace}}/build
+      # Execute tests defined by the CMake configuration.
+      # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
+      run: ninja
+
+    - name: Run CTest
+      working-directory: ${{github.workspace}}/build
+      run: |
+        export QT_QPA_PLATFORM=offscreen
+        ctest --rerun-failed --output-on-failure
