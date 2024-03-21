@@ -81,7 +81,10 @@ set(PROJECT_SOURCES
 
 qt_add_executable(application
     MANUAL_FINALIZATION
-    ${PROJECT_SOURCES})
+    ${PROJECT_SOURCES}
+
+
+    unitTestResources/testkey.txt)
 
 # Link our app to our library target.
 target_link_libraries(application PUBLIC maplib)
@@ -132,6 +135,7 @@ if (BUILD_TESTS)
         FILES
         unitTestResources/loadTileFromCache_fails_on_broken_file.mvt
         unitTestResources/loadTileFromCache_parses_cached_file_successfully.mvt
+        unitTestResources/testkey.txt
     )
     target_link_libraries(tileloader_test PUBLIC maplib Qt6::Test)
 
