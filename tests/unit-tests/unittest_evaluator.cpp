@@ -58,7 +58,7 @@ private slots:
     void resolveExpression_with_all_value();
     void resolveExpression_with_case_value();
     void resolveExpression_with_match_value();
-    void resolveExpression_with_interpolate_value();  // Doesn't pass yet
+    void resolveExpression_with_interpolate_value();
     void resolveExpression_with_compound_value();
 };
 
