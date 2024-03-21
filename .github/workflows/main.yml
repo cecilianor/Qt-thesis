@@ -5,10 +5,10 @@ name: CMake on a single platform
 on:
   workflow_dispatch:
   push:
-    # branches: [ $default-branch ]
-    branches: [ automated-testing ]
+    branches: [ $default-branch ]
+    #branches: [ automated-testing ]
   pull_request:
-    # branches: [ $default-branch ]
+    branches: [ $default-branch ]
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
