@@ -411,7 +411,8 @@ void UnitTesting::resolveExpression_with_coalesce_value()
     closeTestFile(file);
 }
 
-// ON HOLD DUE TO FLOAT COMPARISONS
+// Test resolve expression function when the `match` expression object value is passed in.
+// This function checks that the function returns expected values.
 void UnitTesting::resolveExpression_with_match_value()
 {
     QFile file;
@@ -452,7 +453,8 @@ void UnitTesting::resolveExpression_with_match_value()
     closeTestFile(file);
 }
 
-// ON HOLD DUE TO FLOAT COMPARISONS
+// Test resolve expression function when the `interpolate` expression object value is passed in.
+// This function checks that the function returns expected values.
 void UnitTesting::resolveExpression_with_interpolate_value()
 {
     QFile file;
@@ -534,7 +536,8 @@ void UnitTesting::resolveExpression_with_interpolate_value()
     QVERIFY2(validDoubleError, errorMessage.toUtf8());
 }
 
-// ON HOLD DUE TO FLOAT COMPARISONS
+// Test resolve expression function when the `compound` expression object value is passed in.
+// This function checks that the function returns expected values.
 void UnitTesting::resolveExpression_with_compound_value()
 {
     QFile file;
