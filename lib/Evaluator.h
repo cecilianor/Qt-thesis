@@ -5,7 +5,10 @@
 #include "VectorTiles.h"
 #include <QJsonArray>
 #include <QMap>
-#include <QChar>
+#include <QCharoarsfpulqp
+
+wånqpyulart
+
 class Evaluator
 {
 public:
