@@ -67,7 +67,13 @@ double Bach::calcMapZoomLevelForTileSizePixelsReal(
 
     // Figure out how the difference between the zoom levels of viewport and map
     // needed to satisfy the pixel-size requirement.
-    return vpZoom - log2(desiredScale);
+    double scale = vpZoom - log2(desiredScale);
+
+    double interPart;
+    double fractPart = std::modf(scale, &interPart);
+    double sizeOfTile = std::round(512. * pow(2, fractPart));
+    fractPart = log2(sizeOfTile / 512.);
+    return interPart + fractPart;
 }
 
 QPair<double, double> Bach::calcViewportSizeNorm(double vpZoomLevel, double viewportAspect) {
