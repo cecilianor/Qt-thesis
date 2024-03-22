@@ -153,7 +153,7 @@ public:
     //bool m_textIgnorePlacement = false;//Not used for first iteration
     //QString m_textJustify = QString("center");//Not used for first iteration
     //bool m_textKeenUpright = true;//Not used for first iteration
-    //float m_textMaxWidth = 10;//Not used for first iteration
+    QVariant m_textMaxWidth = 10;
     //QList<QPair<int, QPair<int, int>>> m_textOffset;//Not used for first iteration
     //bool m_textOptional = false;//Not used for first iteration
     //QString m_textPitchAlignment = QString("auto");//Not used for first iteration
@@ -166,6 +166,8 @@ public:
     //Paint properties  -------------------------------------------
     //QString m_iconTranslateAnchor = QString("map"); //Not used for first iteration
     //QString m_textTranslateAnchor = QString("map"); //Not used for first iteration
+    QVariant m_textHaloWidth;
+    QVariant m_textHaloColor;
 private:
     //Layout properties -------------------------------------------
      //QList<QPair<int, QPair<int, int>>> m_iconOffset;//Not used for first iteration
@@ -188,7 +190,7 @@ private:
      //QList<QPair<int, QPair<int, int>>> m_iconTranslate;//Not used for first iteration
      QVariant m_textColor;
      //QList<QPair<int, int>> m_textHaloBlur;//Not used for first iteration
-     //QList<QPair<int, int>> m_textHaloWidth;//Not used for first iteration
+
      QVariant m_textOpacity;
      //QList<QPair<int, QPair<int, int>>> m_textTranslate;//Not used for first iteration
 };
