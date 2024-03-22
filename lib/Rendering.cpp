@@ -47,6 +47,18 @@ int Bach::calcMapZoomLevelForTileSizePixels(
     double vpZoom,
     int desiredTileWidth)
 {
+    double newMapZoomLevel = calcMapZoomLevelForTileSizePixelsReal(vpWidth, vpHeight, vpZoom, desiredTileWidth);
+
+    // Round to int, and clamp output to zoom level range.
+    return std::clamp((int)round(newMapZoomLevel), 0, maxZoomLevel);
+}
+
+double Bach::calcMapZoomLevelForTileSizePixelsReal(
+        int vpWidth,
+        int vpHeight,
+        double vpZoom,
+        int desiredTileWidth)
+{
     // Calculate current tile size based on the largest dimension and current scale
     int currentTileSize = qMax(vpWidth, vpHeight);
 
@@ -55,10 +67,7 @@ int Bach::calcMapZoomLevelForTileSizePixels(
 
     // Figure out how the difference between the zoom levels of viewport and map
     // needed to satisfy the pixel-size requirement.
-    double newMapZoomLevel = vpZoom - log2(desiredScale);
-
-    // Round to int, and clamp output to zoom level range.
-    return std::clamp((int)round(newMapZoomLevel), 0, maxZoomLevel);
+    return vpZoom - log2(desiredScale);
 }
 
 QPair<double, double> Bach::calcViewportSizeNorm(double vpZoomLevel, double viewportAspect) {

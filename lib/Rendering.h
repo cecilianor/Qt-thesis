@@ -62,6 +62,12 @@ namespace Bach {
         double vpZoom,
         int desiredTileSize = defaultDesiredTileSizePixels);
 
+    double calcMapZoomLevelForTileSizePixelsReal(
+            int vpWidth,
+            int vpHeight,
+            double vpZoom,
+            int desiredTileSize = defaultDesiredTileSizePixels);
+
     /* Calculates the set of visible tiles in a viewport.
      *
      * The method is described in the report in the figure with caption

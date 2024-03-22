@@ -7,10 +7,14 @@
 #include <QKeyEvent>
 #include <QPainter>
 
-MapWidget::MapWidget(QWidget *parent) : QWidget(parent)
+MapWidget::MapWidget(QWidget *parent)
+    : QWidget(parent)
+    , mousePressedAtWidget(-1, -1)
+    , mousePressedAtWorld(-1, -1)
 {
     // Establish and install our keypress filter.
     this->keyPressFilter = std::make_unique<KeyPressFilter>(this);
+    this->setMouseTracking(true);
     QCoreApplication::instance()->installEventFilter(this->keyPressFilter.get());
 }
 
@@ -39,6 +43,59 @@ void MapWidget::keyPressEvent(QKeyEvent* event)
     }
 }
 
+void MapWidget::mousePressEvent(QMouseEvent *e)
+{
+    if (e->button() == Qt::LeftButton) {
+        this->mousePressedAtWidget = e->pos();
+        qDebug() << "mouse pressed at" << this->mousePressedAtWidget << "zlvl" << this->getRealMapZoomLevel() << "widget size" << this->size();
+        this->mousePressedAtWorld = mapToMercator(e->pos());
+        qDebug() << "pressed at world cord" << this->mousePressedAtWorld;
+    }
+}
+
+void MapWidget::mouseReleaseEvent(QMouseEvent *)
+{
+    this->mousePressedAtWidget = QPoint(-1, -1);
+}
+
+void MapWidget::mouseMoveEvent(QMouseEvent *e)
+{
+    if (this->mousePressedAtWidget.x() > 0 && this->mousePressedAtWidget.y() > 0) {
+        syncWidgetAndMapCord(e->pos(), this->mousePressedAtWorld);
+    }
+}
+
+void MapWidget::wheelEvent(QWheelEvent *e)
+{
+    QPointF mapPos = this->mapToMercator(e->position());
+    viewportZoomLevel += e->angleDelta().y()/100.;
+    this->syncWidgetAndMapCord(e->position(), mapPos);
+}
+
+QPointF MapWidget::mapToMercator(const QPointF &widgetPos) const
+{
+    QPointF relativePos = widgetPos - QPointF(this->width()/2., this->height()/2.);
+    return this->center + relativePos * this->pixelSizeInWebMercator();
+}
+
+QPointF MapWidget::mapToWidget(const QPointF &merctorPos) const
+{
+    QPointF relativePos = merctorPos - this->center;
+    return QPointF(this->width()/2., this->height()/2.) - relativePos / this->pixelSizeInWebMercator();
+}
+
+double MapWidget::pixelSizeInWebMercator() const
+{
+    return 1/512. / pow(2., this->getRealMapZoomLevel());
+}
+
+void MapWidget::syncWidgetAndMapCord(const QPointF &widgetPos, const QPointF &mapPos)
+{
+    QPointF currentMercatorPos = mapToMercator(widgetPos);
+    this->center += (mapPos - currentMercatorPos);
+    this->update();
+}
+
 void MapWidget::paintEvent(QPaintEvent* event)
 {
     auto visibleTiles = calcVisibleTiles();
@@ -61,8 +118,8 @@ void MapWidget::paintEvent(QPaintEvent* event)
     QPainter painter(this);
     Bach::paintTiles(
         painter,
-        x,
-        y,
+        center.x(),
+        center.y(),
         getViewportZoomLevel(),
         getMapZoomLevel(),
         requestResult->map(),
@@ -89,11 +146,25 @@ int MapWidget::getMapZoomLevel() const
     }
 }
 
+double MapWidget::getRealMapZoomLevel() const
+{
+    // Calculate the map zoom level based on the viewport,
+    // or just return the overriden value.
+    if (overrideMapZoom) {
+        return overrideMapZoomLevel;
+    } else {
+        return Bach::calcMapZoomLevelForTileSizePixelsReal(
+            width(),
+            height(),
+            getViewportZoomLevel());
+    }
+}
+
 QVector<TileCoord> MapWidget::calcVisibleTiles() const
 {
     return Bach::calcVisibleTiles(
-        x,
-        y,
+        center.x(),
+        center.y(),
         (double)width() / height(),
         getViewportZoomLevel(),
         getMapZoomLevel());
@@ -126,38 +197,38 @@ void MapWidget::zoomOut()
 void MapWidget::panUp()
 {
     auto amount = getPanStepAmount();
-    y -= amount;
+    center.ry() -= amount;
     update();
 }
 
 void MapWidget::panDown()
 {
     auto amount = getPanStepAmount();
-    y += amount;
+    center.ry() += amount;
     update();
 }
 
 void MapWidget::panLeft()
 {
     auto amount = getPanStepAmount();
-    x -= amount;
+    center.rx() -= amount;
     update();
 }
 
 void MapWidget::panRight()
 {
     auto amount = getPanStepAmount();
-    x += amount;
+    center.rx() += amount;
     update();
 }
 
 void MapWidget::setViewport(double xIn, double yIn, double zoomIn)
 {
     bool change = false;
-    if (x != xIn || y != yIn || viewportZoomLevel != zoomIn)
+    if (center.x() != xIn || center.y() != yIn || viewportZoomLevel != zoomIn)
         change = true;
-    x = xIn;
-    y = yIn;
+    center.rx() = xIn;
+    center.ry() = yIn;
     viewportZoomLevel = zoomIn;
     if (change) {
         update();

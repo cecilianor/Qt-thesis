@@ -11,7 +11,7 @@ using Bach::MainWindow;
 
 MainWindow::MainWindow(MapWidget* mapWidgetIn) : mapWidget{ mapWidgetIn }
 {
-    resize(800, 800);
+    resize(512, 512);
     setCentralWidget(mapWidget);
 
     // Establish the UI controls.

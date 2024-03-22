@@ -24,9 +24,17 @@ public:
     MapWidget(QWidget *parent = nullptr);
     ~MapWidget();
 
+    QPointF mapToMercator(const QPointF &widgetPos) const;
+    QPointF mapToWidget(const QPointF &merctorPos) const;
+    double pixelSizeInWebMercator() const;
+    void syncWidgetAndMapCord(const QPointF &widgetPos, const QPointF &mapPos);
+
     void paintEvent(QPaintEvent*) override;
     void keyPressEvent(QKeyEvent*) override;
-
+    void mousePressEvent(QMouseEvent*) override;
+    void mouseReleaseEvent(QMouseEvent*) override;
+    void mouseMoveEvent(QMouseEvent*) override;
+    void wheelEvent(QWheelEvent*) override;
     /* Zoom level of viewport. This is a floating number and can be partially zoomed between
      * discrete steps.
      *
@@ -40,6 +48,9 @@ public:
      * Always an integer in the range [0, 16]
      */
     int getMapZoomLevel() const;
+
+    double getRealMapZoomLevel() const;
+
 
     /* Calculates the set of visible tiles
      * based on the widget's current viewport configuration.
@@ -88,12 +99,12 @@ private:
     bool overrideMapZoom = false;
     int overrideMapZoomLevel = 0;
 
-    // Center of viewport X
-    // Range [0, 1]
-    double x = 0.5;
-    // Center of viewport Y
-    // Range [0, 1]
-    double y = 0.5;
+    // Center of viewport
+    // Range [0, 1] x [0, 1]
+    QPointF center = {0.5, 0.5};
+    // Store the positions where the mouse buttons have been pressed to implement panning
+    QPoint mousePressedAtWidget;
+    QPointF mousePressedAtWorld;
 
     // Pass in true if you want to zoom.
     // Applies a single zoom step to the viewport.
