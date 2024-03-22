@@ -227,11 +227,11 @@ void populateFeatureMetaData(AbstractLayerFeature* feature, QList<QString> &keys
         }else if(value.hasDoubleValue()){
             feature->fetureMetaData.insert(key, QVariant(value.doubleValue()));
         }else if(value.hasIntValue()){
-            feature->fetureMetaData.insert(key, QVariant(value.intValue()));
+            feature->fetureMetaData.insert(key, QVariant::fromValue<QtProtobuf::int64>(value.intValue()));
         }else if(value.hasUintValue()){
-            feature->fetureMetaData.insert(key, QVariant(value.uintValue()));
+            feature->fetureMetaData.insert(key, QVariant::fromValue<QtProtobuf::uint64>(value.uintValue()));
         }else if(value.hasSintValue()){
-            feature->fetureMetaData.insert(key, QVariant(value.sintValue()));
+            feature->fetureMetaData.insert(key, QVariant::fromValue<QtProtobuf::sint64>(value.sintValue()));
         }else if(value.hasBoolValue()){
             feature->fetureMetaData.insert(key, QVariant(value.boolValue()));
         }
