@@ -697,7 +697,8 @@ static void paintSingleTile(
     int tileSize)
 {
 
-    QVector<QRect> textRects;
+    QVector<QPair<int, PointFeature>> labels;
+    QVector<QRect> laberRects;
     // We start by iterating over each layer style, it determines the order
     // at which we draw the elements of the map.
     for (auto const& abstractLayerStyle : styleSheet.m_layerStyles) {
@@ -773,17 +774,26 @@ static void paintSingleTile(
                  // Tests whether the feature should be rendered at all based on possible expression.
                  if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
                      continue;
-                 // Render the feature in question.
+                 if(feature.fetureMetaData.contains("rank")){
+                     labels.append(QPair<int, PointFeature>(feature.fetureMetaData["rank"].toInt(), feature));
+                 }else{
+                     labels.append(QPair<int, PointFeature>(100, feature));
+                 }
+            }
+             std::sort(labels.begin(), labels.end(), [](const QPair<int, PointFeature>& a, const QPair<int, PointFeature>& b) {
+                 return a.first < b.first;
+             });
+            for(const auto &pair : labels){
                  painter.save();
                  paintSingleTileFeature_Point(
                      painter,
-                     feature,
+                     pair.second,
                      layerStyle,
                      mapZoom,
                      vpZoom,
                      transformIn,
                      tileSize,
-                     textRects);
+                     laberRects);
                  painter.restore();
              }
         }
