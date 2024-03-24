@@ -425,30 +425,11 @@ void UnitTesting::test_unknown_layer_parsing()
 //Test the parsing functionality of the StyleSheet class.
 void UnitTesting::parseSheet_returns_basic_values()
 {
-    //Check that the file exists.
-    QString path = ":/unitTestResources/styleTest.json";
-    bool fileExist = QFile::exists(path);
-    QString fileExistsError = "File \"" + path + "\" does not exist";
-    QVERIFY2(fileExist == true, fileExistsError.toUtf8());
 
-    //Open the json file and check that the operation was succesful.
-    QFile styleFile(path);
-    bool fileOpened = styleFile.open(QIODevice::ReadOnly);
-    QString fileOpenError = "Could not open file";
-    QVERIFY2(fileOpened == true, fileOpenError.toUtf8());
-
-    //Parse the json file into a QJsonDocument for further processing.
-    QJsonDocument doc;
-    QJsonParseError parseError;
-    doc = QJsonDocument::fromJson(styleFile.readAll(), &parseError);
-
-    //Check for parsing errors.
-    QString parErrorString = "The Qt parser encountered an error";
-    QVERIFY2(parseError.error == QJsonParseError::NoError, parErrorString.toUtf8());
 
     QString testError;
     StyleSheet sheet;
-    sheet.parseSheet(doc);
+    sheet.parseSheet(styleSheetDoc);
 
     QString expectedId = "basic-v2";
     QString expectedName = "Basic";
@@ -476,9 +457,10 @@ void UnitTesting::parseSheet_returns_basic_values()
         QVERIFY2(sheet.m_layerStyles.at(i) != nullptr, testError.toUtf8());
     }
 
-    testBackgroundLayerStyle(sheet.m_layerStyles.at(0));
-    testFillLyerStyle(sheet.m_layerStyles.at(1));
-    testLineLayerStyle(sheet.m_layerStyles.at(2));
-    testPointLayerStyle(sheet.m_layerStyles.at(3));
-    testNotImplementedLayerStyle(sheet.m_layerStyles.at(4));
+    backgroundLayer = sheet.m_layerStyles.at(0);
+    fillLayer = sheet.m_layerStyles.at(1);
+    lineLayer = sheet.m_layerStyles.at(2);
+    symbolLyaer = sheet.m_layerStyles.at(3);
+    unknownLayer = sheet.m_layerStyles.at(4);
 }
+
