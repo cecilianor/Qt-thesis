@@ -411,12 +411,15 @@ void UnitTesting::test_symbol_layer_parsing()
                     .arg(symbolLayerStyle.m_filter.size());
     QVERIFY2(symbolLayerStyle.m_filter.size() == expectedFilterSize, testError.toUtf8());
 }
-void testNotImplementedLayerStyle(AbstractLayereStyle *layerStyle)
+
+
+void UnitTesting::test_unknown_layer_parsing()
 {
-     QString testError;
+    QString testError;
     testError = QString("The layer style is expected to be of type NotImpleneted");
-     QVERIFY2(layerStyle->type() == AbstractLayereStyle::LayerType::notImplemented, testError.toUtf8());
+    QVERIFY2(unknownLayer->type() == AbstractLayereStyle::LayerType::notImplemented, testError.toUtf8());
 }
+
 
 
 //Test the parsing functionality of the StyleSheet class.
