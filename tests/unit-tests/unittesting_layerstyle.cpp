@@ -70,7 +70,7 @@ void UnitTesting::getStopOutput_returns_basic_values(){
 }
 
 
-void testBackgroundLayerStyle(AbstractLayereStyle *layerStyle)
+void UnitTesting::test_background_layer_parsing()
 {
     QString testError;
     QString expectedId = "Background";
@@ -79,8 +79,8 @@ void testBackgroundLayerStyle(AbstractLayereStyle *layerStyle)
     int expectedMaxZoom = 24;
 
     testError = QString("The layer style is expected to be of type BackgroundLayerStyle");
-    QVERIFY2(layerStyle->type() == AbstractLayereStyle::LayerType::background, testError.toUtf8());
-    auto const& backgroundStyle = *static_cast<BackgroundStyle const*>(layerStyle);
+    QVERIFY2(backgroundLayer->type() == AbstractLayereStyle::LayerType::background, testError.toUtf8());
+    auto const& backgroundStyle = *static_cast<BackgroundStyle const*>(backgroundLayer);
 
     testError =  QString("The layerStyle id does not match, expected %1 but got %2")
                     .arg(expectedId)
@@ -128,6 +128,7 @@ void testBackgroundLayerStyle(AbstractLayereStyle *layerStyle)
         QVERIFY2(hueMatch && saturationMatch && lightnessMatch && alphaMatch == true, testError.toUtf8());
     }
 }
+
 
 
 void testFillLyerStyle(AbstractLayereStyle *layerStyle)
