@@ -18,9 +18,16 @@ private:
     AbstractLayereStyle *unknownLayer;
 
 private slots:
-    /* Layerstyle tests */
+    void initTestCase();
     void getStopOutput_returns_basic_values();
     void parseSheet_returns_basic_values();
+    void test_background_layer_parsing();
+    void test_fill_layer_parsing();
+    void test_line_layer_parsing();
+    void test_symbol_layer_parsing();
+    void test_unknown_layer_parsing();
+    void cleanupTestCase();
+
 };
 
 QTEST_MAIN(UnitTesting)
