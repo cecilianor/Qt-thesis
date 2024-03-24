@@ -13,6 +13,8 @@ class UnitTesting : public QObject
 
 private:
     const QString expressionTestPath = ":/unitTestResources/expressionTest.json";
+    QJsonObject expressionsObject;
+    QFile file;
 
     // Opens and parses the test file.
     bool openAndParseTestFile(QFile &testFile, QJsonDocument &doc) {
@@ -47,6 +49,7 @@ private:
     }
 
 private slots:
+    void initTestCase();
     void resolveExpression_with_coalesce_value();
     void resolveExpression_with_get_value();
     void resolveExpression_with_has_value();
@@ -63,6 +66,25 @@ private slots:
 
 QTEST_MAIN(UnitTesting)
 #include "unittest_evaluator.moc"
+
+
+void UnitTesting::initTestCase()
+{
+    // Verify that the test file can be opened.
+    file.setFileName(expressionTestPath);
+    QJsonDocument doc;
+    if(!file.open(QIODevice::ReadOnly))
+        QFAIL("Could not open file: " + expressionTestPath.toUtf8());
+
+    // Verify that the test file got parsed correctly.
+    QJsonParseError parseError;
+    doc = QJsonDocument::fromJson(file.readAll(), &parseError);
+    if(parseError.error != QJsonParseError::NoError)
+        QFAIL("Could not parse JSON file into a QJsonDocument: " + expressionTestPath.toUtf8());
+
+    expressionsObject = doc.object();
+
+}
 
 // Test resolve expression function when the get value is passed in.
 // This function checks both for a valid (positive) and invalid (negative case).
