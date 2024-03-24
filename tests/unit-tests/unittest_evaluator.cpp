@@ -330,11 +330,6 @@ void UnitTesting::resolveExpression_with_all_value()
 // This function checks both for a valid (positive) and invalid (negative case).
 void UnitTesting::resolveExpression_with_case_value()
 {
-    QFile file;
-    QJsonDocument doc;
-    QVERIFY2(openAndParseTestFile(file, doc),
-             " Opening and parsing failed for: " + expressionTestPath.toUtf8());
-
     PolygonFeature feature;
     QString errorMessage;
     QJsonArray expression;
@@ -342,7 +337,7 @@ void UnitTesting::resolveExpression_with_case_value()
     bool validDoubleError=false;
 
     //Parse the json file into a QJsonDocument for further processing.
-    QJsonObject expressionObject = doc.object().value("case").toObject();
+    QJsonObject expressionObject = expressionsObject.value("case").toObject();
     feature.fetureMetaData.insert("class", "neighbourhood");
 
     expression = expressionObject.value("positive").toArray();
@@ -363,7 +358,6 @@ void UnitTesting::resolveExpression_with_case_value()
                        .arg(20, result.toDouble());
     validDoubleError = validDoubleRange(result.toDouble(), 20);
     QVERIFY2(validDoubleError, errorMessage.toUtf8());
-    closeTestFile(file);
 }
 
 // Test resolve expression function when the `coalesce` expression object value is passed in.
