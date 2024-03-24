@@ -298,17 +298,12 @@ void UnitTesting::resolveExpression_with_greater_than_value()
 // This function checks both for a valid (positive) and invalid (negative case).
 void UnitTesting::resolveExpression_with_all_value()
 {
-    QFile file;
-    QJsonDocument doc;
-    QVERIFY2(openAndParseTestFile(file, doc),
-             " Opening and parsing failed for file: " + expressionTestPath.toUtf8());
-
     PolygonFeature feature;
     QString errorMessage;
     QJsonArray expression;
     QVariant result;
 
-    QJsonObject expressionObject = doc.object().value("all").toObject();
+    QJsonObject expressionObject = expressionsObject.value("all").toObject();
     feature.fetureMetaData.insert("class", "neighbourhood");
     feature.fetureMetaData.insert("intermittent", 1);
     feature.fetureMetaData.insert("subclass", "farm");
@@ -328,8 +323,8 @@ void UnitTesting::resolveExpression_with_all_value()
     errorMessage = QString("Wrong result from \"all\" function, expected %1 but got %2")
                        .arg(false,result.toBool());
     QVERIFY2(result.toBool() == false, errorMessage.toUtf8());
-    closeTestFile(file);
 }
+
 
 // Test resolve expression function when the `case` expression object value is passed in.
 // This function checks both for a valid (positive) and invalid (negative case).
