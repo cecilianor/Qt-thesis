@@ -391,11 +391,6 @@ void UnitTesting::resolveExpression_with_coalesce_value()
 // This function checks that the function returns expected values.
 void UnitTesting::resolveExpression_with_match_value()
 {
-    QFile file;
-    QJsonDocument doc;
-    QVERIFY2(openAndParseTestFile(file, doc),
-             " Opening and parsing failed for: " + expressionTestPath.toUtf8());
-
     PolygonFeature feature;
     QString errorMessage;
     QJsonArray expression;
@@ -405,7 +400,7 @@ void UnitTesting::resolveExpression_with_match_value()
     feature.fetureMetaData.clear();
     feature.fetureMetaData.insert("class", "neighbourhood");
 
-    QJsonObject expressionObject = doc.object().value("match").toObject();
+    QJsonObject expressionObject = expressionsObject.value("match").toObject();
     expression = expressionObject.value("positive").toArray();
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
     errorMessage = QString("\"match\" function returns empty result when an int is expected");
@@ -425,9 +420,8 @@ void UnitTesting::resolveExpression_with_match_value()
                        .arg(result.toDouble());
     validDoubleError = validDoubleRange(result.toDouble(), 4);
     QVERIFY2(validDoubleError, errorMessage.toUtf8());
-
-    closeTestFile(file);
 }
+
 
 // Test resolve expression function when the `interpolate` expression object value is passed in.
 // This function checks that the function returns expected values.
