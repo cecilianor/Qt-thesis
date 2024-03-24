@@ -234,17 +234,12 @@ void UnitTesting::resolveExpression_with_equals_value()
 // This function checks both for a valid (positive) and invalid (negative case).
 void UnitTesting::resolveExpression_with_inequality_value()
 {
-    QFile file;
-    QJsonDocument doc;
-    QVERIFY2(openAndParseTestFile(file, doc),
-             " Opening and parsing failed for: " + expressionTestPath.toUtf8());
-
     PolygonFeature feature;
     QString errorMessage;
     QJsonArray expression;
     QVariant result;
 
-    QJsonObject expressionObject = doc.object().value("!=").toObject();
+    QJsonObject expressionObject = expressionsObject.value("!=").toObject();
     feature.fetureMetaData.insert("class", "neighbourhood");
 
     expression = expressionObject.value("positive").toArray();
@@ -264,8 +259,8 @@ void UnitTesting::resolveExpression_with_inequality_value()
                        .arg(false)
                        .arg(result.toBool());
     QVERIFY2(result.toBool() == false, errorMessage.toUtf8());
-    closeTestFile(file);
 }
+
 
 // Test resolve expression function when the `>` expression object value is passed in.
 // This function checks both for a valid (positive) and invalid (negative case).
