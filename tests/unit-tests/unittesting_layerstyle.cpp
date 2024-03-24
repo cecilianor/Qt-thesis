@@ -31,6 +31,27 @@ private slots:
 };
 
 QTEST_MAIN(UnitTesting)
+
+void UnitTesting::initTestCase()
+{
+    if (!QFile::exists(path))
+        QFAIL("File \"" + path.toUtf8() + "\" does not exist");
+
+    // Open the JSON file and check that the operation was successful.
+    styleFile.setFileName(path);
+    if (!styleFile.open(QIODevice::ReadOnly))
+        QFAIL("Failed to open file \"" + path.toUtf8() + "\"");
+
+    // Parse the JSON file into a QJsonDocument for further processing.
+    QJsonParseError parserError;
+    styleSheetDoc = QJsonDocument::fromJson(styleFile.readAll(), &parserError);
+
+    // Check for parsing errors.
+    if (parserError.error != QJsonParseError::NoError)
+        QFAIL("JSON parsing error: " + parserError.errorString().toUtf8());
+}
+
+
 #include "unittesting_layerstyle.moc"
 // This include needs to match the name of this .cpp file.
 //Test the functionality of the function to determine stopoutputs.
