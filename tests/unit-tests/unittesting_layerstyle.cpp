@@ -464,3 +464,7 @@ void UnitTesting::parseSheet_returns_basic_values()
     unknownLayer = sheet.m_layerStyles.at(4);
 }
 
+void UnitTesting::cleanupTestCase()
+{
+    styleFile.close();
+}
