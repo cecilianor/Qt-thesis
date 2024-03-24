@@ -118,17 +118,12 @@ void UnitTesting::resolveExpression_with_get_value()
 // Test resolve expression function when the `has` value is passed in.
 // This function checks both for a valid (positive) and invalid (negative case).
 void UnitTesting::resolveExpression_with_has_value() {
-    QFile file;
-    QJsonDocument doc;
-    QVERIFY2(openAndParseTestFile(file, doc),
-             " Opening and parsing failed for: " + expressionTestPath.toUtf8());
-
     PolygonFeature feature;
     QString errorMessage;
     QJsonArray expression;
     QVariant result;
 
-    QJsonObject expressionObject = doc.object().value("has").toObject();
+    QJsonObject expressionObject = expressionsObject.value("has").toObject();
     feature.fetureMetaData.insert("subclass", "farm");
     expression = expressionObject.value("positive").toArray();
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
@@ -148,8 +143,8 @@ void UnitTesting::resolveExpression_with_has_value() {
                        .arg(false)
                        .arg(result.toBool());
     QVERIFY2(result.toBool() == false, errorMessage.toUtf8());
-    closeTestFile(file);
 }
+
 
 // Test resolve expression function when the `in` value is passed in.
 // This function checks both for a valid (positive) and invalid (negative case).
