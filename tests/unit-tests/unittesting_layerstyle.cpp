@@ -131,7 +131,7 @@ void UnitTesting::test_background_layer_parsing()
 
 
 
-void testFillLyerStyle(AbstractLayereStyle *layerStyle)
+void UnitTesting::test_fill_layer_parsing()
 {
     QString testError;
     QString expectedId = "Glacier";
@@ -149,8 +149,8 @@ void testFillLyerStyle(AbstractLayereStyle *layerStyle)
     int expectedFilterSize = 3;
 
     testError = QString("The layer style is expected to be of type FillLayerStyle");
-    QVERIFY2(layerStyle->type() == AbstractLayereStyle::LayerType::fill, testError.toUtf8());
-    auto const& filllayerStyle = *static_cast<FillLayerStyle const*>(layerStyle);
+    QVERIFY2(fillLayer->type() == AbstractLayereStyle::LayerType::fill, testError.toUtf8());
+    auto const& filllayerStyle = *static_cast<FillLayerStyle const*>(fillLayer);
 
     testError =  QString("The layerStyle id does not match, expected %1 but got %2")
                     .arg(expectedId)
@@ -200,8 +200,8 @@ void testFillLyerStyle(AbstractLayereStyle *layerStyle)
     QVERIFY2(hueMatch && saturationMatch && lightnessMatch && alphaMatch == true, testError.toUtf8());
 
     testError =  QString("The Filter json array size does not match, expected %1 but got %2")
-        .arg(expectedFilterSize)
-        .arg(filllayerStyle.m_filter.size());
+                    .arg(expectedFilterSize)
+                    .arg(filllayerStyle.m_filter.size());
     QVERIFY2(filllayerStyle.m_filter.size() == expectedFilterSize, testError.toUtf8());
 }
 
