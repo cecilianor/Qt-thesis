@@ -506,18 +506,13 @@ void UnitTesting::resolveExpression_with_interpolate_value()
 // This function checks that the function returns expected values.
 void UnitTesting::resolveExpression_with_compound_value()
 {
-    QFile file;
-    QJsonDocument doc;
-    QVERIFY2(openAndParseTestFile(file, doc),
-             " Opening and parsing failed for file: " + expressionTestPath.toUtf8());
-
     PolygonFeature feature;
     QString errorMessage;
     QVariant result;
     bool validDoubleError=false;
     double expectedInterpolationResult;
 
-    QJsonObject expressionObject = doc.object().value("compound").toObject();
+    QJsonObject expressionObject = expressionsObject.value("compound").toObject();
     QJsonArray expression = expressionObject.value("expression1").toArray();
 
     feature.fetureMetaData.insert("class", "motorway");
@@ -589,5 +584,4 @@ void UnitTesting::resolveExpression_with_compound_value()
                        .arg(result.toDouble());
     validDoubleError = validDoubleRange(result.toDouble(), expectedInterpolationResult);
     QVERIFY2(validDoubleError, errorMessage.toUtf8());
-    closeTestFile(file);
 }
