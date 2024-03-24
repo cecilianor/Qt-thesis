@@ -62,6 +62,7 @@ private slots:
     void resolveExpression_with_match_value();
     void resolveExpression_with_interpolate_value();
     void resolveExpression_with_compound_value();
+    void cleanupTestCase();
 };
 
 QTEST_MAIN(UnitTesting)
@@ -584,4 +585,10 @@ void UnitTesting::resolveExpression_with_compound_value()
                        .arg(result.toDouble());
     validDoubleError = validDoubleRange(result.toDouble(), expectedInterpolationResult);
     QVERIFY2(validDoubleError, errorMessage.toUtf8());
+}
+
+
+void UnitTesting::cleanupTestCase()
+{
+    file.close();
 }
