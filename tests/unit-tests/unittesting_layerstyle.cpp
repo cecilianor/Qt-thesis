@@ -7,6 +7,16 @@ class UnitTesting : public QObject
 {
     Q_OBJECT
 
+private:
+    const QString path = ":/unitTestResources/styleTest.json";
+    QFile styleFile;
+    QJsonDocument styleSheetDoc;
+    AbstractLayereStyle *backgroundLayer;
+    AbstractLayereStyle *fillLayer;
+    AbstractLayereStyle *lineLayer;
+    AbstractLayereStyle *symbolLyaer;
+    AbstractLayereStyle *unknownLayer;
+
 private slots:
     /* Layerstyle tests */
     void getStopOutput_returns_basic_values();
