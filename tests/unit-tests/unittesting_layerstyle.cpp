@@ -205,7 +205,7 @@ void UnitTesting::test_fill_layer_parsing()
     QVERIFY2(filllayerStyle.m_filter.size() == expectedFilterSize, testError.toUtf8());
 }
 
-void testLineLayerStyle(AbstractLayereStyle *layerStyle)
+void UnitTesting::test_line_layer_parsing()
 {
     QString testError;
     QString expectedId = "River";
@@ -225,8 +225,8 @@ void testLineLayerStyle(AbstractLayereStyle *layerStyle)
     int expectedFilterSize = 3;
 
     testError = QString("The layer style is expected to be of type LineLayerStyle");
-    QVERIFY2(layerStyle->type() == AbstractLayereStyle::LayerType::line, testError.toUtf8());
-    auto const& lineLyaerStyle = *static_cast<LineLayerStyle const*>(layerStyle);
+    QVERIFY2(lineLayer->type() == AbstractLayereStyle::LayerType::line, testError.toUtf8());
+    auto const& lineLyaerStyle = *static_cast<LineLayerStyle const*>(lineLayer);
 
     testError =  QString("The layerStyle id does not match, expected %1 but got %2")
                     .arg(expectedId)
@@ -274,9 +274,9 @@ void testLineLayerStyle(AbstractLayereStyle *layerStyle)
     for(int i = 0; i < 19; i++){
         int lineWidth = lineLyaerStyle.getLineWidthAtZoom(i).toInt();
         testError =  QString("The line width does not match at zoom %1, expected %2 but got %3")
-            .arg(i)
-            .arg(expectedLineWidthStop1)
-            .arg(lineWidth);
+                        .arg(i)
+                        .arg(expectedLineWidthStop1)
+                        .arg(lineWidth);
         QVERIFY2(lineWidth == expectedLineWidthStop1, testError.toUtf8());
     }
 
@@ -300,6 +300,7 @@ void testLineLayerStyle(AbstractLayereStyle *layerStyle)
                     .arg(lineLyaerStyle.m_filter.size());
     QVERIFY2(lineLyaerStyle.m_filter.size() == expectedFilterSize, testError.toUtf8());
 }
+
 
 void testPointLayerStyle(AbstractLayereStyle *layerStyle)
 {
