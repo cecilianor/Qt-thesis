@@ -90,7 +90,7 @@ namespace Bach {
      *      styleSheet: Function will read the layer styling data in this object to determine how to render
      *                  individual tiles.
      */
-    void paintTiles(
+    void paintVectorTiles(
         QPainter &painter,
         double vpX,
         double vpY,
@@ -99,6 +99,28 @@ namespace Bach {
         const QMap<TileCoord, const VectorTile*> &tileContainer,
         const StyleSheet &styleSheet,
         bool drawDebug);
+
+    /*!
+     * \brief paintPngTiles
+     * \param painter
+     * \param vpX
+     * \param vpY
+     * \param viewportZoomLevel
+     * \param mapZoomLevel
+     * \param tileContainer
+     * \param styleSheet
+     * \param drawDebug
+     */
+    void paintPngTiles(
+        QPainter &painter,
+        double vpX,
+        double vpY,
+        double viewportZoomLevel,
+        int mapZoomLevel,
+        //const QMap<TileCoord, const VectorTile*> &tileContainer,
+        const StyleSheet &styleSheet,
+        bool drawDebug);
+
 }
 
 #endif // RENDERING_HPP

@@ -481,7 +481,7 @@ static void drawBackgroundColor(
     }
 }
 
-void Bach::paintTiles(
+void Bach::paintVectorTiles(
     QPainter &painter,
     double vpX,
     double vpY,
@@ -595,4 +595,116 @@ void Bach::paintTiles(
 
         painter.restore();
     }
+}
+
+void Bach::paintPngTiles(
+    QPainter &painter,
+    double vpX,
+    double vpY,
+    double viewportZoomLevel,
+    int mapZoomLevel,
+    //const QMap<TileCoord, const VectorTile*> &tileContainer,
+    const StyleSheet &styleSheet,
+    bool drawDebug)
+{
+
+    QMap<TileCoord, QImage> tileContainer;
+    tileContainer.insert(TileCoord{1,0,0}, QImage{":/testdata/png-images/13_4340_2381.png"});
+    tileContainer.insert(TileCoord{1,1,0}, QImage{":/testdata/png-images/13_4341_2381.png"});
+    tileContainer.insert(TileCoord{1,0,1}, QImage{":/testdata/png-images/13_4340_2382.png"});
+    tileContainer.insert(TileCoord{1,1,1}, QImage{":/testdata/png-images/13_4341_2382.png"});
+
+    // Start by drawing the background color on the entire canvas.
+    drawBackgroundColor(painter, styleSheet, mapZoomLevel);
+
+    // Gather width and height of the viewport, in pixels..
+    auto vpWidth = painter.window().width();
+    auto vpHeight = painter.window().height();
+
+    // Aspect ratio of the viewport.
+    auto vpAspect = (double)vpWidth / (double)vpHeight;
+
+    // The longest length between vpWidth and vpHeight
+    auto vpMaxDim = qMax(vpWidth, vpHeight);
+
+    // Helper function to turn coordinates that are expressed as fraction of the viewport,
+    // into pixel coordinates.
+    auto toPixelSpace = [&](double in) { return (int)round(in * vpMaxDim); };
+
+    // Calculate the set of visible tiles that fit in the viewport.
+    auto visibleTiles = calcVisibleTiles(
+        vpX,
+        vpY,
+        vpAspect,
+        viewportZoomLevel,
+        mapZoomLevel);
+
+    // The scale of the world map as a fraction of the viewport.
+    auto vpScale = pow(2, viewportZoomLevel);
+    // The scale of a single tile as a fraction of the viewport.
+    auto tileSizeNorm = vpScale / (1 << mapZoomLevel);
+
+    // Calculate where the top-left origin of the world map is relative to the viewport.
+    double worldOriginX = vpX * vpScale - 0.5;
+    double worldOriginY = vpY * vpScale - 0.5;
+    // The world such that our worldmap is still centered around our center-coordinate
+    // when the aspect ratio changes.
+    if (vpAspect < 1.0) {
+        worldOriginX += -0.5 * vpAspect + 0.5;
+    } else if (vpAspect > 1.0) {
+        worldOriginY += -0.5 / vpAspect + 0.5;
+    }
+
+    // Iterate over all possible tiles that can possibly fit in this viewport.
+    for (const auto& tileCoord : visibleTiles) {
+        // Position the top-left of the tile inside the world map, as a fraction of the viewport size.
+        // We use the tile index coords and the size of a tile to generate the offset.
+        auto posNormX = (tileCoord.x * tileSizeNorm) - worldOriginX;
+        auto posNormY = (tileCoord.y * tileSizeNorm) - worldOriginY;
+
+        // Convert tile position and size to pixels.
+        auto tilePixelPosX = toPixelSpace(posNormX);
+        auto tilePixelPosY = toPixelSpace(posNormY);
+        auto tileSizePixels = toPixelSpace(tileSizeNorm);
+
+        painter.save();
+
+        // We move the origin point of the painter to the top-left of the tile.
+        // We do not apply scaling because it interferes with other sized elements,
+        // like the size of pen width.
+        QTransform transform;
+        transform.translate(tilePixelPosX, tilePixelPosY);
+        painter.setTransform(transform);
+
+        // Temporary. Should likely just be passed as a single scalar to tile-drawing function.
+        /* Probably only needed for vector drawing.
+        QTransform geometryTransform;
+        geometryTransform.scale(vpMaxDim * tileSizeNorm, vpMaxDim * tileSizeNorm);
+        */
+
+        // See if the tile being rendered has any tile-data associated with it.
+       auto tileIt = tileContainer.find(tileCoord);
+       if (tileIt != tileContainer.end()) {
+            auto const& tileData = *tileIt;
+
+            painter.save();
+
+            QRectF target(0.0, 0.0, tileSizePixels, tileSizePixels);
+            QRectF source(0.0, 0.0, 512.0, 512.0);
+
+            painter.drawImage(target, tileData, source);
+
+            painter.restore();
+        }
+
+        // Paint debug lines around the tile.
+        if (drawDebug) {
+            paintSingleTileDebug(
+                painter,
+                tileCoord,
+                vpMaxDim * tileSizeNorm);
+        }
+
+        painter.restore();
+        }
 }
