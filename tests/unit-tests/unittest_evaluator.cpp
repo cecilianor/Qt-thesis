@@ -16,27 +16,6 @@ private:
     QJsonObject expressionsObject;
     QFile file;
 
-    // Opens and parses the test file.
-    bool openAndParseTestFile(QFile &testFile, QJsonDocument &doc) {
-        // Verify that the test file can be opened.
-        testFile.setFileName(expressionTestPath);
-        if(!testFile.open(QIODevice::ReadOnly))
-            return false;
-
-        // Verify that the test file got parsed correctly.
-        QJsonParseError parseError;
-        doc = QJsonDocument::fromJson(testFile.readAll(), &parseError);
-        if(parseError.error != QJsonParseError::NoError)
-            return false;
-
-        return true; // Everything went okay, return true.
-    }
-
-    // Cleanup at the end of each test.
-    void closeTestFile(QFile &testFile){
-        testFile.close();
-    }
-
     // Checks if expected and gotten double floating point values are within 0.0001 of each other.
     bool validDoubleRange(double double1, double double2)
     {
