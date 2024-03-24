@@ -39,8 +39,11 @@ void MapWidget::keyPressEvent(QKeyEvent* event)
     }
 }
 
-void MapWidget::paintEvent(QPaintEvent* event)
+void MapWidget::paintEvent(QPaintEvent *event)
 {
+    bool drawVectorTiles = false;
+    bool drawPngTiles = true;
+
     auto visibleTiles = calcVisibleTiles();
     std::set<TileCoord> tilesRequested{ visibleTiles.begin(), visibleTiles.end()};
 
@@ -59,15 +62,29 @@ void MapWidget::paintEvent(QPaintEvent* event)
         signalFn);
 
     QPainter painter(this);
-    Bach::paintTiles(
-        painter,
-        x,
-        y,
-        getViewportZoomLevel(),
-        getMapZoomLevel(),
-        requestResult->map(),
-        requestResult->styleSheet(),
-        isShowingDebug());
+
+    if (drawVectorTiles) {
+        Bach::paintVectorTiles(
+            painter,
+            x,
+            y,
+            getViewportZoomLevel(),
+            getMapZoomLevel(),
+            requestResult->map(),
+            requestResult->styleSheet(),
+            isShowingDebug());
+    }
+
+    else if (drawPngTiles) {
+        Bach::paintPngTiles(
+            painter,
+            x,
+            y,
+            getViewportZoomLevel(),
+            getMapZoomLevel(),
+            requestResult->styleSheet(),
+            isShowingDebug());
+    }
 }
 
 double MapWidget::getViewportZoomLevel() const
