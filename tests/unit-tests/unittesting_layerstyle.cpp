@@ -302,7 +302,7 @@ void UnitTesting::test_line_layer_parsing()
 }
 
 
-void testPointLayerStyle(AbstractLayereStyle *layerStyle)
+void UnitTesting::test_symbol_layer_parsing()
 {
     QString testError;
     QString expectedId = "Airport labels";
@@ -324,8 +324,8 @@ void testPointLayerStyle(AbstractLayereStyle *layerStyle)
     int expectedFilterSize = 2;
 
     testError = QString("The layer style is expected to be of type SymbolLayerStyle");
-    QVERIFY2(layerStyle->type() == AbstractLayereStyle::LayerType::symbol, testError.toUtf8());
-    auto const& symbolLayerStyle = *static_cast<SymbolLayerStyle const*>(layerStyle);
+    QVERIFY2(symbolLyaer->type() == AbstractLayereStyle::LayerType::symbol, testError.toUtf8());
+    auto const& symbolLayerStyle = *static_cast<SymbolLayerStyle const*>(symbolLyaer);
 
     testError =  QString("The layerStyle id does not match, expected %1 but got %2")
                     .arg(expectedId)
@@ -411,7 +411,6 @@ void testPointLayerStyle(AbstractLayereStyle *layerStyle)
                     .arg(symbolLayerStyle.m_filter.size());
     QVERIFY2(symbolLayerStyle.m_filter.size() == expectedFilterSize, testError.toUtf8());
 }
-
 void testNotImplementedLayerStyle(AbstractLayereStyle *layerStyle)
 {
      QString testError;
