@@ -427,13 +427,6 @@ void UnitTesting::resolveExpression_with_match_value()
 // This function checks that the function returns expected values.
 void UnitTesting::resolveExpression_with_interpolate_value()
 {
-    QFile file;
-    QJsonDocument doc;
-    QVERIFY2(openAndParseTestFile(file, doc),
-             " Opening and parsing failed for: " + expressionTestPath.toUtf8());
-
-    QJsonObject expressionsObject = doc.object();
-
     PolygonFeature feature;
     QString errorMessage;
     QJsonArray expression;
@@ -441,8 +434,9 @@ void UnitTesting::resolveExpression_with_interpolate_value()
     bool validDoubleError=false; // Checks if double values are in a valid range
     double expectedInterpolationResult;
 
-    feature.fetureMetaData.insert("class", "neighbourhood");
     expression = expressionsObject.value("interpolate").toArray();
+    feature.fetureMetaData.insert("class", "neighbourhood");
+
 
     expectedInterpolationResult = 11;
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
@@ -506,7 +500,6 @@ void UnitTesting::resolveExpression_with_interpolate_value()
                        .arg(expectedInterpolationResult, result.toDouble());
     validDoubleError = validDoubleRange(result.toDouble(), expectedInterpolationResult);
     QVERIFY2(validDoubleError, errorMessage.toUtf8());
-    closeTestFile(file);
 }
 
 // Test resolve expression function when the `compound` expression object value is passed in.
