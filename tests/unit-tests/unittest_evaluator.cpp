@@ -90,17 +90,12 @@ void UnitTesting::initTestCase()
 // This function checks both for a valid (positive) and invalid (negative case).
 void UnitTesting::resolveExpression_with_get_value()
 {
-    QFile file;
-    QJsonDocument doc;
-    QVERIFY2(openAndParseTestFile(file, doc),
-             " Opening and parsing failed for: " + expressionTestPath.toUtf8());
-
     PolygonFeature feature;
     QString errorMessage;
     QJsonArray expression;
     QVariant result;
 
-    QJsonObject expressionObject = doc.object().value("get").toObject();
+    QJsonObject expressionObject = expressionsObject.value("get").toObject();
     feature.fetureMetaData.insert("class", "grass");
 
     expression = expressionObject.value("positive").toArray();
@@ -117,8 +112,8 @@ void UnitTesting::resolveExpression_with_get_value()
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
     errorMessage = QString("\"get\" function returns a valid variant when the result is expected to be non-valid");
     QVERIFY2(result.isValid() == false, errorMessage.toUtf8());
-    closeTestFile(file);
 }
+
 
 // Test resolve expression function when the `has` value is passed in.
 // This function checks both for a valid (positive) and invalid (negative case).
