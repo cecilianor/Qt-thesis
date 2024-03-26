@@ -100,8 +100,8 @@ int main(int argc, char *argv[])
     // Set up the function that forwards requests from the
     // MapWidget into the TileLoader. This lambda does the
     // two components together.
-    mapWidget->requestTilesFn = [&](auto input, auto signal) {
-        return tileLoader.requestTiles(input, signal, true);
+    mapWidget->requestTilesFn = [&](auto tileList, auto tileLoadedCallback) {
+        return tileLoader.requestTiles(tileList, tileLoadedCallback, true);
     };
 
     // Main window setup
