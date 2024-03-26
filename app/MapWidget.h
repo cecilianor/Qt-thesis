@@ -102,10 +102,13 @@ private:
 
     // Controls whether debug lines should be shown.
     bool showDebug = true;
+    bool renderVectorTile = true;
 public:
     bool isShowingDebug() const { return showDebug; }
+    bool isRenderingVector() const { return renderVectorTile; }
 public slots:
     void toggleIsShowingDebug();
+    void toggleIsRenderingVectorTile();
 
 public:
     /* We run into problems with UI keyboard navigation

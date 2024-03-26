@@ -603,16 +603,17 @@ void Bach::paintPngTiles(
     double vpY,
     double viewportZoomLevel,
     int mapZoomLevel,
-    //const QMap<TileCoord, const VectorTile*> &tileContainer,
+    const QMap<TileCoord, const QImage*> &tileContainer,
     const StyleSheet &styleSheet,
     bool drawDebug)
 {
-
+    /*
     QMap<TileCoord, QImage> tileContainer;
     tileContainer.insert(TileCoord{1,0,0}, QImage{":/testdata/png-images/13_4340_2381.png"});
     tileContainer.insert(TileCoord{1,1,0}, QImage{":/testdata/png-images/13_4341_2381.png"});
     tileContainer.insert(TileCoord{1,0,1}, QImage{":/testdata/png-images/13_4340_2382.png"});
     tileContainer.insert(TileCoord{1,1,1}, QImage{":/testdata/png-images/13_4341_2382.png"});
+    */
 
     // Start by drawing the background color on the entire canvas.
     drawBackgroundColor(painter, styleSheet, mapZoomLevel);
@@ -685,7 +686,7 @@ void Bach::paintPngTiles(
         // See if the tile being rendered has any tile-data associated with it.
        auto tileIt = tileContainer.find(tileCoord);
        if (tileIt != tileContainer.end()) {
-            auto const& tileData = *tileIt;
+            const QImage &tileData = **tileIt;
 
             painter.save();
 

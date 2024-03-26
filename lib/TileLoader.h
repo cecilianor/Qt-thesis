@@ -15,9 +15,10 @@
 #include <memory>
 #include <map>
 
-#include "TileCoord.h"
-#include "VectorTiles.h"
 #include "RequestTilesResult.h"
+#include "TileCoord.h"
+#include "Utilities.h"
+#include "VectorTiles.h"
 
 class UnitTesting;
 
@@ -74,7 +75,7 @@ public:
 
     static std::unique_ptr<TileLoader> newDummy(const QString &diskCachePath);
 
-    QString getTileDiskPath(TileCoord coord);
+    QString getTileDiskPath(TileCoord coord, TileType tileType);
 
     std::optional<Bach::LoadedTileState> getTileState(TileCoord) const;
 
@@ -104,11 +105,12 @@ private:
         // Current loading-state of this tile.
         Bach::LoadedTileState state = {};
 
-        // Stores the final tile data.
+        // Stores the final vectorTile data.
         //
         // We use std::unique_ptr over QScopedPointer
         // because QScopedPointer doesn't support move semantics.
-        std::unique_ptr<VectorTile> tile;
+        std::unique_ptr<VectorTile> vectorTile;
+        QImage rasterTile;
 
         // Tells us whether this tile is safe to return to
         // rendering.
@@ -208,7 +210,7 @@ namespace Bach {
         TileCoord coord,
         const QByteArray &bytes);
 
-    QString tileDiskCacheSubPath(TileCoord coord);
+    QString tileDiskCacheSubPath(TileCoord coord, TileType tileType);
 }
 
 

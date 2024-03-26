@@ -12,6 +12,39 @@
 #include "TileCoord.h"
 #include "Utilities.h"
 
+// This might not be ideal place to define this struct.
+struct TileResultType : public Bach::RequestTilesResult {
+    virtual ~TileResultType() {
+        // TODO:
+        // This should eventually notify the TileLoader
+        // that our tiles are no longer being read.
+        // Only really necessary when we have an eviction policy in place.
+    }
+
+    // Generate the map holding tile coordinates and a vector tile.
+    QMap<TileCoord, const VectorTile*> _vectorMap;
+    const QMap<TileCoord, const VectorTile*> &vectorMap() const override
+    {
+        return _vectorMap;
+    }
+
+    // Generate the map holding tile coordinates and a raster tile.
+    QMap<TileCoord, const QImage*> _rasterMap;
+    const QMap<TileCoord, const QImage*> &rasterImageMap() const override
+    {
+        return _rasterMap;
+    }
+
+    const StyleSheet* _styleSheet = nullptr;
+    const StyleSheet &styleSheet() const override
+    {
+        Q_ASSERT_X(
+            _styleSheet != nullptr,
+            "Stylesheet test",
+            "Tried to request stylesheet from a dummy TileLoader.");
+        return *_styleSheet;
+    }
+};
 
 TileLoader::TileLoader() :
     tileCacheDiskPath { getTileCacheFolder() }
@@ -141,9 +174,9 @@ QString Bach::setPbfLink(TileCoord tileCoord, const QString &pbfLinkTemplate)
 /*!
  * \brief Gets the full file-path of a given tile, whether it exists or not.
  */
-QString TileLoader::getTileDiskPath(TileCoord coord)
+QString TileLoader::getTileDiskPath(TileCoord coord, TileType tileType)
 {
-    return tileCacheDiskPath + QDir::separator() + Bach::tileDiskCacheSubPath(coord);
+    return tileCacheDiskPath + QDir::separator() + Bach::tileDiskCacheSubPath(coord, tileType);
 }
 
 /*!
@@ -161,11 +194,11 @@ QString TileLoader::getTileDiskPath(TileCoord coord)
  * \param requestInput is a set of TileCoords that is requested.
  *
  * \param tileLoadedSignalFn is a function that will get called whenever
- * a tile is loaded, will be called later in time,
+ * a vectorTile is loaded, will be called later in time,
  * can be called from another thread. This function
- * will be called once for each tile that was loaded successfully.
+ * will be called once for each vectorTile that was loaded successfully.
  *
- * This function is only called if a tile is successfully loaded.
+ * This function is only called if a vectorTile is successfully loaded.
  *
  * If this argument is set to null, the missing tiles will not be loaded.
  *
@@ -182,32 +215,7 @@ QScopedPointer<Bach::RequestTilesResult> TileLoader::requestTiles(
     TileLoadedCallbackFn signalFn,
     bool loadMissingTiles)
 {
-    // This might not be ideal place to define this struct.
-    struct ResultType : public Bach::RequestTilesResult {
-        virtual ~ResultType() {
-            // TODO:
-            // This should eventually notify the TileLoader
-            // that our tiles are no longer being read.
-            // Only really necessary when we have an eviction policy in place.
-        }
-
-        QMap<TileCoord, const VectorTile*> _map;
-        const QMap<TileCoord, const VectorTile*> &map() const override
-        {
-            return _map;
-        }
-
-        const StyleSheet* _styleSheet = nullptr;
-        const StyleSheet &styleSheet() const override
-        {
-            Q_ASSERT_X(
-                _styleSheet != nullptr,
-                "Stylesheet test",
-                "Tried to request stylesheet from a dummy TileLoader.");
-            return *_styleSheet;
-        }
-    };
-    auto out = new ResultType;
+    auto out = new TileResultType;
     // Temporary: We just need some way to handle when the user makes
     // a dummy TileLoader with no stylesheet, but tries to request one anyways.
     if (!styleSheet.m_layerStyles.empty())
@@ -233,7 +241,8 @@ QScopedPointer<Bach::RequestTilesResult> TileLoader::requestTiles(
                 // If the item is marked as nullptr,
                 // it means it is pending and should not be immediately returned.
                 if (memoryItem.isReadyToRender()) {
-                    out->_map.insert(requestedCoord, memoryItem.tile.get());
+                    out->_vectorMap.insert(requestedCoord, memoryItem.vectorTile.get());
+                    out->_rasterMap.insert(requestedCoord, &memoryItem.rasterTile);
                 }
             } else if (loadMissingTiles) {
                 // Tile not found, queue it for loading.
@@ -258,8 +267,13 @@ QScopedPointer<Bach::RequestTilesResult> TileLoader::requestTiles(
  */
 bool TileLoader::loadFromDisk(TileCoord coord, TileLoadedCallbackFn signalFn)
 {
-    // Check if it's in disk.
-    QString diskPath = getTileDiskPath(coord);
+    // Check if the tile in disk.
+    //
+    // MAJOR CHANGE HERE. Cecilia has passed in the vector tile type here.
+    // Consider calling this function twice with different tile types or handling just
+    // one type at a time. This is just passed this way to allow the code to run when Nils
+    // pulls it on his end later on March 26th.)
+    QString diskPath = getTileDiskPath(coord, TileType::Vector);
 
     QFile file { diskPath };
     if (!file.exists()) {
@@ -286,9 +300,11 @@ bool TileLoader::loadFromDisk(TileCoord coord, TileLoadedCallbackFn signalFn)
     return true;
 }
 
+
 /*!
- * \brief Immediately writes a tile to disk cache.
- *
+ * \brief TileLoader::writeTileToDisk writes a tile to disk cache.
+ * \param coord is the ZXY coordinate of the tile to write to disk.
+ * \param bytes is vector tile information stored as a QByteArray.
  */
 void TileLoader::writeTileToDisk(TileCoord coord, const QByteArray &bytes) {
     // TODO unused return value of this function.
@@ -296,7 +312,10 @@ void TileLoader::writeTileToDisk(TileCoord coord, const QByteArray &bytes) {
 }
 
 /*!
- * \brief Handles a network reply when a tile has been loaded from web.
+ * \brief TileLoader::networkReplyHandler handles a network reply when a tile is loaded from web.
+ * \param reply is the network reply.
+ * \param coord is the ZXY tile coordinate.
+ * \param signalFn is a callback function that signals when to insert jobs into memory.
  */
 void TileLoader::networkReplyHandler(
     QNetworkReply* reply,
@@ -405,7 +424,7 @@ void TileLoader::queueTileLoadingJobs(
 }
 
 /*!
- * \brief Parses byte-array and inserts into tile memory.
+ * \brief Parses byte-array and inserts into vectorTile memory.
  * \threadsafe
  */
 void TileLoader::insertIntoTileMemory(
@@ -444,7 +463,7 @@ void TileLoader::insertIntoTileMemory(
             return;
         } else {
             StoredTile &memoryItem = tileIt->second;
-            memoryItem.tile = nullptr;
+            memoryItem.vectorTile = nullptr;
             memoryItem.state = Bach::LoadedTileState::ParsingFailed;
         }
         emit tileFinished(coord);
@@ -462,7 +481,7 @@ void TileLoader::insertIntoTileMemory(
         } else {
             // Mark our tile as OK and insert the Tile data.
             StoredTile &memoryItem = tileIt->second;
-            memoryItem.tile = std::move(allocatedTile);
+            memoryItem.vectorTile = std::move(allocatedTile);
             memoryItem.state = Bach::LoadedTileState::Ok;
         }
     }
@@ -492,10 +511,9 @@ bool Bach::writeTileToDiskCache(
     TileCoord coord,
     const QByteArray &bytes)
 {
-    QString fullPath = basePath + QDir::separator() + tileDiskCacheSubPath(coord);
+    QString fullPath = basePath + QDir::separator() + tileDiskCacheSubPath(coord, TileType::Vector);
     return Bach::writeNewFileHelper(fullPath, bytes);
 }
-
 
 /*!
  * \brief tileDiskCacheSubPath finds the file-path subpath for a cache folder.
@@ -509,11 +527,27 @@ bool Bach::writeTileToDiskCache(
  * x and y must be in the range [0, tilecount-1], where tilecount = 2^zoom.
  * \return the subpath that was found.
  */
-QString Bach::tileDiskCacheSubPath(TileCoord coord)
+QString Bach::tileDiskCacheSubPath(TileCoord coord, TileType tileType)
 {
-    QString fileDirPath = QString("z%1x%2y%3.mvt")
+    QString fileDirPath = QString("z%1x%2y%3")
         .arg(coord.zoom)
         .arg(coord.x)
         .arg(coord.y);
+
+    // Add tile correct file extension to the path name.
+    // We treat all raster images as png images for now.
+    // Consider a refactor later if necessary when loading other file types.
+    switch(tileType) {
+        case TileType::Vector:
+        {
+            fileDirPath += ".mvt";
+            break;
+        }
+        case TileType::Raster:
+        {
+            fileDirPath += ".png";
+            break;
+        }
+    }
     return fileDirPath;
 }

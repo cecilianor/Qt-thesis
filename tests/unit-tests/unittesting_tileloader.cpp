@@ -288,6 +288,6 @@ void UnitTesting::check_new_tileLoader_has_no_tiles()
     auto tileLoaderPtr = TileLoader::newDummy("");
     TileLoader &tileLoader = *tileLoaderPtr;
     auto result = tileLoader.requestTiles({});
-    auto &map = result->map();
+    auto &map = result->vectorMap();
     QVERIFY(map.size() == 0);
 }
