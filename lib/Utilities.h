@@ -8,6 +8,32 @@
 #include <optional>
 
 /*!
+ * \brief The TileType enum determines what tile type to render.
+ *
+ * Supported types:
+ *
+ * * Vector: Is in the .mvt file format.
+ * * Raster: Can only be the .png file format for now.
+ */
+enum class TileType {
+    Vector,
+    Raster,
+};
+
+/*!
+ * \brief The FileFormat enum can be used to handle different tile file formats.
+ *
+ * This type is currently not used, but may be relevant if it's critical to handle
+ * file types that are not .mvt or .png.
+ */
+enum class TileFileFormat {
+    Mvt,
+    Png,
+    Jpg,
+    Unknown,
+};
+
+/*!
  * @brief The StyleSheetType enum covers the basic style sheets provided by MapTiler.
  *
  * Some of the style sheet types have _vX at the end. This matches the current map version
