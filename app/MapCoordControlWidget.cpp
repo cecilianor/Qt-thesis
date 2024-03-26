@@ -10,7 +10,13 @@
 
 using Bach::MapCoordControlWidget;
 
+/*!
+ * \brief getShowingDebugBtnLabel creates a string to label the debug button.
+ * \param mapWidget is the QWidget to render to.
+ * \return the label string.
+ */
 QString getShowingDebugBtnLabel(const MapWidget* mapWidget)
+{
     auto name = QString("Showing debug ");
     if (mapWidget->isShowingDebug()) {
         name += "on";
@@ -20,6 +26,11 @@ QString getShowingDebugBtnLabel(const MapWidget* mapWidget)
     return name;
 }
 
+/*!
+ * \brief getRenderingTileBtnLabel creates a string to label the toggle rendering tile button.
+ * \param mapWidget is the QWidget to render to.
+ * \return the label string.
+ */
 QString getRenderingTileBtnLabel(const MapWidget* mapWidget)
 {
     auto name = QString("Showing tile type: ");
@@ -30,6 +41,11 @@ QString getRenderingTileBtnLabel(const MapWidget* mapWidget)
     }
     return name;
 }
+
+/*!
+ * \brief MapCoordControlWidget::setupInputFields sets up
+ * \param outerLayout
+ */
 void MapCoordControlWidget::setupInputFields(QBoxLayout* outerLayout)
 {
     // Build the grid layout
@@ -105,6 +121,11 @@ void MapCoordControlWidget::setupInputFields(QBoxLayout* outerLayout)
     }
 }
 
+/*!
+ * \brief MapCoordControlWidget::setupButtons generates all application buttons.
+ * \param outerLayout ???
+ * \param mapWidget is the QWidget to render to.
+ */
 void MapCoordControlWidget::setupButtons(QBoxLayout *outerLayout, MapWidget *mapWidget)
 {
     // Setup the debug lines toggle switch
@@ -117,7 +138,7 @@ void MapCoordControlWidget::setupButtons(QBoxLayout *outerLayout, MapWidget *map
             &QPushButton::clicked,
             this,
             [=]() {
-                // Send signal to mapWidget?
+                // Send signal to mapWidget
                 mapWidget->toggleIsShowingDebug();
                 auto name = getShowingDebugBtnLabel(mapWidget);
                 btn->setText(name);
@@ -170,6 +191,10 @@ void MapCoordControlWidget::setupButtons(QBoxLayout *outerLayout, MapWidget *map
     }
 }
 
+/*!
+ * \brief MapCoordControlWidget::MapCoordControlWidget controls ???
+ * \param mapWidget is the QWidget to render to.
+ */
 MapCoordControlWidget::MapCoordControlWidget(MapWidget* mapWidget)
 {
     auto temp = new QWidget(mapWidget);
@@ -185,6 +210,9 @@ MapCoordControlWidget::MapCoordControlWidget(MapWidget* mapWidget)
     setupButtons(outerLayout, mapWidget);
 }
 
+/*!
+ * \brief MapCoordControlWidget::submitButtonPressed grabs zoom, longitude, and latitude values from GUI.
+ */
 void MapCoordControlWidget::submitButtonPressed()
 {
     // Initial longitute, latitude, and zoom values.
