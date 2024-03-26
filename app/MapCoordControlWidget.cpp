@@ -161,10 +161,13 @@ MapCoordControlWidget::MapCoordControlWidget(MapWidget* mapWidget)
 
 void MapCoordControlWidget::submitButtonPressed()
 {
-    // Try to grab the new viewport values from our text fields.
-    // If any of them are invalid, we don't submit.
-
+    // Initial longitute, latitude, and zoom values.
     double longitude = 0;
+    double latitude = 0;
+    double zoom = 0;
+
+    // Try to grab new viewport values from text fields.
+    // Check that all values are valid before submitting them.
     auto longitudeText = longitudeField->text();
     if (longitudeText != "") {
         bool ok = false;
@@ -174,7 +177,6 @@ void MapCoordControlWidget::submitButtonPressed()
         }
     }
 
-    double latitude = 0;
     auto latitudeText = latitudeField->text();
     if (latitudeText != "") {
         bool ok = false;
@@ -184,7 +186,6 @@ void MapCoordControlWidget::submitButtonPressed()
         }
     }
 
-    double zoom = 0;
     auto zoomText = zoomField->text();
     if (zoomText != "") {
         bool ok = false;
