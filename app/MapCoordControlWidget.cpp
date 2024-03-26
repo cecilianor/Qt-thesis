@@ -20,6 +20,16 @@ QString getShowingDebugBtnLabel(const MapWidget* mapWidget)
     return name;
 }
 
+QString getRenderingTileBtnLabel(const MapWidget* mapWidget)
+{
+    auto name = QString("Showing tile type: ");
+    if (mapWidget->isRenderingVector()) {
+        name += "Vector";
+    } else {
+        name += "Raster";
+    }
+    return name;
+}
 void MapCoordControlWidget::setupInputFields(QBoxLayout* outerLayout)
 {
     // Build the grid layout
@@ -114,6 +124,22 @@ void MapCoordControlWidget::setupButtons(QBoxLayout *outerLayout, MapWidget *map
             });
     }
 
+    // Setup the toggle tile type button (supports vector and raster for now).
+    {
+        auto name = getRenderingTileBtnLabel(mapWidget);
+        auto btn = new QPushButton(name, this);
+        outerLayout->addWidget(btn);
+        QObject::connect(
+            btn,
+            &QPushButton::clicked,
+            this,
+            [=]() {
+                // Send signal to mapWidget
+                mapWidget->toggleIsRenderingVectorTile();
+                auto name = getRenderingTileBtnLabel(mapWidget);
+                btn->setText(name);
+            });
+    }
 
     // Create buttons to move the viewport to Nydalen.
     {
