@@ -10,7 +10,7 @@
 
 using Bach::MapCoordControlWidget;
 
-QString getShowingDebugBtnLabel(MapWidget* mapWidget) {
+QString getShowingDebugBtnLabel(const MapWidget* mapWidget)
     auto name = QString("Showing debug ");
     if (mapWidget->isShowingDebug()) {
         name += "on";
