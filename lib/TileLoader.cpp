@@ -305,7 +305,8 @@ bool TileLoader::loadFromDisk(TileCoord coord, TileLoadedCallbackFn signalFn)
 
     // Now we need to insert the tile into the tile-memory
     // and NOT insert it into disk cache.
-    insertIntoTileMemory(coord, vectorBytes, signalFn);
+    //// Change here
+    insertIntoTileMemory(coord, vectorBytes, rasterImage, signalFn);
 
     // Return success if we found the file.
     return true;
@@ -371,7 +372,7 @@ void TileLoader::networkReplyHandler(
 
     // Create async jobs to insert tile into memory
     getThreadPool().start([=]() {
-        insertIntoTileMemory(coord, vectorBytes, signalFn);
+        insertIntoTileMemory(coord, vectorBytes, rasterImage, signalFn);
     });
 
     // Also insert into disk cache.
@@ -470,12 +471,18 @@ void TileLoader::queueTileLoadingJobs(
 }
 
 /*!
- * \brief Parses byte-array and inserts into vectorTile memory.
+ * \brief TileLoader::insertIntoTileMemory parses byte-array and inserts into vectorTile memory.
+ * \param coord is the tile coordinate.
+ * \param vectorBytes is the vector tile passed as a byte array.
+ * \param rasterImage is the raster image version of the tile.
+ * \param signalFn is a function to call when the tiles finish loading.
+ *
  * \threadsafe
  */
 void TileLoader::insertIntoTileMemory(
     TileCoord coord,
-    const QByteArray &bytes,
+    const QByteArray &vectorBytes,
+    const QImage &rasterImage,
     TileLoadedCallbackFn signalFn)
 {
     // Check iterator to see if it's fine to access
@@ -494,7 +501,7 @@ void TileLoader::insertIntoTileMemory(
     };
 
     // Try parsing the bytes into our tile.
-    std::optional<VectorTile> newTileResult = Bach::tileFromByteArray(bytes);
+    std::optional<VectorTile> newTileResult = Bach::tileFromByteArray(vectorBytes);
 
     // If we failed to parse our tile,
     // mark the memory as parsing failed.
@@ -528,6 +535,8 @@ void TileLoader::insertIntoTileMemory(
             // Mark our tile as OK and insert the Tile data.
             StoredTile &memoryItem = tileIt->second;
             memoryItem.vectorTile = std::move(allocatedTile);
+            memoryItem.rasterTile = rasterImage;
+
             memoryItem.state = Bach::LoadedTileState::Ok;
         }
     }

@@ -195,7 +195,8 @@ private:
     void writeTileToDisk(TileCoord coord, const QByteArray &bytes);
     void insertIntoTileMemory(
         TileCoord coord,
-        const QByteArray &byteArray,
+        const QByteArray &vectorBytes,
+        const QImage &rasterImage,
         TileLoadedCallbackFn signalFn);
 };
 
