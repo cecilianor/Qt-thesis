@@ -120,6 +120,8 @@ namespace Bach {
         const QMap<TileCoord, const QImage*> &tileContainer,
         const StyleSheet &styleSheet,
         bool drawDebug);
+
+    double normalizeValueToZeroOneRange(double value, double min, double max);
 }
 
 #endif // RENDERING_HPP

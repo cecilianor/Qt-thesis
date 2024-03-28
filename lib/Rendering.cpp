@@ -1,15 +1,9 @@
-#include "Rendering.h"
-
 #include "Evaluator.h"
+#include "Rendering.h"
 
 QPair<double, double> Bach::lonLatToWorldNormCoord(double lon, double lat)
 {
     constexpr double webMercatorPhiCutoff = 1.4844222297;
-
-    // Function to normalize a value from its original range to [0, 1]
-    auto normalize = [](double value, double min, double max) {
-        return (value - min) / (max - min);
-    };
 
     // Convert longitude and latitude to radians
     auto lambda = lon;
@@ -21,10 +15,10 @@ QPair<double, double> Bach::lonLatToWorldNormCoord(double lon, double lat)
 
     // Normalize x and y to [0, 1]
     // Assuming the Web Mercator x range is [-π, π] and y range is calculated from latitude range
-    auto xNormalized = normalize(x, -M_PI, M_PI);
+    auto xNormalized = normalizeValueToZeroOneRange(x, -M_PI, M_PI);
     // We have to flip the sign of Y, because Mercator has positive Y moving up,
     // while the world-normalized coordinate space has Y moving down.
-    auto yNormalized = normalize(
+    auto yNormalized = normalizeValueToZeroOneRange(
         -y,
         std::log(std::tan(M_PI / 4.0 + -webMercatorPhiCutoff / 2.0)),
         std::log(std::tan(M_PI / 4.0 + webMercatorPhiCutoff / 2.0)));
@@ -120,6 +114,27 @@ QVector<TileCoord> Bach::calcVisibleTiles(
         }
         return visibleTiles;
     }
+}
+
+/*!
+ * \brief normalizeValueToZeroOneRange normalizes a value from its original range to [0, 1]
+ * \param value is the value to normalize.
+ * \param min is the lowest possible value in the original range.
+ * \param max is the highest possible value in the original range.
+ * \return the normalized, new value in the [0, 1] range.
+ */
+double Bach::normalizeValueToZeroOneRange(double value, double min, double max)
+{
+    const double epsilon = 0.0001;
+    // Return 0 if the divisor is approaching 0 (illegal mathematically).
+    //
+    // Note that the result will approach infinity if the divisor is
+    // approaching 0. We return 0.0 here to keep the returned
+    // value within the required [0, 1] space.
+    if(max-min < epsilon)
+        return 0.0;
+    else
+        return (value - min) / (max - min);
 }
 
 /* This is a helper function for visualizing the boundaries of each tile.
