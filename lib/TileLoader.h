@@ -69,6 +69,7 @@ public:
     // doesn't support move-semantics.
     static std::unique_ptr<TileLoader> fromPbfLink(
         const QString &pbfUrlTemplate,
+        const QString &pngUrlTemplate,
         StyleSheet&& styleSheet);
 
     static std::unique_ptr<TileLoader> newLocalOnly(StyleSheet&& styleSheet);
@@ -91,6 +92,7 @@ private:
     StyleSheet styleSheet;
 
     QString pbfLinkTemplate;
+    QString pngUrlTemplate;
 
     QNetworkAccessManager networkManager;
 
@@ -185,7 +187,8 @@ private:
 
     bool loadFromDisk(TileCoord coord, TileLoadedCallbackFn signalFn);
     void networkReplyHandler(
-        QNetworkReply* reply,
+        QNetworkReply *vectorReply,
+        QNetworkReply *rasterReply,
         TileCoord coord,
         TileLoadedCallbackFn signalFn);
     void loadFromWeb(TileCoord coord, TileLoadedCallbackFn signalFn);

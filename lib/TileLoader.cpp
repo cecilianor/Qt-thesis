@@ -1,3 +1,4 @@
+#include <QBuffer>
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -68,6 +69,7 @@ TileLoader::TileLoader() :
  */
 std::unique_ptr<TileLoader> TileLoader::fromPbfLink(
     const QString &pbfUrlTemplate,
+    const QString &pngUrlTemplate,
     StyleSheet&& styleSheet)
 {
     auto out = std::unique_ptr<TileLoader>(new TileLoader());
@@ -80,6 +82,8 @@ std::unique_ptr<TileLoader> TileLoader::fromPbfLink(
         tileLoader.useWeb = false;
     else
         tileLoader.useWeb = true;
+
+    tileLoader.pngUrlTemplate = pngUrlTemplate;
     return out;
 }
 
@@ -273,28 +277,35 @@ bool TileLoader::loadFromDisk(TileCoord coord, TileLoadedCallbackFn signalFn)
     // Consider calling this function twice with different tile types or handling just
     // one type at a time. This is just passed this way to allow the code to run when Nils
     // pulls it on his end later on March 26th.)
-    QString diskPath = getTileDiskPath(coord, TileType::Vector);
+    QString vectorDiskPath = getTileDiskPath(coord, TileType::Vector);
+    QString rasterDiskPath = getTileDiskPath(coord, TileType::Raster);
 
-    QFile file { diskPath };
-    if (!file.exists()) {
+    QFile vectorFile { vectorDiskPath };
+    QFile rasterFile { rasterDiskPath };
+    if (!vectorFile.exists() || !rasterFile.exists()) {
         // Todo: More error feedback?
         return false;
     }
 
     // TODO: Check that the file isn't currently being written into
     // by another thread by checking for associated .lock file.
-    if (!file.open(QFile::ReadOnly)) {
+    if (!vectorFile.open(QFile::ReadOnly) || !rasterFile.open(QFile::ReadOnly)) {
         qDebug() << "Tried reading tile from file, but encountered unexpected error when opening file.\n";
         // Error, file exists but didn't open.
         return false;
     }
 
     // Successfully opened file, read contents.
-    QByteArray bytes = file.readAll();
+    QByteArray vectorBytes = vectorFile.readAll();
+    QImage rasterImage;
+    if (!rasterImage.load(rasterDiskPath)) {
+        // Unable to load image file.
+        return false;
+    }
 
     // Now we need to insert the tile into the tile-memory
     // and NOT insert it into disk cache.
-    insertIntoTileMemory(coord, bytes, signalFn);
+    insertIntoTileMemory(coord, vectorBytes, signalFn);
 
     // Return success if we found the file.
     return true;
@@ -318,15 +329,24 @@ void TileLoader::writeTileToDisk(TileCoord coord, const QByteArray &bytes) {
  * \param signalFn is a callback function that signals when to insert jobs into memory.
  */
 void TileLoader::networkReplyHandler(
-    QNetworkReply* reply,
+    QNetworkReply *vectorReply,
+    QNetworkReply *rasterReply,
     TileCoord coord,
     TileLoadedCallbackFn signalFn)
 {
-    QScopeGuard cleanup { [&]() { reply->deleteLater(); } };
+    QScopeGuard cleanup { [&]() {
+        vectorReply->deleteLater();
+        rasterReply->deleteLater(); } };
 
     // Check for errors in the reply.
-    if (reply->error() != QNetworkReply::NoError) {
-        qDebug() << "Error when requesting tile from web: " << reply->errorString() << '\n';
+    if (vectorReply->error() != QNetworkReply::NoError) {
+        qDebug() << "Error when requesting tile from web: " << vectorReply->errorString() << '\n';
+        // TODO: Do something meaningful, like retrying the request later or
+        // marking this tile as non-functional to stop us from requesting it anymore.
+    }
+    // Check for errors in the reply.
+    if (rasterReply->error() != QNetworkReply::NoError) {
+        qDebug() << "Error when requesting tile from web: " << rasterReply->errorString() << '\n';
         // TODO: Do something meaningful, like retrying the request later or
         // marking this tile as non-functional to stop us from requesting it anymore.
     }
@@ -336,7 +356,13 @@ void TileLoader::networkReplyHandler(
     // Only background needs to be rendered.
 
     // Extract the bytes we want and discard the reply.
-    auto bytes = reply->readAll();
+    auto vectorBytes = vectorReply->readAll();
+    auto rasterBytes = rasterReply->readAll();
+    QImage rasterImage;
+    if (!rasterImage.loadFromData(rasterBytes)) {
+        // Error, unable to load the reply as QImage.
+        qDebug() << "Failed to load raster image\n";
+    }
 
     // We are now on the same thread as the QNetworkAccessManager,
     // which means we are on the GUI thread. We need to dispatch the result of
@@ -345,12 +371,18 @@ void TileLoader::networkReplyHandler(
 
     // Create async jobs to insert tile into memory
     getThreadPool().start([=]() {
-        insertIntoTileMemory(coord, bytes, signalFn);
+        insertIntoTileMemory(coord, vectorBytes, signalFn);
     });
 
     // Also insert into disk cache.
     getThreadPool().start([=]() {
-        writeTileToDisk(coord, bytes);
+        writeTileToDisk(coord, vectorBytes);
+
+        QByteArray outputBytes;
+        QBuffer buffer(&outputBytes);
+        buffer.open(QIODevice::WriteOnly);
+        rasterImage.save(&buffer, "PNG");
+        Bach::writeNewFileHelper(getTileDiskPath(coord, TileType::Raster), outputBytes);
     });
 }
 
@@ -364,7 +396,8 @@ void TileLoader::networkReplyHandler(
 void TileLoader::loadFromWeb(TileCoord coord, TileLoadedCallbackFn signalFn)
 {
     // Load the URL for this particular tile.
-    QString tileUrl = Bach::setPbfLink(coord, pbfLinkTemplate);
+    QString vectorTileUrl = Bach::setPbfLink(coord, pbfLinkTemplate);
+    QString rasterTileUrl = Bach::setPbfLink(coord, pngUrlTemplate);
 
     // We expect this function to be called on the background thread, but our
     // QNetworkAccessManager lives on the main thread.
@@ -375,12 +408,25 @@ void TileLoader::loadFromWeb(TileCoord coord, TileLoadedCallbackFn signalFn)
         // forces us to wait. And since we are on main GUI thread,
         // that would block GUI logic until we get a reply.
 
-        QNetworkReply *reply = networkManager.get(QNetworkRequest{ tileUrl });
+        // We want to make two requests, one for vector tile, one for raster.
+        QNetworkReply *vectorReply = networkManager.get(QNetworkRequest{ vectorTileUrl });
+        QNetworkReply *rasterReply = networkManager.get(QNetworkRequest{ rasterTileUrl });
+        auto replyHandler = [=]() {
+            if (!vectorReply->isFinished() || !rasterReply->isFinished()) {
+                return;
+            }
+            networkReplyHandler(vectorReply, rasterReply, coord, signalFn);
+        };
         QObject::connect(
-            reply,
+            vectorReply,
             &QNetworkReply::finished,
             this,
-            [=]() { networkReplyHandler(reply, coord, signalFn); } );
+            replyHandler);
+        QObject::connect(
+            rasterReply,
+            &QNetworkReply::finished,
+            this,
+            replyHandler);
     };
     QMetaObject::invokeMethod(
         &networkManager,

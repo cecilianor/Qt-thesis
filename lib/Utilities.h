@@ -163,6 +163,10 @@ namespace Bach {
         MapType type,
         const std::optional<QString> &mapTilerKey);
 
+    std::optional<QJsonDocument> loadStyleSheetJson(
+        MapType type,
+        const std::optional<QString> &mapTilerKey);
+
     ParsedLink getTilesLinkFromStyleSheet(
         const QJsonDocument &styleSheet,
         const QString &sourceType);

@@ -24,6 +24,23 @@
     std::exit(EXIT_FAILURE);
 }
 
+ParsedLink loadPngUrlTemplate(
+    std::optional<QString> mapTilerKey)
+{
+    // TODO: First check our disk cache
+
+    // If not found, load it from web.
+    // If we don't have a MapTiler key, we can't load it from web.
+    if (!mapTilerKey.has_value()) {
+        return { {}, ResultType::UnknownError };
+    }
+
+    // TODO: Make a switch on the map type to find correct URL for the tile sheet.
+
+    return Bach::getPbfLinkFromTileSheet(
+        "https://api.maptiler.com/maps/basic-v2/tiles.json?key=" + mapTilerKey.value());
+}
+
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
@@ -42,23 +59,13 @@ int main(int argc, char *argv[])
     // The style sheet type to load (can be many different types).
     auto styleSheetType = MapType::BasicV2;
 
-    // Load stylesheet raw data from disk/web.
-    HttpResponse styleSheetBytes = Bach::loadStyleSheetBytes(
+    std::optional<QJsonDocument> styleSheetJsonResult = Bach::loadStyleSheetJson(
         styleSheetType,
         mapTilerKeyResult);
-    // If loading the style sheet failed, there is nothing to display. Shut down.
-    if (styleSheetBytes.resultType != ResultType::Success) {
+    if (!styleSheetJsonResult.has_value()) {
         earlyShutdown("Unable to load stylesheet from disk/web.");
     }
-
-    QJsonParseError parseError;
-    QJsonDocument styleSheetJson = QJsonDocument::fromJson(
-        styleSheetBytes.response,
-        &parseError);
-    // No stylesheet, so we shut down.
-    if (parseError.error != QJsonParseError::NoError) {
-        earlyShutdown("Unable to parse stylesheet raw data into JSON.");
-    }
+    const QJsonDocument &styleSheetJson = styleSheetJsonResult.value();
 
     // Parse the stylesheet into data we can render.
     std::optional<StyleSheet> parsedStyleSheetResult = StyleSheet::fromJson(styleSheetJson);
@@ -82,6 +89,8 @@ int main(int argc, char *argv[])
         else
             pbfUrlTemplate = pbfUrlTemplateResult.link;
     }
+    // Load the tilesheet and grab the PNG url.
+    ParsedLink pngUrlTemplateResult = loadPngUrlTemplate(mapTilerKeyResult);
 
     // Create our TileLoader based on whether we can do web
     // or not.
@@ -89,6 +98,7 @@ int main(int argc, char *argv[])
     if (useWeb) {
         tileLoaderPtr = TileLoader::fromPbfLink(
             pbfUrlTemplate,
+            pngUrlTemplateResult.link,
             std::move(styleSheet));
     } else {
         tileLoaderPtr = TileLoader::newLocalOnly(std::move(styleSheet));

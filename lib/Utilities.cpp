@@ -199,6 +199,31 @@ HttpResponse Bach::loadStyleSheetBytes(
     return webResponse;
 }
 
+std::optional<QJsonDocument> Bach::loadStyleSheetJson(
+    MapType type,
+    const std::optional<QString> &mapTilerKey)
+{
+    // Load stylesheet raw data from disk/web.
+    HttpResponse styleSheetBytes = loadStyleSheetBytes(
+        type,
+        mapTilerKey);
+    // If loading the style sheet failed, there is nothing to display. Shut down.
+    if (styleSheetBytes.resultType != ResultType::Success) {
+        return std::nullopt;
+    }
+
+    QJsonParseError parseError;
+    QJsonDocument styleSheetJson = QJsonDocument::fromJson(
+        styleSheetBytes.response,
+        &parseError);
+    // No stylesheet, so we shut down.
+    if (parseError.error != QJsonParseError::NoError) {
+        return std::nullopt;
+    }
+    return styleSheetJson;
+}
+
+
 /*!
  * \brief getPbfLinkTemplate
  * Finds the PBF link template from the stylesheet JSON.
