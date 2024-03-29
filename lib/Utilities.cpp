@@ -6,6 +6,22 @@
 
 #include "TileLoader.h"
 
+std::optional<QString> Bach::rasterTilesheetUrlFromMapType(MapType maptype)
+{
+    switch (maptype) {
+        case MapType::BasicV2:
+            return "https://api.maptiler.com/maps/basic-v2/tiles.json?key=";
+        case MapType::BrightV2:
+            return "https://api.maptiler.com/maps/bright-v2/tiles.json?key=";
+        case MapType::StreetsV2:
+            return "https://api.maptiler.com/maps/streets-v2/tiles.json?key=";
+        case MapType::Satellite:
+            return "https://api.maptiler.com/maps/satellite/tiles.json?key=";
+        default:
+            return std::nullopt;
+    };
+}
+
 /*!
  * \brief Helper function to write a byte array to disk.
  * This function will automatically establish any necessary
@@ -223,6 +239,145 @@ std::optional<QJsonDocument> Bach::loadStyleSheetJson(
     return styleSheetJson;
 }
 
+std::optional<QJsonDocument> Bach::loadVectorTileSheet(
+    const QJsonDocument &styleSheet,
+    const QString &sourceType)
+{
+    const QString cachePath = QDir::cleanPath(
+        TileLoader::getGeneralCacheFolder() +
+        QDir::separator() +
+        "vectorTileSheet.json");
+
+    // Firste check if the tilesheet exists in cache?
+    {
+        QFile file{ cachePath };
+        if (file.exists()) {
+            // If the file exists, we read it and parse it.
+            if (!file.open(QFile::ReadOnly)) {
+                qWarning() << "Error: Found cached tilesheet but unable to open it.";
+                return std::nullopt;
+            }
+
+            QByteArray tileSheetBytes = file.readAll();
+            // Parse it in to JSON and return it.
+            QJsonParseError parseError;
+            QJsonDocument tileSheetJson = QJsonDocument::fromJson(tileSheetBytes, &parseError);
+            if (parseError.error != QJsonParseError::NoError) {
+                qWarning() << "Error: Found cached tileshhet but unable to parse into JSON";
+                return std::nullopt;
+            }
+            return tileSheetJson;
+        }
+    }
+
+    // We didn't find it in cache, we need to download it.
+
+    // First we need to find the URL to the tiles document.
+    ParsedLink tilesUrlResult = getTilesLinkFromStyleSheet(styleSheet, sourceType);
+    if (tilesUrlResult.resultType != ResultType::Success) {
+        qWarning() << "Unable to grab tilesheet URL from stylesheet.";
+        return std::nullopt;
+    }
+
+    HttpResponse response = Bach::requestAndWait(tilesUrlResult.link);
+    if (response.resultType != ResultType::Success) {
+        qWarning() << "Error when performing network request for tilesheet.";
+        return std::nullopt;
+    }
+
+    // Parse into JSON.
+    // Parse it in to JSON and return it.
+    QJsonParseError parseError;
+    QJsonDocument tileSheetJson = QJsonDocument::fromJson(response.response, &parseError);
+    if (parseError.error != QJsonParseError::NoError) {
+        qWarning() << "Error: Got valid network reply for tilesheet but unable to parse into JSON";
+        return std::nullopt;
+    }
+
+    // Then save it to file.
+    bool writeDiskSuccess = Bach::writeNewFileHelper(cachePath, response.response);
+    if (!writeDiskSuccess) {
+        qWarning() << "Error when writing tilesheet to disk cache";
+        return std::nullopt;
+    }
+    return tileSheetJson;
+}
+
+std::optional<QJsonDocument> Bach::loadRasterTileSheet(
+    MapType mapType,
+    std::optional<QString> mapTilerKeyOpt)
+{
+    // Check if this tilesheet exists in disk.
+    const QString cachePath = QDir::cleanPath(
+        TileLoader::getGeneralCacheFolder() +
+        QDir::separator() +
+        "rasterTileSheet.json");
+
+    // Firste check if the tilesheet exists in cache?
+    {
+        QFile file{ cachePath };
+        if (file.exists()) {
+            // If the file exists, we read it and parse it.
+            if (!file.open(QFile::ReadOnly)) {
+                qWarning() << "Error: Found cached tilesheet but unable to open it.";
+                return std::nullopt;
+            }
+
+            QByteArray tileSheetBytes = file.readAll();
+            // Parse it in to JSON and return it.
+            QJsonParseError parseError;
+            QJsonDocument tileSheetJson = QJsonDocument::fromJson(tileSheetBytes, &parseError);
+            if (parseError.error != QJsonParseError::NoError) {
+                qWarning() << "Error: Found cached tileshhet but unable to parse into JSON";
+                return std::nullopt;
+            }
+            return tileSheetJson;
+        }
+    }
+
+    if (!mapTilerKeyOpt.has_value()) {
+        // This is not an error. This means we can't use web
+        // because we have no MapTiler key.
+        return std::nullopt;
+    }
+
+    QString mapTilerKey = mapTilerKeyOpt.value();
+
+    // TODO: In the future, this needs a switch case to choose the correct
+    // URL based on the maptype. For now it's hardcoded to basic-v2.
+    std::optional<QString> tileSheetUrlOpt = rasterTilesheetUrlFromMapType(mapType);
+    if (!tileSheetUrlOpt.has_value()) {
+        // Couldn't find the corresponding Url for this maptype.
+        return std::nullopt;
+    }
+    QString tileSheetUrl = tileSheetUrlOpt.value();
+
+    // Insert the key
+    tileSheetUrl += mapTilerKey;
+
+    HttpResponse response = Bach::requestAndWait(tileSheetUrl);
+    if (response.resultType != ResultType::Success) {
+        qWarning() << "Error when performing network request for tilesheet.";
+        return std::nullopt;
+    }
+
+    // Parse into JSON.
+    // Parse it in to JSON and return it.
+    QJsonParseError parseError;
+    QJsonDocument tileSheetJson = QJsonDocument::fromJson(response.response, &parseError);
+    if (parseError.error != QJsonParseError::NoError) {
+        qWarning() << "Error: Got valid network reply for tilesheet but unable to parse into JSON";
+        return std::nullopt;
+    }
+
+    // Then save it to file.
+    bool writeDiskSuccess = Bach::writeNewFileHelper(cachePath, response.response);
+    if (!writeDiskSuccess) {
+        qWarning() << "Error when writing tilesheet to disk cache";
+        return std::nullopt;
+    }
+    return tileSheetJson;
+}
 
 /*!
  * \brief getPbfLinkTemplate
@@ -234,19 +389,18 @@ std::optional<QJsonDocument> Bach::loadStyleSheetJson(
  * This string will have patterns {z}/{x}/{y} where the tile indices
  * need to be inserted.
  */
-ParsedLink Bach::getPbfLinkTemplate(
+ParsedLink Bach::getPbfUrlTemplate(
     const QJsonDocument &styleSheet,
     const QString &sourceType)
 {
-    // First we need to find the URL to the tiles document.
-    ParsedLink tilesUrlResult = getTilesLinkFromStyleSheet(styleSheet, sourceType);
-    if (tilesUrlResult.resultType != ResultType::Success) {
-        qWarning() << "";
-        return {QString(), tilesUrlResult.resultType};
-    }
+    std::optional<QJsonDocument> tileSheetJsonOpt = Bach::loadVectorTileSheet(
+        styleSheet,
+        sourceType);
+    if (!tileSheetJsonOpt.has_value())
+        return { {}, ResultType::UnknownError };
 
-    // Grab link to the XYZ PBF tile format based on the tiles.json link
-    return getPbfLinkFromTileSheet(tilesUrlResult.link);
+    QJsonDocument &tileSheetJson = tileSheetJsonOpt.value();
+    return Bach::getTileUrlTemplateFromTileSheet(tileSheetJson);
 }
 /*
 ParsedLink Bach::getPngTileLinkTemplate(
@@ -306,29 +460,13 @@ ParsedLink Bach::getTilesLinkFromStyleSheet(
  * \param tileSheetUrl the link/url to the stylesheet.
  * \return The link to PBF tiles.
  */
-ParsedLink Bach::getPbfLinkFromTileSheet(const QString &tileSheetUrl)
+ParsedLink Bach::getTileUrlTemplateFromTileSheet(const QJsonDocument &tileSheet)
 {
-    HttpResponse response = requestAndWait(tileSheetUrl);
-    if (response.resultType != ResultType::Success) {
-        qWarning() << "Error: " << PrintResultTypeInfo(response.resultType);
-        return { QString(), response.resultType };
-    }
-
-    // Parse the tilesheet
-    QJsonParseError parseError;
-    QJsonDocument tilesSheet = QJsonDocument::fromJson(response.response, &parseError);
-
-    if (parseError.error != QJsonParseError::NoError) {
-        qWarning() << "Parse error at" << parseError.offset << ":" << parseError.errorString();
-        return { QString(), ResultType::ParseError };
-    }
-
-    if (tilesSheet.isObject()) {
-        QJsonObject jsonObject = tilesSheet.object();
+    if (tileSheet.isObject()) {
+        QJsonObject jsonObject = tileSheet.object();
         //qDebug() << "A JSON object was found. It is the following: \n" << jsonObject;
         if(jsonObject.contains("tiles") && jsonObject["tiles"].isArray()) {
             QJsonArray tilesArray = jsonObject["tiles"].toArray();
-
             for (const QJsonValueRef &tileValue : tilesArray) {
                 QString tileLink = tileValue.toString();
                 //qDebug() << "\n\t" <<"Link to PBF tiles: " << tileLink <<"\n";
@@ -338,7 +476,7 @@ ParsedLink Bach::getPbfLinkFromTileSheet(const QString &tileSheetUrl)
         else {
             qWarning() << "No 'tiles' array was found in the JSON object...";
         }
-    } else if (tilesSheet.isArray()) {
+    } else if (tileSheet.isArray()) {
         //The else if branch is just used for testing. Do NOT pushto final version!!
         qWarning() << "A JSON array was found. The current functionality doesn't support this...";
     }
@@ -346,4 +484,17 @@ ParsedLink Bach::getPbfLinkFromTileSheet(const QString &tileSheetUrl)
         qWarning() << "There is an unknown error with the loaded JSON data...";
     }
     return { QString(), ResultType::UnknownError };
+}
+
+ParsedLink Bach::getPngUrlTemplate(
+    MapType mapType,
+    std::optional<QString> mapTilerKey)
+{
+    std::optional<QJsonDocument> tileSheetOpt = Bach::loadRasterTileSheet(mapType, mapTilerKey);
+    if (!tileSheetOpt.has_value()) {
+        return { {}, ResultType::UnknownError };
+    }
+
+    QJsonDocument &tileSheet = tileSheetOpt.value();
+    return Bach::getTileUrlTemplateFromTileSheet(tileSheet);
 }

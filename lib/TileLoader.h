@@ -67,7 +67,7 @@ public:
 
     // We can't return by value below, because TileLoader is a QObject and therefore
     // doesn't support move-semantics.
-    static std::unique_ptr<TileLoader> fromPbfLink(
+    static std::unique_ptr<TileLoader> fromTileUrlTemplate(
         const QString &pbfUrlTemplate,
         const QString &pngUrlTemplate,
         StyleSheet&& styleSheet);
@@ -192,11 +192,14 @@ private:
         TileCoord coord,
         TileLoadedCallbackFn signalFn);
     void loadFromWeb(TileCoord coord, TileLoadedCallbackFn signalFn);
-    void writeTileToDisk(TileCoord coord, const QByteArray &bytes);
+    void writeTileToDisk(
+        TileCoord coord,
+        const QByteArray &vectorBytes,
+        const QByteArray &rasterBytes);
     void insertIntoTileMemory(
         TileCoord coord,
         const QByteArray &vectorBytes,
-        const QImage &rasterImage,
+        const QByteArray &rasterBytes,
         TileLoadedCallbackFn signalFn);
 };
 
@@ -212,7 +215,8 @@ namespace Bach {
     bool writeTileToDiskCache(
         const QString& basePath,
         TileCoord coord,
-        const QByteArray &bytes);
+        const QByteArray &vectorBytes,
+        const QByteArray &rasterBytes);
 
     QString tileDiskCacheSubPath(TileCoord coord, TileType tileType);
 }

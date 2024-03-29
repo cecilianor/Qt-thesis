@@ -151,6 +151,8 @@ struct ParsedLink {
 };
 
 namespace Bach {
+    std::optional<QString> rasterTilesheetUrlFromMapType(MapType maptype);
+
     bool writeNewFileHelper(const QString& path, const QByteArray &bytes);
 
     std::optional<QString> readMapTilerKey(const QString &filePath);
@@ -167,15 +169,27 @@ namespace Bach {
         MapType type,
         const std::optional<QString> &mapTilerKey);
 
+    std::optional<QJsonDocument> loadVectorTileSheet(
+        const QJsonDocument &styleSheet,
+        const QString &sourceType);
+
+    std::optional<QJsonDocument> loadRasterTileSheet(
+        MapType mapType,
+        std::optional<QString> mapTilerKey);
+
     ParsedLink getTilesLinkFromStyleSheet(
         const QJsonDocument &styleSheet,
         const QString &sourceType);
 
-    ParsedLink getPbfLinkTemplate(
+    ParsedLink getTileUrlTemplateFromTileSheet(const QJsonDocument &tileSheet);
+
+    ParsedLink getPbfUrlTemplate(
         const QJsonDocument &styleSheet,
         const QString &sourceType);
 
-    ParsedLink getPbfLinkFromTileSheet(const QString &tileSheetUrl);
+    ParsedLink getPngUrlTemplate(
+        MapType mapType,
+        std::optional<QString> mapTilerKey);
 }
 
 #endif // UTILITIES_H

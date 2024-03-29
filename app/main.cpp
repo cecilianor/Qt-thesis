@@ -1,15 +1,9 @@
 #include <QApplication>
 #include <QMessageBox>
-#include <QFile>
-#include <QStandardPaths>
-#include <QDir>
 
 #include "MainWindow.h"
 #include "TileLoader.h"
 #include "Utilities.h"
-
-#include <QNetworkReply>
-#include <QDir>
 
 // Helper function to let us do early shutdown during startup.
 [[noreturn]] void earlyShutdown(const QString &msg = "")
@@ -24,23 +18,6 @@
     std::exit(EXIT_FAILURE);
 }
 
-ParsedLink loadPngUrlTemplate(
-    std::optional<QString> mapTilerKey)
-{
-    // TODO: First check our disk cache
-
-    // If not found, load it from web.
-    // If we don't have a MapTiler key, we can't load it from web.
-    if (!mapTilerKey.has_value()) {
-        return { {}, ResultType::UnknownError };
-    }
-
-    // TODO: Make a switch on the map type to find correct URL for the tile sheet.
-
-    return Bach::getPbfLinkFromTileSheet(
-        "https://api.maptiler.com/maps/basic-v2/tiles.json?key=" + mapTilerKey.value());
-}
-
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
@@ -49,19 +26,19 @@ int main(int argc, char *argv[])
     qDebug() << "Current file cache can be found in: " << TileLoader::getGeneralCacheFolder();
 
     // Read key from file.
-    std::optional<QString> mapTilerKeyResult = Bach::readMapTilerKey("key.txt");
-    bool hasMapTilerKey = mapTilerKeyResult.has_value();
+    std::optional<QString> mapTilerKeyOpt = Bach::readMapTilerKey("key.txt");
+    bool hasMapTilerKey = mapTilerKeyOpt.has_value();
     if (!hasMapTilerKey) {
         qWarning() << "Reading of the MapTiler key failed. " <<
                       "App will attempt to only use local cache.";
     }
 
     // The style sheet type to load (can be many different types).
-    auto styleSheetType = MapType::BasicV2;
+    auto mapType = MapType::BasicV2;
 
     std::optional<QJsonDocument> styleSheetJsonResult = Bach::loadStyleSheetJson(
-        styleSheetType,
-        mapTilerKeyResult);
+        mapType,
+        mapTilerKeyOpt);
     if (!styleSheetJsonResult.has_value()) {
         earlyShutdown("Unable to load stylesheet from disk/web.");
     }
@@ -75,30 +52,34 @@ int main(int argc, char *argv[])
     }
     StyleSheet &styleSheet = parsedStyleSheetResult.value();
 
-
     // Load useful links from the stylesheet.
     // This only matters if one is online and has a MapTiler key.
 
     // Tracks whether or not to download data from web.
     bool useWeb = hasMapTilerKey;
     QString pbfUrlTemplate;
+    QString pngUrlTemplate;
     if (useWeb) {
-        auto pbfUrlTemplateResult = Bach::getPbfLinkTemplate(styleSheetJson, "maptiler_planet");
+        ParsedLink pbfUrlTemplateResult = Bach::getPbfUrlTemplate(styleSheetJson, "maptiler_planet");
+        ParsedLink pngUrlTemplateResult = Bach::getPngUrlTemplate(mapType, mapTilerKeyOpt);
+
         if (pbfUrlTemplateResult.resultType != ResultType::Success)
             useWeb = false;
-        else
+        else if (pngUrlTemplateResult.resultType != ResultType::Success)
+            useWeb = false;
+        else {
             pbfUrlTemplate = pbfUrlTemplateResult.link;
+            pngUrlTemplate = pngUrlTemplateResult.link;
+        }
     }
-    // Load the tilesheet and grab the PNG url.
-    ParsedLink pngUrlTemplateResult = loadPngUrlTemplate(mapTilerKeyResult);
 
     // Create our TileLoader based on whether we can do web
     // or not.
     std::unique_ptr<TileLoader> tileLoaderPtr;
     if (useWeb) {
-        tileLoaderPtr = TileLoader::fromPbfLink(
+        tileLoaderPtr = TileLoader::fromTileUrlTemplate(
             pbfUrlTemplate,
-            pngUrlTemplateResult.link,
+            pngUrlTemplate,
             std::move(styleSheet));
     } else {
         tileLoaderPtr = TileLoader::newLocalOnly(std::move(styleSheet));
