@@ -1,6 +1,26 @@
 #include "Evaluator.h"
 #include "Rendering.h"
 
+// Information about what's on this file:
+// It consists of three major sections:
+//
+// 1. All calculation functions that can be used externally, declared in `Rendering.h`.
+// 2. Rendering helper functions only used in `Rendering.cpp`.
+// 3. Rendering functions that can be used externally, declared in `Rendering.h`.
+
+// Calculations/Maths functionality:
+
+/*!
+ * \brief Bach::lonLatToWorldNormCoord converts longitude and latitude to world-normalized coordinates.
+ *
+ * Takes radians, not degrees.
+ * The math formula employed is described by the figure in the report with the caption
+ * "Converting longitude and latitude to world-normalized coordinates".
+ *
+ * \param lon is the longitude measured in radians.
+ * \param lat is the latitude measured in radians.
+ * \return a pair containing the normalized longitude and latitude coordinates (radians).
+ */
 QPair<double, double> Bach::lonLatToWorldNormCoord(double lon, double lat)
 {
     constexpr double webMercatorPhiCutoff = 1.4844222297;
@@ -27,6 +47,17 @@ QPair<double, double> Bach::lonLatToWorldNormCoord(double lon, double lat)
     return { xNormalized, yNormalized };
 }
 
+/* Converts longitude and latitude to world-normalized coordinates.
+     * Takes degrees.
+     */
+
+/*!
+ * \brief Bach::lonLatToWorldNormCoordDegrees converts longitude and latitude to world-normalized coordinates.
+     * Takes degrees, not radians.
+ * \param lon is the longitude measured in degrees.
+ * \param lat is the latitude measured in degrees.
+ * \return a pair containing the normalized longitude and latitude coordinates (degrees).
+ */
 QPair<double, double> Bach::lonLatToWorldNormCoordDegrees(double lon, double lat)
 {
     auto degToRad = [](double deg) {
@@ -35,6 +66,15 @@ QPair<double, double> Bach::lonLatToWorldNormCoordDegrees(double lon, double lat
     return lonLatToWorldNormCoord(degToRad(lon), degToRad(lat));
 }
 
+/*!
+ * \brief Bach::calcMapZoomLevelForTileSizePixels calculates zoom level to get displayed tile size as close as possible to desiredTileWidth.
+ *
+ * \param vpWidth is the width of the viewport in pixels.
+ * \param vpHeight is the height of the viewport in pixels.
+ * \param vpZoom is the zoom level of the viewport.
+ * \param desiredTileWidth is the desired size of tiles in pixels.
+ * \return an integer for the zoom level to use for map's zoom-level, in the range [0, 16].
+ */
 int Bach::calcMapZoomLevelForTileSizePixels(
     int vpWidth,
     int vpHeight,
@@ -55,6 +95,33 @@ int Bach::calcMapZoomLevelForTileSizePixels(
     return std::clamp((int)round(newMapZoomLevel), 0, maxZoomLevel);
 }
 
+/* Calculates the width and height of the viewport in world-normalized coordinates.
+     * This means the size expressed as a fraction of the world map. For example,
+     * a viewportZoom set to 0 will return size as 1, while a zoom level of
+     * 1 will return 0.5. This takes the aspect ratio of the viewport into account,
+     * with the largest side being mapped to relation mentioned.
+     *
+     * The math formula used is described by the figure in the report with the caption
+     * "Calculating viewport size as a factor of the world map".
+     *
+     * Returns width and height as fractions, in the range [0, 1]
+     */
+
+/*!
+ * \brief Bach::calcViewportSizeNorm calculates width and height of the viewport in world-normalized coordinates.
+ *
+ * This means the size expressed as a fraction of the world map. For example,
+ * a viewportZoom set to 0 will return size as 1, while a zoom level of
+ * 1 will return 0.5. This takes the aspect ratio of the viewport into account,
+ * with the largest side being mapped to relation mentioned.
+ *
+ * The math formula used is described by the figure in the report with the caption
+ * "Calculating viewport size as a factor of the world map".
+ *
+ * \param vpZoomLevel is the zoom level of the viewport.
+ * \param viewportAspect is the aspect ratio of the viewport.
+ * \return width and height as fractions, in the range [0, 1].
+ */
 QPair<double, double> Bach::calcViewportSizeNorm(double vpZoomLevel, double viewportAspect) {
     // Math formula can be seen in the figure in the report, with the caption
     // "Calculating viewport size as a factor of the world map"
@@ -65,6 +132,21 @@ QPair<double, double> Bach::calcViewportSizeNorm(double vpZoomLevel, double view
     };
 }
 
+/*!
+ * \brief Bach::calcVisibleTiles calculates the set of visible tiles in a viewport.
+ *
+ * The method is described in the report in the figure with caption
+ * "Calculating set of tiles within viewport"
+ *
+ * vpAspect expects the aspect ratio of the viewport, expressed as a fraction width / height.
+ *
+ * \param vpX ?
+ * \param vpY ?
+ * \param vpAspect ?
+ * \param vpZoomLevel is the zoom level of the viewport.
+ * \param mapZoomLevel is the zoom level of the map (between what values?).
+ * \return a list of tile-coordinates.
+ */
 QVector<TileCoord> Bach::calcVisibleTiles(
     double vpX,
     double vpY,
@@ -136,6 +218,8 @@ double Bach::normalizeValueToZeroOneRange(double value, double min, double max)
     else
         return (value - min) / (max - min);
 }
+
+// Rendering helper functions follow below.
 
 /* This is a helper function for visualizing the boundaries of each tile.
  *
@@ -496,6 +580,21 @@ static void drawBackgroundColor(
     }
 }
 
+// Exported rendering functionality.
+
+/*!
+ * \brief Bach::paintVectorTiles renders vector tiles to the map.
+ *  The function will iterate over multiple tiles and place them correctly on screen.
+ *
+ * \param painter is a QPainter object that renders the tile data to the screen.
+ * \param vpX
+ * \param vpY
+ * \param viewportZoomLevel
+ * \param mapZoomLevel
+ * \param tileContainer contains all the tile-data available at this point in time.
+ * \param styleSheet contains layer styling data.
+ * \param drawDebug determines if debug lines should be drawn or not.
+ */
 void Bach::paintVectorTiles(
     QPainter &painter,
     double vpX,
@@ -622,14 +721,6 @@ void Bach::paintPngTiles(
     const StyleSheet &styleSheet,
     bool drawDebug)
 {
-    /*
-    QMap<TileCoord, QImage> tileContainer;
-    tileContainer.insert(TileCoord{1,0,0}, QImage{":/testdata/png-images/13_4340_2381.png"});
-    tileContainer.insert(TileCoord{1,1,0}, QImage{":/testdata/png-images/13_4341_2381.png"});
-    tileContainer.insert(TileCoord{1,0,1}, QImage{":/testdata/png-images/13_4340_2382.png"});
-    tileContainer.insert(TileCoord{1,1,1}, QImage{":/testdata/png-images/13_4341_2382.png"});
-    */
-
     // Start by drawing the background color on the entire canvas.
     drawBackgroundColor(painter, styleSheet, mapZoomLevel);
 
