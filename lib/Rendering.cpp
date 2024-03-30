@@ -530,48 +530,59 @@ static void paintCompositeText(
     const double vpZoom)
 {
 
-    // Create a QPainterPath
+    //The font metrics var is used to calculate how much space does each word consume.
     QFontMetricsF fmetrics(textFont);
+    //This is the hight of text character, this is used to calculate the combined hight of all the substrings' bounding rects.
     qreal height = fmetrics.height();
+    //This will hold the paths for all the substrings of the text.
     QList<QPainterPath> paths;
+    // Create a temporary QPainterPath for the loop.
     QPainterPath temp;
+    //Loop over each substring and calculate its correct position.
     for(int i = 0; i < texts.size(); i++){
         temp.addText({}, textFont, texts.at(i));
         QRectF boundingRect = temp.boundingRect().toRect();
+        //We account for the text outline when calculating the bounding rect size.
         boundingRect.setWidth(boundingRect.width() + 2 * outlineSize);
         boundingRect.setHeight(boundingRect.height() + 2 * outlineSize);
+        //The text is supposed to be rendered such that the goemetry point is poistioned at the cented of the text,
+        //however, the painter draws the text such that the point is at the bottom left of the text.
+        //So we have to account for that and translate the drawing point with half the width and height of the bounding
+        //rectangle of the original text. We also have to consider the postion of the current substring relative to the
+        //other substrings.
         qreal textCenteringOffsetX = -boundingRect.width() / 2.;
         qreal textCenteringOffsetY = boundingRect.height() / 2.;
         temp.translate({
-                            textCenteringOffsetX,
+                        textCenteringOffsetX,
                         textCenteringOffsetY + ((i - (texts.size() / 2.)) * height)});
         temp.translate(coordinates);
         boundingRect.translate({
                                 textCenteringOffsetX,
                                 textCenteringOffsetY + ((i - (texts.size() / 2.)) * height)});
         boundingRect.translate(coordinates);
+        //Add the current text path to the list and clear it for the next iteration.
         paths.append(temp);
         temp.clear();
     }
 
-    //get the bounding rect for all the small rects
+    //Combine the bounding rects of all the substrings to get the total bounding rect.
     QRect boundingRect = paths.at(0).boundingRect().toRect();
     for(const auto &path : paths.sliced(1)){
         boundingRect = boundingRect.united(path.boundingRect().toRect());
     }
+
+    //Check if the text overlaps with any previously rendered text.
     if(isOverlapping(boundingRect, rects)) return;
 
-    QPen outlinePen(outlineColor, outlineSize); // Outline color and width
-
-
+    // Set the pen for the outline color and width.
+    QPen outlinePen(outlineColor, outlineSize);
+    //Add the total bouding rect to the list of the text rects to check for overlap for upcoming text.
     rects.append(boundingRect);
+    //Draw all the text parts
     for(const auto &path : paths){
         painter.strokePath(path, outlinePen);
         painter.fillPath(path, getTextColor(layerStyle, feature, mapZoom, vpZoom));
     }
-
-    // Fill text
-     // Fill color
 }
 
 /* Paints a single Point feature within a tile.
