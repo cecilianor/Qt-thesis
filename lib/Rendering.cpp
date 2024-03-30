@@ -481,17 +481,21 @@ static void paintSimpleText(
     const double vpZoom)
 {
 
-    // Create a QPainterPath
+    //Create a QPainterPath for the text.
     QPainterPath textPath;
-    // Create the path with no offset first.
+    //Create the path with no offset first.
     textPath.addText({}, textFont, text);
 
     QRectF boundingRect = textPath.boundingRect().toRect();
+    //We account for the text outline when calculating the bounding rect size.
     boundingRect.setWidth(boundingRect.width() + 2 * outlineSize);
     boundingRect.setHeight(boundingRect.height() + 2 * outlineSize);
+    //The text is supposed to be rendered such that the goemetry point is poistioned at the cented of the text,
+    //however, the painter draws the text such that the point is at the bottom left of the text.
+    //So we have to account for that and translate the drawing point with half the width and height of the bounding
+    //rectangle of the original text.
     qreal textCenteringOffsetX = -boundingRect.width() / 2.;
     qreal textCenteringOffsetY = boundingRect.height() / 2.;
-
     textPath.translate({
                         textCenteringOffsetX,
                         textCenteringOffsetY});
@@ -500,16 +504,16 @@ static void paintSimpleText(
                             textCenteringOffsetX,
                             textCenteringOffsetY});
     boundingRect.translate(coordinate);
-    // Position and text to add to the path
 
-    // Draw outline
 
+    // Set the pen for the outline color and width.
     QPen outlinePen(outlineColor, outlineSize); // Outline color and width
-
+    //Check if the text overlaps with any previously rendered text.
     if(isOverlapping(boundingRect.toRect(), rects)) return;
+    //Add the total bouding rect to the list of the text rects to check for overlap for upcoming text.
     rects.append(boundingRect.toRect());
+    //Draw  the text.
     painter.strokePath(textPath, outlinePen);
-    // Fill text
     painter.fillPath(textPath, getTextColor(layerStyle, feature, mapZoom, vpZoom));
 }
 
