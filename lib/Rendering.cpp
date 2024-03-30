@@ -594,9 +594,9 @@ static void paintSingleTileFeature_Point(
     //If there is no text then there is nothing to render, we return
     if(textToDraw == "") return;
 
-    painter.setBrush(Qt::NoBrush);
 
-    //Get the remdering parameters from the layerstyle
+    //Get the rendering parameters from the layerstyle and set the relevant painter field.
+    painter.setBrush(Qt::NoBrush);
     int textSize = getTextSize(layerStyle, feature, mapZoom, vpZoom);
     QFont textFont = QFont(layerStyle.m_textFont);
     textFont.setPixelSize(textSize);
@@ -606,19 +606,20 @@ static void paintSingleTileFeature_Point(
     //Text is always antialised (otherwise it does not look good)
     painter.setRenderHints(QPainter::Antialiasing, true);
 
-    //Get the corrected version of the tex.
-    //This means that text is split up for text wrapping depending on if it exceeds the maximum allowed width
+    //Get the corrected version of the text.
+    //This means that text is split up for text wrapping depending on if it exceeds the maximum allowed width.
     QList<QString> correctedText = getCorrectedText(textToDraw, textFont, layerStyle.m_textMaxWidth.toInt());
 
-    //Get the coordinates for the text rendering a remap them
+    //Get the coordinates for the text rendering
     auto const& coordinates = feature.points().at(0);
     QTransform transform = {};
     transform.scale(1 / 4096.0, 1 / 4096.0);
     transform.scale(tileSize, tileSize);
+    //Remap the original coordinates so that they are positioned correctly.
     auto newCoordinates = transform.map(coordinates);
 
     //The text is rendered differently depending on it it wraps or not.
-    if(correctedText.size() == 1)
+    if(correctedText.size() == 1) //In case there is only one string to be rendered (no wrapping)
         paintSimpleText(
             correctedText.at(0),
             newCoordinates,
@@ -631,7 +632,7 @@ static void paintSingleTileFeature_Point(
             layerStyle,
             mapZoom,
             vpZoom);
-    else{
+    else{ //In case there are multiple strings to be redered (text wrapping)
         paintCompositeText(
             correctedText,
             newCoordinates,
@@ -647,6 +648,7 @@ static void paintSingleTileFeature_Point(
     }
 
 }
+
 
 // Determines whether this layer is hidden.
 static bool isLayerHidden(const AbstractLayereStyle &layerStyle, int mapZoom)
