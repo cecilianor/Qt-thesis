@@ -399,8 +399,7 @@ static float getTextOpacity(
 
 
 
-/* Gets the kay to be used to find the text content
- * within this feature's metadata
+/* Gets the text to be rendered.
  */
 static QString getTextContent(
     const SymbolLayerStyle &layerStyle,
@@ -408,20 +407,28 @@ static QString getTextContent(
     int mapZoom,
     double vpZoom)
 {
-    QVariant text = layerStyle.m_textField;
+    QVariant textVariant = layerStyle.m_textField;
+    if(textVariant.isNull() || !textVariant.isValid()) return "";
     // The layer style might return an expression, we need to resolve it.
-    if(text.typeId() == QMetaType::Type::QJsonArray){
-        text = Evaluator::resolveExpression(
-            text.toJsonArray(),
+    if(textVariant.typeId() == QMetaType::Type::QJsonArray){
+        textVariant = Evaluator::resolveExpression(
+            textVariant.toJsonArray(),
             &feature,
             mapZoom,
             vpZoom);
-    }else if(text.typeId() != QMetaType::Type::QString)
+        return textVariant.toString();
+    }else //In case the text field is just a string of the key for the metadata map.
     {
-        text = "";
+        QString textFieldKey = textVariant.toString();
+        textFieldKey.remove("{");
+        textFieldKey.remove("}");
+        if(!feature.fetureMetaData.contains(textFieldKey)){
+            return "";
+        }
+        return feature.fetureMetaData[textFieldKey].toString();
     }
-    return text.value<QString>();
 }
+
 
 
 /* Checks if the bouding rect for textRect collids with any rects in rectList
