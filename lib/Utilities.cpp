@@ -1,14 +1,18 @@
-#include "Utilities.h"
-
 #include <QFile>
 #include <QtNetwork>
 #include <QTextStream>
 
 #include "TileLoader.h"
+#include "Utilities.h"
 
-std::optional<QString> Bach::rasterTilesheetUrlFromMapType(MapType maptype)
+/*!
+ * \brief Bach::rasterTilesheetUrlFromMapType gets a raster tile sheet based on the chosen map type.
+ * \param mapType is the mapType to get the correspoding raster tile URL for.
+ * \return the raster tile sheet URL that corresponds to the chosen map type.
+ */
+std::optional<QString> Bach::rasterTilesheetUrlFromMapType(MapType mapType)
 {
-    switch (maptype) {
+    switch (mapType) {
         case MapType::BasicV2:
             return "https://api.maptiler.com/maps/basic-v2/tiles.json?key=";
         case MapType::BrightV2:
