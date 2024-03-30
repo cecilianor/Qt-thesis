@@ -590,22 +590,10 @@ static void paintSingleTileFeature_Point(
 {
 
     //Get the text to be rendered.
-    //Specifically, this gets the name of the key to be used to get the text content from the feature metadata map.
-    QString text = getTextContent(layerStyle, feature, mapZoom, vpZoom);
+    QString textToDraw = getTextContent(layerStyle, feature, mapZoom, vpZoom);
     //If there is no text then there is nothing to render, we return
-    if(text == "") return;
-    //The kay is usually (not always) in the format: {name} or {name:en}
-    //We remove the curly brackets to get the key.
-    text.remove("{");
-    text.remove("}");
+    if(textToDraw == "") return;
 
-    QString textToDraw;
-    //Get the text content from the feature metadata.
-    if(feature.fetureMetaData.contains(text)){
-         textToDraw = feature.fetureMetaData[text].value<QString>();
-    }else{
-        return;
-    }
     painter.setBrush(Qt::NoBrush);
 
     //Get the remdering parameters from the layerstyle
