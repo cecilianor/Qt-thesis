@@ -13,8 +13,13 @@ class UnitTesting : public QObject
 
 private:
     const QString expressionTestPath = ":/unitTestResources/expressionTest.json";
-    QJsonObject expressionsObject;
-    QFile file;
+    QJsonObject mutableExpressionsObject;
+    const QJsonObject expressionsObject() const { return mutableExpressionsObject; }
+
+    void setExpressionsObject(QJsonObject obj)
+    {
+        mutableExpressionsObject = obj;
+    }
 
     // Checks if expected and gotten double floating point values are within 0.0001 of each other.
     bool validDoubleRange(double double1, double double2)
@@ -50,6 +55,8 @@ QTEST_MAIN(UnitTesting)
 
 void UnitTesting::initTestCase()
 {
+    QFile file;
+
     // Verify that the test file can be opened.
     file.setFileName(expressionTestPath);
     QJsonDocument doc;
@@ -62,8 +69,10 @@ void UnitTesting::initTestCase()
     if(parseError.error != QJsonParseError::NoError)
         QFAIL("Could not parse JSON file into a QJsonDocument: " + expressionTestPath.toUtf8());
 
-    expressionsObject = doc.object();
+    QJsonObject obj = doc.object();
+    setExpressionsObject(obj);
 
+    file.close();
 }
 
 // Test resolve expression function when the get value is passed in.
@@ -75,8 +84,8 @@ void UnitTesting::resolveExpression_with_get_value()
     QJsonArray expression;
     QVariant result;
 
-    QJsonObject expressionObject = expressionsObject.value("get").toObject();
-    feature.fetureMetaData.insert("class", "grass");
+    QJsonObject expressionObject = expressionsObject().value("get").toObject();
+    feature.featureMetaData.insert("class", "grass");
 
     expression = expressionObject.value("positive").toArray();
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
@@ -103,8 +112,8 @@ void UnitTesting::resolveExpression_with_has_value() {
     QJsonArray expression;
     QVariant result;
 
-    QJsonObject expressionObject = expressionsObject.value("has").toObject();
-    feature.fetureMetaData.insert("subclass", "farm");
+    QJsonObject expressionObject = expressionsObject().value("has").toObject();
+    feature.featureMetaData.insert("subclass", "farm");
     expression = expressionObject.value("positive").toArray();
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
     errorMessage = QString("\"has\" function returns empty result when a bool is expected");
@@ -135,8 +144,8 @@ void UnitTesting::resolveExpression_with_in_value()
     QJsonArray expression;
     QVariant result;
 
-    QJsonObject expressionObject = expressionsObject.value("in").toObject();
-    feature.fetureMetaData.insert("class", "residential");
+    QJsonObject expressionObject = expressionsObject().value("in").toObject();
+    feature.featureMetaData.insert("class", "residential");
     expression = expressionObject.value("positive").toArray();
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
     errorMessage = QString("\"in\" function returns empty result when a bool is expected");
@@ -168,8 +177,8 @@ void UnitTesting::resolveExpression_with_equals_value()
     QJsonArray expression;
     QVariant result;
 
-    QJsonObject expressionObject = expressionsObject.value("==").toObject();
-    feature.fetureMetaData.insert("class", "neighbourhood");
+    QJsonObject expressionObject = expressionsObject().value("==").toObject();
+    feature.featureMetaData.insert("class", "neighbourhood");
 
     expression = expressionObject.value("positive").toArray();
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
@@ -219,8 +228,8 @@ void UnitTesting::resolveExpression_with_inequality_value()
     QJsonArray expression;
     QVariant result;
 
-    QJsonObject expressionObject = expressionsObject.value("!=").toObject();
-    feature.fetureMetaData.insert("class", "neighbourhood");
+    QJsonObject expressionObject = expressionsObject().value("!=").toObject();
+    feature.featureMetaData.insert("class", "neighbourhood");
 
     expression = expressionObject.value("positive").toArray();
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
@@ -251,8 +260,8 @@ void UnitTesting::resolveExpression_with_greater_than_value()
     QJsonArray expression;
     QVariant result;
 
-    QJsonObject expressionObject = expressionsObject.value(">").toObject();
-    feature.fetureMetaData.insert("intermittent", 1);
+    QJsonObject expressionObject = expressionsObject().value(">").toObject();
+    feature.featureMetaData.insert("intermittent", 1);
 
     expression = expressionObject.value("positive").toArray();
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
@@ -283,10 +292,10 @@ void UnitTesting::resolveExpression_with_all_value()
     QJsonArray expression;
     QVariant result;
 
-    QJsonObject expressionObject = expressionsObject.value("all").toObject();
-    feature.fetureMetaData.insert("class", "neighbourhood");
-    feature.fetureMetaData.insert("intermittent", 1);
-    feature.fetureMetaData.insert("subclass", "farm");
+    QJsonObject expressionObject = expressionsObject().value("all").toObject();
+    feature.featureMetaData.insert("class", "neighbourhood");
+    feature.featureMetaData.insert("intermittent", 1);
+    feature.featureMetaData.insert("subclass", "farm");
 
     expression = expressionObject.value("positive").toArray();
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
@@ -317,8 +326,8 @@ void UnitTesting::resolveExpression_with_case_value()
     bool validDoubleError=false;
 
     //Parse the json file into a QJsonDocument for further processing.
-    QJsonObject expressionObject = expressionsObject.value("case").toObject();
-    feature.fetureMetaData.insert("class", "neighbourhood");
+    QJsonObject expressionObject = expressionsObject().value("case").toObject();
+    feature.featureMetaData.insert("class", "neighbourhood");
 
     expression = expressionObject.value("positive").toArray();
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
@@ -349,8 +358,8 @@ void UnitTesting::resolveExpression_with_coalesce_value()
     QJsonArray expression;
     QVariant result;
 
-    QJsonObject expressionObject = expressionsObject.value("coalesce").toObject();
-    feature.fetureMetaData.insert("class", "neighbourhood");
+    QJsonObject expressionObject = expressionsObject().value("coalesce").toObject();
+    feature.featureMetaData.insert("class", "neighbourhood");
 
     expression = expressionObject.value("positive").toArray();
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
@@ -377,10 +386,10 @@ void UnitTesting::resolveExpression_with_match_value()
     QVariant result;
 
     bool validDoubleError = false;
-    feature.fetureMetaData.clear();
-    feature.fetureMetaData.insert("class", "neighbourhood");
+    feature.featureMetaData.clear();
+    feature.featureMetaData.insert("class", "neighbourhood");
 
-    QJsonObject expressionObject = expressionsObject.value("match").toObject();
+    QJsonObject expressionObject = expressionsObject().value("match").toObject();
     expression = expressionObject.value("positive").toArray();
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
     errorMessage = QString("\"match\" function returns empty result when an int is expected");
@@ -414,8 +423,8 @@ void UnitTesting::resolveExpression_with_interpolate_value()
     bool validDoubleError=false; // Checks if double values are in a valid range
     double expectedInterpolationResult;
 
-    expression = expressionsObject.value("interpolate").toArray();
-    feature.fetureMetaData.insert("class", "neighbourhood");
+    expression = expressionsObject().value("interpolate").toArray();
+    feature.featureMetaData.insert("class", "neighbourhood");
 
 
     expectedInterpolationResult = 11;
@@ -492,10 +501,10 @@ void UnitTesting::resolveExpression_with_compound_value()
     bool validDoubleError=false;
     double expectedInterpolationResult;
 
-    QJsonObject expressionObject = expressionsObject.value("compound").toObject();
+    QJsonObject expressionObject = expressionsObject().value("compound").toObject();
     QJsonArray expression = expressionObject.value("expression1").toArray();
 
-    feature.fetureMetaData.insert("class", "motorway");
+    feature.featureMetaData.insert("class", "motorway");
 
     expectedInterpolationResult = 0.5;
     result = Evaluator::resolveExpression(expression, &feature, 0, 0);
@@ -513,7 +522,7 @@ void UnitTesting::resolveExpression_with_compound_value()
     validDoubleError = validDoubleRange(result.toDouble(), expectedInterpolationResult);
     QVERIFY2(validDoubleError, errorMessage.toUtf8());
 
-    feature.fetureMetaData.insert("brunnel", "bridge");
+    feature.featureMetaData.insert("brunnel", "bridge");
     expectedInterpolationResult =1 + (1*(-1.)/4);
     result = Evaluator::resolveExpression(expression, &feature, 7, 0);
     errorMessage = QString("Wrong result from \"interpolate\" function for zoom level 7, expected %1 but got %2")
@@ -530,7 +539,7 @@ void UnitTesting::resolveExpression_with_compound_value()
     validDoubleError = validDoubleRange(result.toDouble(), expectedInterpolationResult);
     QVERIFY2(validDoubleError, errorMessage.toUtf8());
 
-    feature.fetureMetaData.insert("ramp", 1);
+    feature.featureMetaData.insert("ramp", 1);
     expectedInterpolationResult =0.5;
     result = Evaluator::resolveExpression(expression, &feature, 11, 0);
     errorMessage = QString("Wrong result from \"interpolate\" function for zoom level 11, expected %1 but got %2")
@@ -539,8 +548,8 @@ void UnitTesting::resolveExpression_with_compound_value()
     validDoubleError = validDoubleRange(result.toDouble(), expectedInterpolationResult);
     QVERIFY2(validDoubleError, errorMessage.toUtf8());
 
-    feature.fetureMetaData.clear();
-    feature.fetureMetaData.insert("class", "service");
+    feature.featureMetaData.clear();
+    feature.featureMetaData.insert("class", "service");
     expectedInterpolationResult =0.75;
     result = Evaluator::resolveExpression(expression, &feature, 11, 0);
     errorMessage = QString("Wrong result from \"interpolate\" function for zoom level 11, expected %1 but got %2")
@@ -569,5 +578,5 @@ void UnitTesting::resolveExpression_with_compound_value()
 
 void UnitTesting::cleanupTestCase()
 {
-    file.close();
+    // Do nothing
 }
