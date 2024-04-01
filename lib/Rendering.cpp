@@ -1,15 +1,29 @@
+#include "Evaluator.h"
 #include "Rendering.h"
 
-#include "Evaluator.h"
+// Information about what's on this file:
+// It consists of three major sections:
+//
+// 1. All calculation functions that can be used externally, declared in `Rendering.h`.
+// 2. Rendering helper functions only used in `Rendering.cpp`.
+// 3. Rendering functions that can be used externally, declared in `Rendering.h`.
 
+// Calculations/Maths functionality:
+
+/*!
+ * \brief Bach::lonLatToWorldNormCoord converts longitude and latitude to world-normalized coordinates.
+ *
+ * Takes radians, not degrees.
+ * The math formula employed is described by the figure in the report with the caption
+ * "Converting longitude and latitude to world-normalized coordinates".
+ *
+ * \param lon is the longitude measured in radians.
+ * \param lat is the latitude measured in radians.
+ * \return a pair containing the normalized longitude and latitude coordinates (radians).
+ */
 QPair<double, double> Bach::lonLatToWorldNormCoord(double lon, double lat)
 {
     constexpr double webMercatorPhiCutoff = 1.4844222297;
-
-    // Function to normalize a value from its original range to [0, 1]
-    auto normalize = [](double value, double min, double max) {
-        return (value - min) / (max - min);
-    };
 
     // Convert longitude and latitude to radians
     auto lambda = lon;
@@ -21,10 +35,10 @@ QPair<double, double> Bach::lonLatToWorldNormCoord(double lon, double lat)
 
     // Normalize x and y to [0, 1]
     // Assuming the Web Mercator x range is [-π, π] and y range is calculated from latitude range
-    auto xNormalized = normalize(x, -M_PI, M_PI);
+    auto xNormalized = normalizeValueToZeroOneRange(x, -M_PI, M_PI);
     // We have to flip the sign of Y, because Mercator has positive Y moving up,
     // while the world-normalized coordinate space has Y moving down.
-    auto yNormalized = normalize(
+    auto yNormalized = normalizeValueToZeroOneRange(
         -y,
         std::log(std::tan(M_PI / 4.0 + -webMercatorPhiCutoff / 2.0)),
         std::log(std::tan(M_PI / 4.0 + webMercatorPhiCutoff / 2.0)));
@@ -33,6 +47,17 @@ QPair<double, double> Bach::lonLatToWorldNormCoord(double lon, double lat)
     return { xNormalized, yNormalized };
 }
 
+/* Converts longitude and latitude to world-normalized coordinates.
+     * Takes degrees.
+     */
+
+/*!
+ * \brief Bach::lonLatToWorldNormCoordDegrees converts longitude and latitude to world-normalized coordinates.
+     * Takes degrees, not radians.
+ * \param lon is the longitude measured in degrees.
+ * \param lat is the latitude measured in degrees.
+ * \return a pair containing the normalized longitude and latitude coordinates (degrees).
+ */
 QPair<double, double> Bach::lonLatToWorldNormCoordDegrees(double lon, double lat)
 {
     auto degToRad = [](double deg) {
@@ -41,6 +66,15 @@ QPair<double, double> Bach::lonLatToWorldNormCoordDegrees(double lon, double lat
     return lonLatToWorldNormCoord(degToRad(lon), degToRad(lat));
 }
 
+/*!
+ * \brief Bach::calcMapZoomLevelForTileSizePixels calculates zoom level to get displayed tile size as close as possible to desiredTileWidth.
+ *
+ * \param vpWidth is the width of the viewport in pixels.
+ * \param vpHeight is the height of the viewport in pixels.
+ * \param vpZoom is the zoom level of the viewport.
+ * \param desiredTileWidth is the desired size of tiles in pixels.
+ * \return an integer for the zoom level to use for map's zoom-level, in the range [0, 16].
+ */
 int Bach::calcMapZoomLevelForTileSizePixels(
     int vpWidth,
     int vpHeight,
@@ -61,6 +95,33 @@ int Bach::calcMapZoomLevelForTileSizePixels(
     return std::clamp((int)round(newMapZoomLevel), 0, maxZoomLevel);
 }
 
+/* Calculates the width and height of the viewport in world-normalized coordinates.
+     * This means the size expressed as a fraction of the world map. For example,
+     * a viewportZoom set to 0 will return size as 1, while a zoom level of
+     * 1 will return 0.5. This takes the aspect ratio of the viewport into account,
+     * with the largest side being mapped to relation mentioned.
+     *
+     * The math formula used is described by the figure in the report with the caption
+     * "Calculating viewport size as a factor of the world map".
+     *
+     * Returns width and height as fractions, in the range [0, 1]
+     */
+
+/*!
+ * \brief Bach::calcViewportSizeNorm calculates width and height of the viewport in world-normalized coordinates.
+ *
+ * This means the size expressed as a fraction of the world map. For example,
+ * a viewportZoom set to 0 will return size as 1, while a zoom level of
+ * 1 will return 0.5. This takes the aspect ratio of the viewport into account,
+ * with the largest side being mapped to relation mentioned.
+ *
+ * The math formula used is described by the figure in the report with the caption
+ * "Calculating viewport size as a factor of the world map".
+ *
+ * \param vpZoomLevel is the zoom level of the viewport.
+ * \param viewportAspect is the aspect ratio of the viewport.
+ * \return width and height as fractions, in the range [0, 1].
+ */
 QPair<double, double> Bach::calcViewportSizeNorm(double vpZoomLevel, double viewportAspect) {
     // Math formula can be seen in the figure in the report, with the caption
     // "Calculating viewport size as a factor of the world map"
@@ -71,6 +132,21 @@ QPair<double, double> Bach::calcViewportSizeNorm(double vpZoomLevel, double view
     };
 }
 
+/*!
+ * \brief Bach::calcVisibleTiles calculates the set of visible tiles in a viewport.
+ *
+ * The method is described in the report in the figure with caption
+ * "Calculating set of tiles within viewport"
+ *
+ * vpAspect expects the aspect ratio of the viewport, expressed as a fraction width / height.
+ *
+ * \param vpX ?
+ * \param vpY ?
+ * \param vpAspect ?
+ * \param vpZoomLevel is the zoom level of the viewport.
+ * \param mapZoomLevel is the zoom level of the map (between what values?).
+ * \return a list of tile-coordinates.
+ */
 QVector<TileCoord> Bach::calcVisibleTiles(
     double vpX,
     double vpY,
@@ -121,6 +197,29 @@ QVector<TileCoord> Bach::calcVisibleTiles(
         return visibleTiles;
     }
 }
+
+/*!
+ * \brief normalizeValueToZeroOneRange normalizes a value from its original range to [0, 1]
+ * \param value is the value to normalize.
+ * \param min is the lowest possible value in the original range.
+ * \param max is the highest possible value in the original range.
+ * \return the normalized, new value in the [0, 1] range.
+ */
+double Bach::normalizeValueToZeroOneRange(double value, double min, double max)
+{
+    const double epsilon = 0.0001;
+    // Return 0 if the divisor is approaching 0 (illegal mathematically).
+    //
+    // Note that the result will approach infinity if the divisor is
+    // approaching 0. We return 0.0 here to keep the returned
+    // value within the required [0, 1] space.
+    if(max-min < epsilon)
+        return 0.0;
+    else
+        return (value - min) / (max - min);
+}
+
+// Rendering helper functions follow below.
 
 /* This is a helper function for visualizing the boundaries of each tile.
  *
@@ -481,7 +580,22 @@ static void drawBackgroundColor(
     }
 }
 
-void Bach::paintTiles(
+// Exported rendering functionality.
+
+/*!
+ * \brief Bach::paintVectorTiles renders vector tiles to the map.
+ *  The function will iterate over multiple tiles and place them correctly on screen.
+ *
+ * \param painter is a QPainter object that renders the tile data to the screen.
+ * \param vpX
+ * \param vpY
+ * \param viewportZoomLevel
+ * \param mapZoomLevel
+ * \param tileContainer contains all the tile-data available at this point in time.
+ * \param styleSheet contains layer styling data.
+ * \param drawDebug determines if debug lines should be drawn or not.
+ */
+void Bach::paintVectorTiles(
     QPainter &painter,
     double vpX,
     double vpY,
@@ -595,4 +709,109 @@ void Bach::paintTiles(
 
         painter.restore();
     }
+}
+
+void Bach::paintPngTiles(
+    QPainter &painter,
+    double vpX,
+    double vpY,
+    double viewportZoomLevel,
+    int mapZoomLevel,
+    const QMap<TileCoord, const QImage*> &tileContainer,
+    const StyleSheet &styleSheet,
+    bool drawDebug)
+{
+    // Start by drawing the background color on the entire canvas.
+    drawBackgroundColor(painter, styleSheet, mapZoomLevel);
+
+    // Gather width and height of the viewport, in pixels..
+    auto vpWidth = painter.window().width();
+    auto vpHeight = painter.window().height();
+
+    // Aspect ratio of the viewport.
+    auto vpAspect = (double)vpWidth / (double)vpHeight;
+
+    // The longest length between vpWidth and vpHeight
+    auto vpMaxDim = qMax(vpWidth, vpHeight);
+
+    // Helper function to turn coordinates that are expressed as fraction of the viewport,
+    // into pixel coordinates.
+    auto toPixelSpace = [&](double in) { return (int)round(in * vpMaxDim); };
+
+    // Calculate the set of visible tiles that fit in the viewport.
+    auto visibleTiles = calcVisibleTiles(
+        vpX,
+        vpY,
+        vpAspect,
+        viewportZoomLevel,
+        mapZoomLevel);
+
+    // The scale of the world map as a fraction of the viewport.
+    auto vpScale = pow(2, viewportZoomLevel);
+    // The scale of a single tile as a fraction of the viewport.
+    auto tileSizeNorm = vpScale / (1 << mapZoomLevel);
+
+    // Calculate where the top-left origin of the world map is relative to the viewport.
+    double worldOriginX = vpX * vpScale - 0.5;
+    double worldOriginY = vpY * vpScale - 0.5;
+    // The world such that our worldmap is still centered around our center-coordinate
+    // when the aspect ratio changes.
+    if (vpAspect < 1.0) {
+        worldOriginX += -0.5 * vpAspect + 0.5;
+    } else if (vpAspect > 1.0) {
+        worldOriginY += -0.5 / vpAspect + 0.5;
+    }
+
+    // Iterate over all possible tiles that can possibly fit in this viewport.
+    for (const auto& tileCoord : visibleTiles) {
+        // Position the top-left of the tile inside the world map, as a fraction of the viewport size.
+        // We use the tile index coords and the size of a tile to generate the offset.
+        auto posNormX = (tileCoord.x * tileSizeNorm) - worldOriginX;
+        auto posNormY = (tileCoord.y * tileSizeNorm) - worldOriginY;
+
+        // Convert tile position and size to pixels.
+        auto tilePixelPosX = toPixelSpace(posNormX);
+        auto tilePixelPosY = toPixelSpace(posNormY);
+        auto tileSizePixels = toPixelSpace(tileSizeNorm);
+
+        painter.save();
+
+        // We move the origin point of the painter to the top-left of the tile.
+        // We do not apply scaling because it interferes with other sized elements,
+        // like the size of pen width.
+        QTransform transform;
+        transform.translate(tilePixelPosX, tilePixelPosY);
+        painter.setTransform(transform);
+
+        // Temporary. Should likely just be passed as a single scalar to tile-drawing function.
+        /* Probably only needed for vector drawing.
+        QTransform geometryTransform;
+        geometryTransform.scale(vpMaxDim * tileSizeNorm, vpMaxDim * tileSizeNorm);
+        */
+
+        // See if the tile being rendered has any tile-data associated with it.
+       auto tileIt = tileContainer.find(tileCoord);
+       if (tileIt != tileContainer.end()) {
+            const QImage &tileData = **tileIt;
+
+            painter.save();
+
+            QRectF target(0.0, 0.0, tileSizePixels, tileSizePixels);
+            QRectF source(0.0, 0.0, 512.0, 512.0);
+
+            painter.drawImage(target, tileData, source);
+
+            painter.restore();
+        }
+
+        // Paint debug lines around the tile.
+        if (drawDebug) {
+            paintSingleTileDebug(
+                painter,
+                tileCoord,
+                vpMaxDim * tileSizeNorm);
+        }
+
+        painter.restore();
+        }
 }

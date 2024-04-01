@@ -1,3 +1,4 @@
+#include <QBuffer>
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -12,6 +13,39 @@
 #include "TileCoord.h"
 #include "Utilities.h"
 
+// This might not be ideal place to define this struct.
+struct TileResultType : public Bach::RequestTilesResult {
+    virtual ~TileResultType() {
+        // TODO:
+        // This should eventually notify the TileLoader
+        // that our tiles are no longer being read.
+        // Only really necessary when we have an eviction policy in place.
+    }
+
+    // Generate the map holding tile coordinates and a vector tile.
+    QMap<TileCoord, const VectorTile*> _vectorMap;
+    const QMap<TileCoord, const VectorTile*> &vectorMap() const override
+    {
+        return _vectorMap;
+    }
+
+    // Generate the map holding tile coordinates and a raster tile.
+    QMap<TileCoord, const QImage*> _rasterMap;
+    const QMap<TileCoord, const QImage*> &rasterImageMap() const override
+    {
+        return _rasterMap;
+    }
+
+    const StyleSheet* _styleSheet = nullptr;
+    const StyleSheet &styleSheet() const override
+    {
+        Q_ASSERT_X(
+            _styleSheet != nullptr,
+            "Stylesheet test",
+            "Tried to request stylesheet from a dummy TileLoader.");
+        return *_styleSheet;
+    }
+};
 
 TileLoader::TileLoader() :
     tileCacheDiskPath { getTileCacheFolder() }
@@ -33,20 +67,24 @@ TileLoader::TileLoader() :
  *
  * \return The constructed TileLoader instance.
  */
-std::unique_ptr<TileLoader> TileLoader::fromPbfLink(
+std::unique_ptr<TileLoader> TileLoader::fromTileUrlTemplate(
     const QString &pbfUrlTemplate,
+    const QString &pngUrlTemplate,
     StyleSheet&& styleSheet)
 {
     auto out = std::unique_ptr<TileLoader>(new TileLoader());
     TileLoader &tileLoader = *out;
     tileLoader.styleSheet = std::move(styleSheet);
     tileLoader.pbfLinkTemplate = pbfUrlTemplate;
+    tileLoader.pngUrlTemplate = pngUrlTemplate;
+
     // An empty URL is obviously not going to work with
     // web, so we turn off web capabilities.
-    if (pbfUrlTemplate == "")
+    if (pbfUrlTemplate == "" || pngUrlTemplate == "")
         tileLoader.useWeb = false;
     else
         tileLoader.useWeb = true;
+
     return out;
 }
 
@@ -141,9 +179,9 @@ QString Bach::setPbfLink(TileCoord tileCoord, const QString &pbfLinkTemplate)
 /*!
  * \brief Gets the full file-path of a given tile, whether it exists or not.
  */
-QString TileLoader::getTileDiskPath(TileCoord coord)
+QString TileLoader::getTileDiskPath(TileCoord coord, TileType tileType)
 {
-    return tileCacheDiskPath + QDir::separator() + Bach::tileDiskCacheSubPath(coord);
+    return tileCacheDiskPath + QDir::separator() + Bach::tileDiskCacheSubPath(coord, tileType);
 }
 
 /*!
@@ -161,11 +199,11 @@ QString TileLoader::getTileDiskPath(TileCoord coord)
  * \param requestInput is a set of TileCoords that is requested.
  *
  * \param tileLoadedSignalFn is a function that will get called whenever
- * a tile is loaded, will be called later in time,
+ * a vectorTile is loaded, will be called later in time,
  * can be called from another thread. This function
- * will be called once for each tile that was loaded successfully.
+ * will be called once for each vectorTile that was loaded successfully.
  *
- * This function is only called if a tile is successfully loaded.
+ * This function is only called if a vectorTile is successfully loaded.
  *
  * If this argument is set to null, the missing tiles will not be loaded.
  *
@@ -182,32 +220,7 @@ QScopedPointer<Bach::RequestTilesResult> TileLoader::requestTiles(
     TileLoadedCallbackFn signalFn,
     bool loadMissingTiles)
 {
-    // This might not be ideal place to define this struct.
-    struct ResultType : public Bach::RequestTilesResult {
-        virtual ~ResultType() {
-            // TODO:
-            // This should eventually notify the TileLoader
-            // that our tiles are no longer being read.
-            // Only really necessary when we have an eviction policy in place.
-        }
-
-        QMap<TileCoord, const VectorTile*> _map;
-        const QMap<TileCoord, const VectorTile*> &map() const override
-        {
-            return _map;
-        }
-
-        const StyleSheet* _styleSheet = nullptr;
-        const StyleSheet &styleSheet() const override
-        {
-            Q_ASSERT_X(
-                _styleSheet != nullptr,
-                "Stylesheet test",
-                "Tried to request stylesheet from a dummy TileLoader.");
-            return *_styleSheet;
-        }
-    };
-    auto out = new ResultType;
+    auto out = new TileResultType;
     // Temporary: We just need some way to handle when the user makes
     // a dummy TileLoader with no stylesheet, but tries to request one anyways.
     if (!styleSheet.m_layerStyles.empty())
@@ -233,7 +246,8 @@ QScopedPointer<Bach::RequestTilesResult> TileLoader::requestTiles(
                 // If the item is marked as nullptr,
                 // it means it is pending and should not be immediately returned.
                 if (memoryItem.isReadyToRender()) {
-                    out->_map.insert(requestedCoord, memoryItem.tile.get());
+                    out->_vectorMap.insert(requestedCoord, memoryItem.vectorTile.get());
+                    out->_rasterMap.insert(requestedCoord, &memoryItem.rasterTile);
                 }
             } else if (loadMissingTiles) {
                 // Tile not found, queue it for loading.
@@ -258,56 +272,81 @@ QScopedPointer<Bach::RequestTilesResult> TileLoader::requestTiles(
  */
 bool TileLoader::loadFromDisk(TileCoord coord, TileLoadedCallbackFn signalFn)
 {
-    // Check if it's in disk.
-    QString diskPath = getTileDiskPath(coord);
+    // Check if the tile in disk.
+    QString vectorDiskPath = getTileDiskPath(coord, TileType::Vector);
+    QString rasterDiskPath = getTileDiskPath(coord, TileType::Raster);
 
-    QFile file { diskPath };
-    if (!file.exists()) {
-        // Todo: More error feedback?
+    QFile vectorFile { vectorDiskPath };
+    QFile rasterFile { rasterDiskPath };
+    if (!vectorFile.exists() || !rasterFile.exists()) {
+        // This is NOT an error. This just means our cache files didn't exist and we should return false
         return false;
     }
 
     // TODO: Check that the file isn't currently being written into
     // by another thread by checking for associated .lock file.
-    if (!file.open(QFile::ReadOnly)) {
+    if (!vectorFile.open(QFile::ReadOnly) || !rasterFile.open(QFile::ReadOnly)) {
+        // TODO: This should return the error instead of printing.
         qDebug() << "Tried reading tile from file, but encountered unexpected error when opening file.\n";
         // Error, file exists but didn't open.
         return false;
     }
 
     // Successfully opened file, read contents.
-    QByteArray bytes = file.readAll();
+    QByteArray vectorBytes = vectorFile.readAll();
+    QByteArray rasterBytes = rasterFile.readAll();
 
     // Now we need to insert the tile into the tile-memory
     // and NOT insert it into disk cache.
-    insertIntoTileMemory(coord, bytes, signalFn);
+    insertIntoTileMemory(coord, vectorBytes, rasterBytes, signalFn);
 
     // Return success if we found the file.
     return true;
 }
 
 /*!
- * \brief Immediately writes a tile to disk cache.
- *
+ * \brief TileLoader::writeTileToDisk writes a tile to disk cache.
+ * \param coord is the ZXY coordinate of the tile to write to disk.
+ * \param bytes is vector tile information stored as a QByteArray.
  */
-void TileLoader::writeTileToDisk(TileCoord coord, const QByteArray &bytes) {
+void TileLoader::writeTileToDisk(
+    TileCoord coord,
+    const QByteArray &vectorBytes,
+    const QByteArray &rasterBytes)
+{
     // TODO unused return value of this function.
-    Bach::writeTileToDiskCache(tileCacheDiskPath, coord, bytes);
+    Bach::writeTileToDiskCache(
+        tileCacheDiskPath,
+        coord,
+        vectorBytes,
+        rasterBytes);
 }
 
 /*!
- * \brief Handles a network reply when a tile has been loaded from web.
+ * \brief TileLoader::networkReplyHandler handles a network reply when a tile is loaded from web.
+ * \param reply is the network reply.
+ * \param coord is the ZXY tile coordinate.
+ * \param signalFn is a callback function that signals when to insert jobs into memory.
  */
 void TileLoader::networkReplyHandler(
-    QNetworkReply* reply,
+    QNetworkReply *vectorReply,
+    QNetworkReply *rasterReply,
     TileCoord coord,
     TileLoadedCallbackFn signalFn)
 {
-    QScopeGuard cleanup { [&]() { reply->deleteLater(); } };
+    QScopeGuard cleanup { [&]() {
+        vectorReply->deleteLater();
+        rasterReply->deleteLater(); } };
 
     // Check for errors in the reply.
-    if (reply->error() != QNetworkReply::NoError) {
-        qDebug() << "Error when requesting tile from web: " << reply->errorString() << '\n';
+    if (vectorReply->error() != QNetworkReply::NoError) {
+        qDebug() << "Error when requesting tile from web: " << vectorReply->errorString() << '\n';
+        // TODO: Do something meaningful, like retrying the request later or
+        // marking this tile as non-functional to stop us from requesting it anymore.
+    }
+    // Check for errors in the reply.
+    if (rasterReply->error() != QNetworkReply::NoError) {
+        qDebug() << "Error when requesting tile from web: " << rasterReply->errorString() << '\n';
         // TODO: Do something meaningful, like retrying the request later or
         // marking this tile as non-functional to stop us from requesting it anymore.
     }
@@ -317,7 +356,8 @@ void TileLoader::networkReplyHandler(
     // Only background needs to be rendered.
 
     // Extract the bytes we want and discard the reply.
-    auto bytes = reply->readAll();
+    auto vectorBytes = vectorReply->readAll();
+    auto rasterBytes = rasterReply->readAll();
 
     // We are now on the same thread as the QNetworkAccessManager,
     // which means we are on the GUI thread. We need to dispatch the result of
@@ -326,12 +366,25 @@ void TileLoader::networkReplyHandler(
 
     // Create async jobs to insert tile into memory
     getThreadPool().start([=]() {
-        insertIntoTileMemory(coord, bytes, signalFn);
-    });
+        QImage rasterImage;
+        if (!rasterImage.loadFromData(rasterBytes)) {
+            // Error.
+            qDebug() << "TileLoader: Failed to parse byte-array into QImage when trying to write raster-tile to disk.";
+        }
 
-    // Also insert into disk cache.
-    getThreadPool().start([=]() {
-        writeTileToDisk(coord, bytes);
+        QByteArray rasterFileBytes;
+        QBuffer buffer(&rasterFileBytes);
+        if (!buffer.open(QIODevice::WriteOnly)) {
+            // Failed to open buffer into outbut byte array.
+            qDebug() << "TileLoader: Failed to open buffer into output byte array when trying to write raster-tile to disk.";
+        }
+        if (!rasterImage.save(&buffer, "PNG")) {
+            qDebug() << "TileLoader: Failed to save QImage into output byte array when trying to write raster-tile to disk.";
+        }
+
+        writeTileToDisk(coord, vectorBytes, rasterBytes);
+
+        insertIntoTileMemory(coord, vectorBytes, rasterBytes, signalFn);
     });
 }
 
@@ -345,7 +398,8 @@ void TileLoader::networkReplyHandler(
 void TileLoader::loadFromWeb(TileCoord coord, TileLoadedCallbackFn signalFn)
 {
     // Load the URL for this particular tile.
-    QString tileUrl = Bach::setPbfLink(coord, pbfLinkTemplate);
+    QString vectorTileUrl = Bach::setPbfLink(coord, pbfLinkTemplate);
+    QString rasterTileUrl = Bach::setPbfLink(coord, pngUrlTemplate);
 
     // We expect this function to be called on the background thread, but our
     // QNetworkAccessManager lives on the main thread.
@@ -356,12 +410,25 @@ void TileLoader::loadFromWeb(TileCoord coord, TileLoadedCallbackFn signalFn)
         // forces us to wait. And since we are on main GUI thread,
         // that would block GUI logic until we get a reply.
 
-        QNetworkReply *reply = networkManager.get(QNetworkRequest{ tileUrl });
+        // We want to make two requests, one for vector tile, one for raster.
+        QNetworkReply *vectorReply = networkManager.get(QNetworkRequest{ vectorTileUrl });
+        QNetworkReply *rasterReply = networkManager.get(QNetworkRequest{ rasterTileUrl });
+        auto replyHandler = [=]() {
+            if (!vectorReply->isFinished() || !rasterReply->isFinished()) {
+                return;
+            }
+            networkReplyHandler(vectorReply, rasterReply, coord, signalFn);
+        };
         QObject::connect(
-            reply,
+            vectorReply,
             &QNetworkReply::finished,
             this,
-            [=]() { networkReplyHandler(reply, coord, signalFn); } );
+            replyHandler);
+        QObject::connect(
+            rasterReply,
+            &QNetworkReply::finished,
+            this,
+            replyHandler);
     };
     QMetaObject::invokeMethod(
         &networkManager,
@@ -405,12 +472,18 @@ void TileLoader::queueTileLoadingJobs(
 }
 
 /*!
- * \brief Parses byte-array and inserts into tile memory.
+ * \brief TileLoader::insertIntoTileMemory parses byte-array and inserts into vectorTile memory.
+ * \param coord is the tile coordinate.
+ * \param vectorBytes is the vector tile passed as a byte array.
+ * \param rasterImage is the raster image version of the tile.
+ * \param signalFn is a function to call when the tiles finish loading.
+ *
  * \threadsafe
  */
 void TileLoader::insertIntoTileMemory(
     TileCoord coord,
-    const QByteArray &bytes,
+    const QByteArray &vectorBytes,
+    const QByteArray &rasterBytes,
     TileLoadedCallbackFn signalFn)
 {
     // Check iterator to see if it's fine to access
@@ -429,11 +502,15 @@ void TileLoader::insertIntoTileMemory(
     };
 
     // Try parsing the bytes into our tile.
-    std::optional<VectorTile> newTileResult = Bach::tileFromByteArray(bytes);
+    std::optional<VectorTile> newTileResult = Bach::tileFromByteArray(vectorBytes);
+
+    // And try parsing the raster image.
+    QImage rasterImage;
+    bool rasterParseSuccess = rasterImage.loadFromData(rasterBytes);
 
     // If we failed to parse our tile,
     // mark the memory as parsing failed.
-    if (!newTileResult.has_value()) {
+    if (!newTileResult.has_value() && !rasterParseSuccess) {
         qCritical() << "Error when parsing tile " << coord.toString();
 
         // Insert into the tile memory storage.
@@ -444,7 +521,7 @@ void TileLoader::insertIntoTileMemory(
             return;
         } else {
             StoredTile &memoryItem = tileIt->second;
-            memoryItem.tile = nullptr;
+            memoryItem.vectorTile = nullptr;
             memoryItem.state = Bach::LoadedTileState::ParsingFailed;
         }
         emit tileFinished(coord);
@@ -462,7 +539,9 @@ void TileLoader::insertIntoTileMemory(
         } else {
             // Mark our tile as OK and insert the Tile data.
             StoredTile &memoryItem = tileIt->second;
-            memoryItem.tile = std::move(allocatedTile);
+            memoryItem.vectorTile = std::move(allocatedTile);
+            memoryItem.rasterTile = rasterImage;
+
             memoryItem.state = Bach::LoadedTileState::Ok;
         }
     }
@@ -490,12 +569,29 @@ void TileLoader::insertIntoTileMemory(
 bool Bach::writeTileToDiskCache(
     const QString& basePath,
     TileCoord coord,
-    const QByteArray &bytes)
+    const QByteArray &vectorBytes,
+    const QByteArray &rasterBytes)
 {
-    QString fullPath = basePath + QDir::separator() + tileDiskCacheSubPath(coord);
-    return Bach::writeNewFileHelper(fullPath, bytes);
-}
+    // Write the vector tile to disk.
+    QString fullVectorPath = QDir::cleanPath(
+        basePath +
+        QDir::separator() +
+        tileDiskCacheSubPath(coord, TileType::Vector));
+    bool vectorWriteResult = Bach::writeNewFileHelper(fullVectorPath, vectorBytes);
+    if (!vectorWriteResult)
+        return vectorWriteResult;
 
+    // Write the raster tile to disk.
+    QString fullRasterPath = QDir::cleanPath(
+        basePath +
+        QDir::separator() +
+        tileDiskCacheSubPath(coord, TileType::Raster));
+    bool rasterWriteResult = Bach::writeNewFileHelper(fullRasterPath, rasterBytes);
+    if (!rasterWriteResult)
+        return rasterWriteResult;
+
+    return true;
+}
 
 /*!
  * \brief tileDiskCacheSubPath finds the file-path subpath for a cache folder.
@@ -509,11 +605,27 @@ bool Bach::writeTileToDiskCache(
  * x and y must be in the range [0, tilecount-1], where tilecount = 2^zoom.
  * \return the subpath that was found.
  */
-QString Bach::tileDiskCacheSubPath(TileCoord coord)
+QString Bach::tileDiskCacheSubPath(TileCoord coord, TileType tileType)
 {
-    QString fileDirPath = QString("z%1x%2y%3.mvt")
+    QString fileDirPath = QString("z%1x%2y%3")
         .arg(coord.zoom)
         .arg(coord.x)
         .arg(coord.y);
+
+    // Add tile correct file extension to the path name.
+    // We treat all raster images as png images for now.
+    // Consider a refactor later if necessary when loading other file types.
+    switch(tileType) {
+        case TileType::Vector:
+        {
+            fileDirPath += ".mvt";
+            break;
+        }
+        case TileType::Raster:
+        {
+            fileDirPath += ".png";
+            break;
+        }
+    }
     return fileDirPath;
 }
