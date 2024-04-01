@@ -91,7 +91,7 @@ std::optional<QString> Bach::readMapTilerKey(const QString &filePath)
 {
     // First check if the key is available as an environment variable.
     {
-        QByteArray envValue = qgetenv(mapTilerKeyEnvName.toUtf8());
+        QString envValue = qEnvironmentVariable(mapTilerKeyEnvName.toUtf8());
         if (!envValue.isEmpty()) {
             return envValue;
         }
