@@ -8,28 +8,53 @@
 #include <optional>
 
 /*!
+ * \brief The TileType enum determines what tile type to render.
+ *
+ * Supported types:
+ *
+ * * Vector: Is in the .mvt file format.
+ * * Raster: Can only be the .png file format for now.
+ */
+enum class TileType {
+    Vector,
+    Raster,
+};
+
+/*!
+ * \brief The FileFormat enum can be used to handle different tile file formats.
+ *
+ * This type is currently not used, but may be relevant if it's critical to handle
+ * file types that are not .mvt or .png.
+ */
+enum class TileFileFormat {
+    Mvt,
+    Png,
+    Jpg,
+    Unknown,
+};
+
+/*!
  * @brief The StyleSheetType enum covers the basic style sheets provided by MapTiler.
  *
  * Some of the style sheet types have _vX at the end. This matches the current map version
  * that the code is implemented against in case the MapTiler APIs are updated
  * in the future with new endpoints that include -v2, -v3 and so on.
  */
-enum class StyleSheetType {
-    backdrop,
-    basic_v2,
-    bright_v2,
-    dataviz,
-    ocean,
-    open_street_map,
-    outdoor_v2,
-    satellite,
-    streets_v2,
-    toner_v2,
-    topo_v2,
-    winter_v2,
-    unknown,
+enum class MapType {
+    Backdrop,
+    BasicV2,
+    BrightV2,
+    Dataviz,
+    Ocean,
+    OpenStreetMap,
+    OutdoorV2,
+    Satellite,
+    StreetsV2,
+    TonerV2,
+    TopoV2,
+    WinterV2,
+    Unknown,
 };
-
 
 /*!
  * \brief The SourceType enum contains MapTiler sources.
@@ -37,10 +62,10 @@ enum class StyleSheetType {
  * These source types are specified by the MapTiler API.
  */
 enum class SourceType {
-    maptiler_planet,
-    land,
-    ocean,
-    unknown,
+    MaptilerPlanet,
+    Land,
+    Ocean,
+    Unknown,
 };
 
 /*!
@@ -52,16 +77,16 @@ enum class SourceType {
  * `success` can be used.
  */
 enum class ResultType {
-    success,
-    mapTilerError,
-    styleSheetNotFound,
-    tileSheetNotFound,
-    unknownSourceType,
-    noData,
-    noImplementation,
-    networkError,
-    parseError,
-    unknownError,
+    Success,
+    MapTilerError,
+    StyleSheetNotFound,
+    TileSheetNotFound,
+    UnknownSourceType,
+    NoData,
+    NoImplementation,
+    NetworkError,
+    ParseError,
+    UnknownError,
 };
 
 /*!
@@ -74,25 +99,25 @@ const inline QString PrintResultTypeInfo(ResultType r) {
 
     switch (r)
     {
-    case ResultType::success:
+    case ResultType::Success:
         str = "Success";
-    case ResultType::mapTilerError:
+    case ResultType::MapTilerError:
         str = "Maptiler error";
-    case ResultType::styleSheetNotFound:
+    case ResultType::StyleSheetNotFound:
         str = "Style sheet not found";
-    case ResultType::tileSheetNotFound:
+    case ResultType::TileSheetNotFound:
         str = "Tile sheet not found";
-    case ResultType::unknownSourceType:
+    case ResultType::UnknownSourceType:
         str = "Unknown source type";
-    case ResultType::noData:
+    case ResultType::NoData:
         str ="No returned data";
-    case ResultType::noImplementation:
+    case ResultType::NoImplementation:
         str = "No implementation";
-    case ResultType::parseError:
+    case ResultType::ParseError:
         str = "Parsing error";
-    case ResultType::unknownError:
+    case ResultType::UnknownError:
         str = "Unknown error";
-    case ResultType::networkError:
+    case ResultType::NetworkError:
         str = "Network error";
     default:
         str = "Unknown error. Check ResultType documentation for PrintResultTypeInfo.";
@@ -126,27 +151,51 @@ struct ParsedLink {
 };
 
 namespace Bach {
+    /*! \brief
+     *  Contains the name of the environment variable where we expect
+     *  the MapTiler key to be stored.
+    */
+    const QString mapTilerKeyEnvName = "MAPTILER_KEY";
+
+    std::optional<QString> rasterTilesheetUrlFromMapType(MapType maptype);
+
     bool writeNewFileHelper(const QString& path, const QByteArray &bytes);
 
     std::optional<QString> readMapTilerKey(const QString &filePath);
 
     HttpResponse requestAndWait(const QString &url);
 
-    HttpResponse requestStyleSheetFromWeb(StyleSheetType type, const QString &key);
+    HttpResponse requestStyleSheetFromWeb(MapType type, const QString &key);
 
     HttpResponse loadStyleSheetBytes(
-        StyleSheetType type,
+        MapType type,
         const std::optional<QString> &mapTilerKey);
+
+    std::optional<QJsonDocument> loadStyleSheetJson(
+        MapType type,
+        const std::optional<QString> &mapTilerKey);
+
+    std::optional<QJsonDocument> loadVectorTileSheet(
+        const QJsonDocument &styleSheet,
+        const QString &sourceType);
+
+    std::optional<QJsonDocument> loadRasterTileSheet(
+        MapType mapType,
+        std::optional<QString> mapTilerKey);
 
     ParsedLink getTilesLinkFromStyleSheet(
         const QJsonDocument &styleSheet,
         const QString &sourceType);
 
-    ParsedLink getPbfLinkTemplate(
+    ParsedLink getTileUrlTemplateFromTileSheet(const QJsonDocument &tileSheet);
+
+    ParsedLink getPbfUrlTemplate(
         const QJsonDocument &styleSheet,
         const QString &sourceType);
 
-    ParsedLink getPbfLinkFromTileSheet(const QString &tileSheetUrl);
+    ParsedLink getPngUrlTemplate(
+        MapType mapType,
+        std::optional<QString> mapTilerKey);
 }
 
 #endif // UTILITIES_H

@@ -8,16 +8,38 @@ class UnitTesting : public QObject
     Q_OBJECT
 
 private slots:
-    /* Rendering tests
-     */
-    void longLatToWorldNormCoordDegrees_returns_expected_basic_values();
     void calcVisibleTiles_returns_expected_basic_cases();
     void calcViewportSizeNorm_returns_expected_basic_cases();
     void calcMapZoomLevelForTileSizePixels_returns_expected_basic_values();
+    void longLatToWorldNormCoordDegrees_returns_expected_basic_values();
+    void normalizeValueToZeroOneRange_returns_zero_when_small_divisor();
+    void normalizeValueToZeroOneRange_returns_number_when_large_divisor();
 };
 
 QTEST_MAIN(UnitTesting)
 #include "unittesting_rendering.moc"
+
+void UnitTesting::normalizeValueToZeroOneRange_returns_zero_when_small_divisor() {
+    double min = 0.0;
+    double max = 0.0;
+    double value = 5.0;
+    // Should return 0 when the difference between max and min approaches 0.
+    auto result = Bach::normalizeValueToZeroOneRange(value, min, max);
+
+    QVERIFY(result==0.0);
+}
+
+void UnitTesting::normalizeValueToZeroOneRange_returns_number_when_large_divisor() {
+    double min = 0.0;
+    double max = 1.0;
+    double value = 5.0;
+
+    auto result = Bach::normalizeValueToZeroOneRange(value, min, max);
+    auto expected = ((value - min) / (max - min));
+
+    QVERIFY(result==expected);
+}
+
 
 void UnitTesting::calcViewportSizeNorm_returns_expected_basic_cases()
 {

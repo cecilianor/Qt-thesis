@@ -473,7 +473,6 @@ Qt::PenCapStyle LineLayerStyle::getCapStyle() const
      */
 SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
 {
-
     SymbolLayerStyle* returnLayer = new SymbolLayerStyle();
 
     //parsing layout properties
@@ -511,6 +510,12 @@ SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
         }
 
     }
+
+    if(layout.contains("text-max-width")){
+        returnLayer->m_textMaxWidth = layout.value("text-max-width").toInt();
+    }else{
+        returnLayer->m_textMaxWidth = 10;
+    }
     //parsing paint properties
     QJsonObject paint = json.value("paint").toObject();
     if(paint.contains("text-color")){
@@ -545,6 +550,19 @@ SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
         }else{ //Case where the property is a numeric value
             returnLayer->m_textOpacity.setValue(textOpacity.toDouble());
         }
+    }
+
+    if(paint.contains("text-halo-color")){
+        QColor haloColor = getColorFromString(paint.value("text-halo-color").toString());
+        returnLayer->m_textHaloColor = haloColor;
+    }else{
+        returnLayer->m_textHaloColor = QColor(Qt::GlobalColor::black);
+    }
+
+    if(paint.contains("text-halo-width")){
+        returnLayer->m_textHaloWidth =paint.value("text-halo-width").toInt();
+    }else{
+        returnLayer->m_textHaloWidth = 0;
     }
 
     return returnLayer;
@@ -683,7 +701,6 @@ AbstractLayereStyle* AbstractLayereStyle::fromJson(const QJsonObject &json)
  * ----------------------------------------------------------------------------
  */
 
-
 StyleSheet::~StyleSheet()
 {
     //for(auto layer : m_layerStyles) {
@@ -716,4 +733,3 @@ std::optional<StyleSheet> StyleSheet::fromJson(const QJsonDocument& input)
     out.parseSheet(input);
     return out;
 }
-
