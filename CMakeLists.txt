@@ -83,15 +83,6 @@ qt_add_executable(application
     MANUAL_FINALIZATION
     ${PROJECT_SOURCES})
 
-qt_add_resources(application "pngImages"
-    PREFIX "/"
-    FILES
-    testdata/png-images/13_4340_2381.png
-    testdata/png-images/13_4340_2382.png
-    testdata/png-images/13_4341_2381.png
-    testdata/png-images/13_4341_2382.png
-)
-
 # Link our app to our library target.
 target_link_libraries(application PUBLIC maplib)
 
