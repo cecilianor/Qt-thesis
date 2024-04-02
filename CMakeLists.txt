@@ -36,8 +36,12 @@ endfunction()
 qt_add_library(maplib STATIC
     lib/VectorTiles.cpp
     lib/VectorTiles.h
-    lib/Rendering.cpp
     lib/Rendering.h
+    lib/Rendering.cpp
+    lib/Rendering_Line.cpp
+    lib/Rendering_Math.cpp
+    lib/Rendering_Polygon.cpp
+    lib/Rendering_Text.cpp
     lib/TileCoord.h
     lib/TileCoord.cpp
     lib/Layerstyle.h
