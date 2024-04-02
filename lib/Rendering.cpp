@@ -417,8 +417,7 @@ static QString getTextContent(
             mapZoom,
             vpZoom);
         return textVariant.toString();
-    }else //In case the text field is just a string of the key for the metadata map.
-    {
+    }else{ //In case the text field is just a string of the key for the metadata map.
         QString textFieldKey = textVariant.toString();
         textFieldKey.remove("{");
         textFieldKey.remove("}");
@@ -496,13 +495,9 @@ static void paintSimpleText(
     //rectangle of the original text.
     qreal textCenteringOffsetX = -boundingRect.width() / 2.;
     qreal textCenteringOffsetY = boundingRect.height() / 2.;
-    textPath.translate({
-                        textCenteringOffsetX,
-                        textCenteringOffsetY});
+    textPath.translate({textCenteringOffsetX, textCenteringOffsetY});
     textPath.translate(coordinate);
-    boundingRect.translate({
-                            textCenteringOffsetX,
-                            textCenteringOffsetY});
+    boundingRect.translate({textCenteringOffsetX, textCenteringOffsetY});
     boundingRect.translate(coordinate);
 
 
@@ -556,13 +551,9 @@ static void paintCompositeText(
         //other substrings.
         qreal textCenteringOffsetX = -boundingRect.width() / 2.;
         qreal textCenteringOffsetY = boundingRect.height() / 2.;
-        temp.translate({
-                        textCenteringOffsetX,
-                        textCenteringOffsetY + ((i - (texts.size() / 2.)) * height)});
+        temp.translate({textCenteringOffsetX, textCenteringOffsetY + ((i - (texts.size() / 2.)) * height)});
         temp.translate(coordinates);
-        boundingRect.translate({
-                                textCenteringOffsetX,
-                                textCenteringOffsetY + ((i - (texts.size() / 2.)) * height)});
+        boundingRect.translate({textCenteringOffsetX, textCenteringOffsetY + ((i - (texts.size() / 2.)) * height)});
         boundingRect.translate(coordinates);
         //Add the current text path to the list and clear it for the next iteration.
         paths.append(temp);
@@ -931,9 +922,6 @@ void Bach::paintTiles(
         auto tileIt = tileContainer.find(tileCoord);
         if (tileIt != tileContainer.end()) {
             auto const& tileData = **tileIt;
-            if(tileCoord == TileCoord({2,2,1})){
-                int i = 0;
-            }
             painter.save();
 
             // We create a clip rect around our tile, as to only render into
