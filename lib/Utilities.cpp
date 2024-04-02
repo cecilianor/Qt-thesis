@@ -1,3 +1,4 @@
+#include <QtEnvironmentVariables>
 #include <QFile>
 #include <QtNetwork>
 #include <QTextStream>
@@ -88,6 +89,15 @@ bool Bach::writeNewFileHelper(const QString& path, const QByteArray &bytes)
  */
 std::optional<QString> Bach::readMapTilerKey(const QString &filePath)
 {
+    // First check if the key is available as an environment variable.
+    {
+        QString envValue = qEnvironmentVariable(mapTilerKeyEnvName.toUtf8());
+        if (!envValue.isEmpty()) {
+            return envValue;
+        }
+    }
+
+
     QFile file(filePath);
 
     if (!file.open(QFile::ReadOnly | QFile::Text)) {

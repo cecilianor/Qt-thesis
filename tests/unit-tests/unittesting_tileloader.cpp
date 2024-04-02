@@ -1,3 +1,4 @@
+#include <QtEnvironmentVariables>
 #include <QJsonDocument>
 #include <QObject>
 #include <QTest>
@@ -11,6 +12,7 @@ class UnitTesting : public QObject
     Q_OBJECT
 
 private slots:
+    void readKey_returns_success_when_env_var_is_set();
     void readKey_returns_success_when_valid_key();
     void readKey_returns_failure_when_invalid_key();
     void getStyleSheet_returns_success_on_supported_stylesheet();
@@ -26,6 +28,26 @@ private slots:
 QTEST_MAIN(UnitTesting)
 #include "unittesting_tileloader.moc"
 // This include needs to match the name of this .cpp file.
+
+void UnitTesting::readKey_returns_success_when_env_var_is_set()
+{
+    QString expectedKey = "abcd";
+
+    bool insertEnvSuccess = qputenv(
+        Bach::mapTilerKeyEnvName.toUtf8(),
+        expectedKey.toUtf8());
+    if (!insertEnvSuccess) {
+        qWarning() << "Inserting environment variable failed. Skipping test.";
+        return;
+    }
+
+    std::optional<QString> keyOpt = Bach::readMapTilerKey({});
+    QVERIFY2(
+        keyOpt.has_value(),
+        "readMapTilerKey failed. It should succeed because the environment variable was set correctly.");
+    const QString &key = keyOpt.value();
+    QVERIFY(key == expectedKey);
+}
 
 // Try to get a key that's correct
 void UnitTesting::readKey_returns_success_when_valid_key()
@@ -306,3 +328,5 @@ void UnitTesting::check_new_tileLoader_has_no_tiles()
     const QMap<TileCoord, const VectorTile*> &map = result->vectorMap();
     QVERIFY(map.size() == 0);
 }
+
+
