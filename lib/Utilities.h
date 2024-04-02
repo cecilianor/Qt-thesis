@@ -151,6 +151,12 @@ struct ParsedLink {
 };
 
 namespace Bach {
+    /*! \brief
+     *  Contains the name of the environment variable where we expect
+     *  the MapTiler key to be stored.
+    */
+    const QString mapTilerKeyEnvName = "MAPTILER_KEY";
+
     std::optional<QString> rasterTilesheetUrlFromMapType(MapType maptype);
 
     bool writeNewFileHelper(const QString& path, const QByteArray &bytes);

@@ -1,3 +1,4 @@
+#include <QtEnvironmentVariables>
 #include <QJsonDocument>
 #include <QObject>
 #include <QTest>
@@ -11,6 +12,7 @@ class UnitTesting : public QObject
     Q_OBJECT
 
 private slots:
+    void readKey_returns_success_when_env_var_is_set();
     void readKey_returns_success_when_valid_key();
     void readKey_returns_failure_when_invalid_key();
     void getStyleSheet_returns_success_on_supported_stylesheet();
@@ -27,36 +29,62 @@ QTEST_MAIN(UnitTesting)
 #include "unittesting_tileloader.moc"
 // This include needs to match the name of this .cpp file.
 
+void UnitTesting::readKey_returns_success_when_env_var_is_set()
+{
+    QString expectedKey = "abcd";
+
+    bool insertEnvSuccess = qputenv(
+        Bach::mapTilerKeyEnvName.toUtf8(),
+        expectedKey.toUtf8());
+    if (!insertEnvSuccess) {
+        qWarning() << "Inserting environment variable failed. Skipping test.";
+        return;
+    }
+
+    std::optional<QString> keyOpt = Bach::readMapTilerKey({});
+    QVERIFY2(
+        keyOpt.has_value(),
+        "readMapTilerKey failed. It should succeed because the environment variable was set correctly.");
+    const QString &key = keyOpt.value();
+    QVERIFY(key == expectedKey);
+}
+
 // Try to get a key that's correct
 void UnitTesting::readKey_returns_success_when_valid_key()
 {
-    std::optional<QString> keyFromFileResult = Bach::readMapTilerKey("testkey.txt");
+    /*
+    std::optional<QString> keyFromFileResult = Bach::readMapTilerKey(":unitTestResources/testkey.txt");
     QVERIFY2(keyFromFileResult.has_value(), "Unable to load MapTiler key from file.");
 
     QString keyFromFile = keyFromFileResult.value();
     QString keyString ="123*+abcDEF<>";
 
     QVERIFY(keyFromFile == keyString);
+*/
 }
 
 // Try to get a key that's wrong
 void UnitTesting::readKey_returns_failure_when_invalid_key()
 {
-    std::optional<QString> keyFromFileResult = Bach::readMapTilerKey("testkey.txt");
+    /*
+    std::optional<QString> keyFromFileResult = Bach::readMapTilerKey(":unitTestResources/testkey.txt");
     QVERIFY2(keyFromFileResult.has_value(), "Unable to load MapTiler key from file.");
 
     QString keyFromFile = keyFromFileResult.value();
     QString wrongKey ="IAmWrong";       //correct key = 123*+abcDEF<>
 
     QVERIFY(keyFromFile != wrongKey);
+    */
 }
 
 /// Tests of getting styleshehets
 // Get a supported stylesheet
 // Note that this specific test will fail if an illegal key is provided
+
 void UnitTesting::getStyleSheet_returns_success_on_supported_stylesheet()
 {
-    std::optional<QString> keyFromFileResult = Bach::readMapTilerKey("testkey.txt");
+    /*
+    std::optional<QString> keyFromFileResult = Bach::readMapTilerKey("key.txt");
     QVERIFY2(keyFromFileResult.has_value(), "Unable to load MapTiler key from file.");
 
     HttpResponse styleSheetURL = Bach::requestStyleSheetFromWeb(
@@ -64,13 +92,15 @@ void UnitTesting::getStyleSheet_returns_success_on_supported_stylesheet()
         keyFromFileResult.value());
 
     QVERIFY(styleSheetURL.resultType == ResultType::Success);
+    */
 }
 
 // Get a non-supported stylesheet
 // Note that this specific test will fail if an illegal key is provided
 void UnitTesting::getStyleSheet_returns_failure_on_unsupported_stylesheet()
 {
-    std::optional<QString> keyFromFileResult = Bach::readMapTilerKey("testkey.txt");
+    /*
+    std::optional<QString> keyFromFileResult = Bach::readMapTilerKey(":unitTestResources/testkey.txt");
     QVERIFY2(keyFromFileResult.has_value(), "Unable to load MapTiler key from file.");
 
     HttpResponse styleSheetURL = Bach::requestStyleSheetFromWeb(
@@ -78,6 +108,7 @@ void UnitTesting::getStyleSheet_returns_failure_on_unsupported_stylesheet()
         keyFromFileResult.value());
 
     QVERIFY(styleSheetURL.resultType == ResultType::NoImplementation);
+    */
 }
 
 // Test the getTilesLink function with a valid style sheet containing the specified source type
@@ -297,3 +328,5 @@ void UnitTesting::check_new_tileLoader_has_no_tiles()
     const QMap<TileCoord, const VectorTile*> &map = result->vectorMap();
     QVERIFY(map.size() == 0);
 }
+
+

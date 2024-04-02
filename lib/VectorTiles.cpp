@@ -64,7 +64,6 @@ TileLayer::TileLayer(int version, QString name, int extent)
     : m_version(version),
     m_name(name),
     m_extent(extent) {
-
 }
 
 TileLayer::~TileLayer() {
@@ -133,7 +132,6 @@ PolygonFeature* polygonFeatureFromProto(const vector_tile::Tile::Feature &featur
             count--;
         }
     }
-
     return newFeature;
 }
 
@@ -172,7 +170,6 @@ LineFeature* lineFeatureFromProto(const vector_tile::Tile::Feature &feature)
             count--;
         }
     }
-
     return newFeature;
 }
 
@@ -227,11 +224,11 @@ void populateFeatureMetaData(AbstractLayerFeature* feature, QList<QString> &keys
         }else if(value.hasDoubleValue()){
             feature->fetureMetaData.insert(key, QVariant(value.doubleValue()));
         }else if(value.hasIntValue()){
-            feature->fetureMetaData.insert(key, QVariant(value.intValue()));
+            feature->fetureMetaData.insert(key, QVariant::fromValue<QtProtobuf::int64>(value.intValue()));
         }else if(value.hasUintValue()){
-            feature->fetureMetaData.insert(key, QVariant(value.uintValue()));
+            feature->fetureMetaData.insert(key, QVariant::fromValue<QtProtobuf::uint64>(value.uintValue()));
         }else if(value.hasSintValue()){
-            feature->fetureMetaData.insert(key, QVariant(value.sintValue()));
+            feature->fetureMetaData.insert(key, QVariant::fromValue<QtProtobuf::sint64>(value.sintValue()));
         }else if(value.hasBoolValue()){
             feature->fetureMetaData.insert(key, QVariant(value.boolValue()));
         }
@@ -243,7 +240,6 @@ void populateFeatureMetaData(AbstractLayerFeature* feature, QList<QString> &keys
  */
 
 VectorTile::VectorTile() {
-
 }
 
 VectorTile::~VectorTile() {
@@ -305,7 +301,6 @@ bool VectorTile::DeserializeMessage(QByteArray data)
             }
         }
     }
-
     return true;
 }
 
@@ -360,7 +355,6 @@ std::optional<VectorTile> Bach::tileFromByteArray(const QByteArray &bytes)
             }
         }
     }
-
     return output;
 }
 

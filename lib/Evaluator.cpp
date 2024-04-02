@@ -20,7 +20,8 @@ QMap<QString, QVariant(*)(const QJsonArray&, const AbstractLayerFeature*, int ma
     */
 QVariant Evaluator::resolveExpression(const QJsonArray &expression, const AbstractLayerFeature* feature, int mapZoomLevel, float vpZoomeLevel)
 {
-    if (m_expressionMap.isEmpty()) setupExpressionMap();
+    if (m_expressionMap.isEmpty())
+        setupExpressionMap();
     if (expression.empty()) {
         return {};
     }
@@ -92,7 +93,6 @@ QVariant Evaluator::has(const QJsonArray &array, const AbstractLayerFeature *fea
     return feature->fetureMetaData.contains(property);
 }
 
-
 /*Resolve the "in" expression which checks if a feature's property is in a range of values
     *
     * parameters:
@@ -135,7 +135,6 @@ QVariant Evaluator::in(const QJsonArray &array, const AbstractLayerFeature *feat
     */
 QVariant Evaluator::compare(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
 {
-
     QVariant operand1;
     QVariant operand2;
     if(array.at(1).isArray()){
@@ -179,7 +178,6 @@ QVariant Evaluator::compare(const QJsonArray &array, const AbstractLayerFeature 
         }
     }
 
-
     operand2 = array.at(2).toVariant();
     //Check wich operation this expression contains
     if(array.at(0).toString() == "!="){
@@ -187,7 +185,6 @@ QVariant Evaluator::compare(const QJsonArray &array, const AbstractLayerFeature 
     }else{
         return operand1 == operand2;
     }
-
 }
 
 /*Resolve the ">" expression which checks if a value is greater than the other one
@@ -303,6 +300,7 @@ QVariant Evaluator::match(const QJsonArray &array, const AbstractLayerFeature *f
 {
     QJsonArray expression = array.at(1).toArray();
     QVariant input = resolveExpression(expression, feature, mapZoomLevel, vpZoomeLevel);
+
     for(int i = 2; i < array.size() - 2; i += 2){
         if(array.at(i).isArray()){
             if(array.at(i).toArray().toVariantList().contains(input)){
@@ -322,9 +320,7 @@ QVariant Evaluator::match(const QJsonArray &array, const AbstractLayerFeature *f
         }
     }
     return array.last().toVariant();
-
 }
-
 
 /*Perform a linear interpolation
     *
@@ -341,7 +337,6 @@ static float lerp(QPair<float, float> stop1, QPair<float, float> stop2, int curr
     return lerpedValue;
 }
 
-
 /*Resolve the "interpolate" expression which performs an interpolation fiven a zoom level (limited only to linear interpolation)
     *
     * parameters:
@@ -355,6 +350,8 @@ static float lerp(QPair<float, float> stop1, QPair<float, float> stop2, int curr
 QVariant Evaluator::interpolate(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
 {
     QVariant returnVariant;
+    // The source interpolation data values start at index 3 if they exist, use that
+    // to check and specify how to handle interpolation.
     if(mapZoomLevel <= array.at(3).toDouble()){
         if(array.at(4).isArray()){
             returnVariant = resolveExpression(array.at(4).toArray(), feature, mapZoomLevel, vpZoomeLevel);
@@ -388,13 +385,10 @@ QVariant Evaluator::interpolate(const QJsonArray &array, const AbstractLayerFeat
         }else{
             stopOutput2 = array.at(index + 1).toDouble();
         }
-
-
+        // Use lerped values in the return variant.
         returnVariant = lerp(QPair<float, float>(stopInput1,stopOutput1), QPair<float, float>(stopInput2,stopOutput2), mapZoomLevel);
-
     }
     return returnVariant;
-
 }
 
 

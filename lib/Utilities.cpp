@@ -1,3 +1,4 @@
+#include <QtEnvironmentVariables>
 #include <QFile>
 #include <QtNetwork>
 #include <QTextStream>
@@ -88,6 +89,15 @@ bool Bach::writeNewFileHelper(const QString& path, const QByteArray &bytes)
  */
 std::optional<QString> Bach::readMapTilerKey(const QString &filePath)
 {
+    // First check if the key is available as an environment variable.
+    {
+        QString envValue = qEnvironmentVariable(mapTilerKeyEnvName.toUtf8());
+        if (!envValue.isEmpty()) {
+            return envValue;
+        }
+    }
+
+
     QFile file(filePath);
 
     if (!file.open(QFile::ReadOnly | QFile::Text)) {
@@ -197,7 +207,6 @@ HttpResponse Bach::loadStyleSheetBytes(
             return { file.readAll(), ResultType::Success }; // Kinda strange signature here, but it must be this way to match its original implementation.
         }
     }
-
 
     // If we got here, we need to try loading from web.
 
@@ -468,7 +477,6 @@ ParsedLink Bach::getTileUrlTemplateFromTileSheet(const QJsonDocument &tileSheet)
 {
     if (tileSheet.isObject()) {
         QJsonObject jsonObject = tileSheet.object();
-        //qDebug() << "A JSON object was found. It is the following: \n" << jsonObject;
         if(jsonObject.contains("tiles") && jsonObject["tiles"].isArray()) {
             QJsonArray tilesArray = jsonObject["tiles"].toArray();
             for (const QJsonValueRef &tileValue : tilesArray) {

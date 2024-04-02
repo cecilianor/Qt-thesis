@@ -30,7 +30,7 @@ int main(int argc, char *argv[])
     bool hasMapTilerKey = mapTilerKeyOpt.has_value();
     if (!hasMapTilerKey) {
         qWarning() << "Reading of the MapTiler key failed. " <<
-                      "App will attempt to only use local cache.";
+            "App will attempt to only use local cache.";
     }
 
     // The style sheet type to load (can be many different types).
@@ -62,7 +62,6 @@ int main(int argc, char *argv[])
     if (useWeb) {
         ParsedLink pbfUrlTemplateResult = Bach::getPbfUrlTemplate(styleSheetJson, "maptiler_planet");
         ParsedLink pngUrlTemplateResult = Bach::getPngUrlTemplate(mapType, mapTilerKeyOpt);
-
         if (pbfUrlTemplateResult.resultType != ResultType::Success)
             useWeb = false;
         else if (pngUrlTemplateResult.resultType != ResultType::Success)
