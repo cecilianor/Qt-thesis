@@ -350,6 +350,8 @@ static float lerp(QPair<float, float> stop1, QPair<float, float> stop2, int curr
 QVariant Evaluator::interpolate(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
 {
     QVariant returnVariant;
+    // The source interpolation data values start at index 3 if they exist, use that
+    // to check and specify how to handle interpolation.
     if(mapZoomLevel <= array.at(3).toDouble()){
         if(array.at(4).isArray()){
             returnVariant = resolveExpression(array.at(4).toArray(), feature, mapZoomLevel, vpZoomeLevel);
@@ -383,7 +385,7 @@ QVariant Evaluator::interpolate(const QJsonArray &array, const AbstractLayerFeat
         }else{
             stopOutput2 = array.at(index + 1).toDouble();
         }
-        // Use lerped values in the return variant
+        // Use lerped values in the return variant.
         returnVariant = lerp(QPair<float, float>(stopInput1,stopOutput1), QPair<float, float>(stopInput2,stopOutput2), mapZoomLevel);
     }
     return returnVariant;
