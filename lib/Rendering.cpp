@@ -1,13 +1,14 @@
 #include "Evaluator.h"
 #include "Rendering.h"
 
-// Information about what's on this file:
-// It consists of two major sections:
-//
-// 1. Rendering helper functions only used in `Rendering.cpp`.
-// 2. Rendering functions that can be used externally, declared in `Rendering.h`.
+/*  Information about what's on this file:
+    It consists of two major sections:
 
-// Rendering helper functions follow below.
+    1. Rendering helper functions only used in `Rendering.cpp`.
+    2. Rendering functions that can be used externally, declared in `Rendering.h`.
+
+    Rendering helper functions follow below.
+*/
 
 /* This is a helper function for visualizing the boundaries of each tile.
  *
