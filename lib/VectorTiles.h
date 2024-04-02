@@ -28,7 +28,7 @@ public:
 
     virtual featureType type() const = 0;
     QVector<unsigned int> tags;
-    QMap<QString, QVariant> fetureMetaData;
+    QMap<QString, QVariant> featureMetaData;
 private:
     int m_id;
 };

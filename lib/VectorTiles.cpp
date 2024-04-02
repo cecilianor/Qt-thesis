@@ -213,7 +213,6 @@ PointFeature* pointFeatureFromProto(const vector_tile::Tile::Feature &feature)
 */
 void populateFeatureMetaData(AbstractLayerFeature* feature, QList<QString> &keys, QList<vector_tile::Tile_QtProtobufNested::Value> &values)
 {
-
     if(!feature || feature->tags.length() < 2) return;
     for(int i = 0; i <= feature->tags.length() - 2; i += 2){
         int keyIndex = feature->tags.at(i);
@@ -221,19 +220,19 @@ void populateFeatureMetaData(AbstractLayerFeature* feature, QList<QString> &keys
         QString key = keys.at(keyIndex);
         auto value = values.at(valueIndex);
         if(value.hasStringValue()){
-            feature->fetureMetaData.insert(key, QVariant(value.stringValue()));
+            feature->featureMetaData.insert(key, QVariant(value.stringValue()));
         }else if(value.hasFloatValue()){
-            feature->fetureMetaData.insert(key, QVariant(value.floatValue()));
+            feature->featureMetaData.insert(key, QVariant(value.floatValue()));
         }else if(value.hasDoubleValue()){
-            feature->fetureMetaData.insert(key, QVariant(value.doubleValue()));
+            feature->featureMetaData.insert(key, QVariant(value.doubleValue()));
         }else if(value.hasIntValue()){
-            feature->fetureMetaData.insert(key, QVariant(value.intValue()));
+            feature->featureMetaData.insert(key, QVariant(static_cast<qint64>(value.intValue())));
         }else if(value.hasUintValue()){
-            feature->fetureMetaData.insert(key, QVariant(value.uintValue()));
+            feature->featureMetaData.insert(key, QVariant(static_cast<quint64>(value.intValue())));
         }else if(value.hasSintValue()){
-            feature->fetureMetaData.insert(key, QVariant(value.sintValue()));
+            feature->featureMetaData.insert(key, QVariant(static_cast<qint64>(value.sintValue())));
         }else if(value.hasBoolValue()){
-            feature->fetureMetaData.insert(key, QVariant(value.boolValue()));
+            feature->featureMetaData.insert(key, QVariant(value.boolValue()));
         }
     }
 }
