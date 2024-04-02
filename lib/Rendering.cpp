@@ -297,7 +297,6 @@ static int getLineWidth(
     return lineWidth.value<int>();
 }
 
-
 /* Paints a single Line feature within a tile.
  *
  * Assumes the painters origin has moved to the tiles origin.
@@ -528,7 +527,6 @@ static void paintCompositeText(
     const int mapZoom,
     const double vpZoom)
 {
-
     //The font metrics var is used to calculate how much space does each word consume.
     QFontMetricsF fmetrics(textFont);
     //This is the hight of text character, this is used to calculate the combined hight of all the substrings' bounding rects.
@@ -594,12 +592,10 @@ static void paintSingleTileFeature_Point(
     int tileSize,
     QVector<QRect> &rects)
 {
-
     //Get the text to be rendered.
     QString textToDraw = getTextContent(layerStyle, feature, mapZoom, vpZoom);
     //If there is no text then there is nothing to render, we return
     if(textToDraw == "") return;
-
 
     //Get the rendering parameters from the layerstyle and set the relevant painter field.
     painter.setBrush(Qt::NoBrush);
@@ -652,9 +648,7 @@ static void paintSingleTileFeature_Point(
             mapZoom,
             vpZoom);
     }
-
 }
-
 
 // Determines whether this layer is hidden.
 static bool isLayerHidden(const AbstractLayereStyle &layerStyle, int mapZoom)
@@ -699,7 +693,6 @@ static void paintSingleTile(
     const QTransform &transformIn,
     int tileSize)
 {
-
     QVector<QPair<int, PointFeature>> labels; //Used to order text rendering operation based on "rank" property.
     QVector<QRect> laberRects; //Used to prevent text overlapping.
     // We start by iterating over each layer style, it determines the order
@@ -854,7 +847,6 @@ void Bach::paintTiles(
     // Start by drawing the background color on the entire canvas.
     drawBackgroundColor(painter, styleSheet, mapZoomLevel);
 
-
     // Gather width and height of the viewport, in pixels..
     auto vpWidth = painter.window().width();
     auto vpHeight = painter.window().height();
@@ -952,7 +944,6 @@ void Bach::paintTiles(
                 tileCoord,
                 vpMaxDim * tileSizeNorm);
         }
-
         painter.restore();
     }
 }

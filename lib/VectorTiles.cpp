@@ -64,7 +64,6 @@ TileLayer::TileLayer(int version, QString name, int extent)
     : m_version(version),
     m_name(name),
     m_extent(extent) {
-
 }
 
 TileLayer::~TileLayer() {
@@ -133,7 +132,6 @@ PolygonFeature* polygonFeatureFromProto(const vector_tile::Tile::Feature &featur
             count--;
         }
     }
-
     return newFeature;
 }
 
@@ -172,7 +170,6 @@ LineFeature* lineFeatureFromProto(const vector_tile::Tile::Feature &feature)
             count--;
         }
     }
-
     return newFeature;
 }
 
@@ -243,7 +240,6 @@ void populateFeatureMetaData(AbstractLayerFeature* feature, QList<QString> &keys
  */
 
 VectorTile::VectorTile() {
-
 }
 
 VectorTile::~VectorTile() {
@@ -305,7 +301,6 @@ bool VectorTile::DeserializeMessage(QByteArray data)
             }
         }
     }
-
     return true;
 }
 
@@ -360,7 +355,6 @@ std::optional<VectorTile> Bach::tileFromByteArray(const QByteArray &bytes)
             }
         }
     }
-
     return output;
 }
 

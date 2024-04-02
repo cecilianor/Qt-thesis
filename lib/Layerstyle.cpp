@@ -473,7 +473,6 @@ Qt::PenCapStyle LineLayerStyle::getCapStyle() const
      */
 SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
 {
-
     SymbolLayerStyle* returnLayer = new SymbolLayerStyle();
 
     //parsing layout properties
@@ -702,7 +701,6 @@ AbstractLayereStyle* AbstractLayereStyle::fromJson(const QJsonObject &json)
  * ----------------------------------------------------------------------------
  */
 
-
 StyleSheet::~StyleSheet()
 {
     //for(auto layer : m_layerStyles) {
@@ -735,4 +733,3 @@ std::optional<StyleSheet> StyleSheet::fromJson(const QJsonDocument& input)
     out.parseSheet(input);
     return out;
 }
-

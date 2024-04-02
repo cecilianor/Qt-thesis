@@ -178,7 +178,6 @@ HttpResponse Bach::loadStyleSheetBytes(
         }
     }
 
-
     // If we got here, we need to try loading from web.
 
     // If we don't have any MapTiler key, we can't make a request.

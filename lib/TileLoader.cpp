@@ -243,7 +243,6 @@ QScopedPointer<Bach::RequestTilesResult> TileLoader::requestTiles(
             }
         }
     }
-
     if (loadMissingTiles)
         queueTileLoadingJobs(loadJobs, signalFn);
 
