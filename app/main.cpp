@@ -1,15 +1,9 @@
 #include <QApplication>
 #include <QMessageBox>
-#include <QFile>
-#include <QStandardPaths>
-#include <QDir>
 
 #include "MainWindow.h"
 #include "TileLoader.h"
 #include "Utilities.h"
-
-#include <QNetworkReply>
-#include <QDir>
 
 // Helper function to let us do early shutdown during startup.
 [[noreturn]] void earlyShutdown(const QString &msg = "")

@@ -1134,12 +1134,6 @@ void Bach::paintPngTiles(
         transform.translate(tilePixelPosX, tilePixelPosY);
         painter.setTransform(transform);
 
-        // Temporary. Should likely just be passed as a single scalar to tile-drawing function.
-        /* Probably only needed for vector drawing.
-        QTransform geometryTransform;
-        geometryTransform.scale(vpMaxDim * tileSizeNorm, vpMaxDim * tileSizeNorm);
-        */
-
         // See if the tile being rendered has any tile-data associated with it.
        auto tileIt = tileContainer.find(tileCoord);
        if (tileIt != tileContainer.end()) {
@@ -1164,5 +1158,5 @@ void Bach::paintPngTiles(
         }
 
         painter.restore();
-        }
+    }
 }
