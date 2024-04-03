@@ -135,13 +135,7 @@ static void paintSingleTile(
 
                 // Render the feature in question.
                 painter.save();
-                Bach::paintSingleTileFeature_Fill_Polygon(
-                    painter,
-                    feature,
-                    layerStyle,
-                    mapZoom,
-                    vpZoom,
-                    transformIn);
+                Bach::paintSingleTileFeature_Fill_Polygon({&painter, &layerStyle, &feature, mapZoom, vpZoom, transformIn});
                 painter.restore();
             }
         } else if (abstractLayerStyle->type() == AbstractLayereStyle::LayerType::line) {
