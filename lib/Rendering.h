@@ -56,15 +56,10 @@ namespace Bach {
     QPair<double, double> calcViewportSizeNorm(double viewportZoom, double viewportAspect);
     double normalizeValueToZeroOneRange(double value, double min, double max);
 
-   void paintSingleTileFeature_Fill_Polygon(PaintingDetailsPolygon details);
+    void paintSingleTileFeature_Fill_Polygon(PaintingDetailsPolygon details);
 
-    void paintSingleTileFeature_Line(
-        QPainter &painter,
-        const LineFeature &feature,
-        const LineLayerStyle &layerStyle,
-        const int mapZoom,
-        const double vpZoom,
-        const QTransform &transformIn);
+    void paintSingleTileFeature_Line(PaintingDetailsLine details);
+
 
     void paintSingleTileFeature_Point(
         QPainter &painter,

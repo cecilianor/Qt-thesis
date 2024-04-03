@@ -153,13 +153,7 @@ static void paintSingleTile(
 
                 // Render the feature in question.
                 painter.save();
-                Bach::paintSingleTileFeature_Line(
-                    painter,
-                    feature,
-                    layerStyle,
-                    mapZoom,
-                    vpZoom,
-                    transformIn);
+                Bach::paintSingleTileFeature_Line({&painter, &layerStyle, &feature, mapZoom, vpZoom, transformIn});
                 painter.restore();
             }
         } else if(abstractLayerStyle->type() == AbstractLayereStyle::LayerType::symbol){
