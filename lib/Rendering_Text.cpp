@@ -250,26 +250,24 @@ static void paintCompositeText(
  * Assumes the painters origin has moved to the tiles origin.
  */
 void Bach::paintSingleTileFeature_Point(
-    QPainter &painter,
-    const PointFeature &feature,
-    const SymbolLayerStyle &layerStyle,
-    const int mapZoom,
-    const double vpZoom,
-    const QTransform &transformIn,
+    PaintingDetailsPoint details,
     const int tileSize,
     QVector<QRect> &rects)
 {
+    auto &painter = *details.painter;
+    auto &layerStyle = *details.layerStyle;
+    auto &feature = *details.feature;
     //Get the text to be rendered.
-    QString textToDraw = getTextContent(layerStyle, feature, mapZoom, vpZoom);
+    QString textToDraw = getTextContent(layerStyle, feature, details.mapZoom, details.vpZoom);
     //If there is no text then there is nothing to render, we return
     if(textToDraw == "") return;
 
     //Get the rendering parameters from the layerstyle and set the relevant painter field.
     painter.setBrush(Qt::NoBrush);
-    int textSize = getTextSize(layerStyle, feature, mapZoom, vpZoom);
+    int textSize = getTextSize(layerStyle, feature, details.mapZoom, details.vpZoom);
     QFont textFont = QFont(layerStyle.m_textFont);
     textFont.setPixelSize(textSize);
-    painter.setOpacity(getTextOpacity(layerStyle, feature, mapZoom, vpZoom));
+    painter.setOpacity(getTextOpacity(layerStyle, feature, details.mapZoom, details.vpZoom));
     const int outlineSize = layerStyle.m_textHaloWidth.toInt();
     QColor outlineColor = layerStyle.m_textHaloColor.value<QColor>();
     //Text is always antialised (otherwise it does not look good)
@@ -299,8 +297,8 @@ void Bach::paintSingleTileFeature_Point(
             painter,
             feature,
             layerStyle,
-            mapZoom,
-            vpZoom);
+            details.mapZoom,
+            details.vpZoom);
     else{ //In case there are multiple strings to be redered (text wrapping)
         paintCompositeText(
             correctedText,
@@ -312,7 +310,8 @@ void Bach::paintSingleTileFeature_Point(
             painter,
             feature,
             layerStyle,
-            mapZoom,
-            vpZoom);
+            details.mapZoom,
+            details.vpZoom);
     }
 }
+

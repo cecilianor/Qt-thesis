@@ -183,14 +183,10 @@ static void paintSingleTile(
             for(const auto &pair : labels){
                  painter.save();
                 Bach::paintSingleTileFeature_Point(
-                     painter,
-                     pair.second,
-                     layerStyle,
-                     mapZoom,
-                     vpZoom,
-                     transformIn,
-                     tileSize,
-                     laberRects);
+                    {&painter, &layerStyle, &pair.second, mapZoom, vpZoom, transformIn},
+                    tileSize,
+                    laberRects);
+
                  painter.restore();
              }
         }

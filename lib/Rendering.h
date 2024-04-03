@@ -62,14 +62,10 @@ namespace Bach {
 
 
     void paintSingleTileFeature_Point(
-        QPainter &painter,
-        const PointFeature &feature,
-        const SymbolLayerStyle &layerStyle,
-        const int mapZoom,
-        const double vpZoom,
-        const QTransform &transformIn,
+        PaintingDetailsPoint details,
         const int tileSize,
         QVector<QRect> &rects);
+
 
     int calcMapZoomLevelForTileSizePixels(
         int vpWidth,
