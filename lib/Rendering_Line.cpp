@@ -67,10 +67,10 @@ static int getLineWidth(
  */
 void Bach::paintSingleTileFeature_Line(Bach::PaintingDetailsLine details)
 {
-    auto &painter = *details.painter;
-    auto &feature = *details.feature;
-    auto &layerStyle = *details.layerStyle;
-    auto pen = painter.pen();
+    QPainter &painter = *details.painter;
+    const LineFeature &feature = *details.feature;
+    const LineLayerStyle &layerStyle = *details.layerStyle;
+    QPen pen = painter.pen();
 
     pen.setColor(getLineColor(layerStyle, feature, details.mapZoom, details.vpZoom));
     // Not sure how to take opacity into account yet.
@@ -87,10 +87,10 @@ void Bach::paintSingleTileFeature_Line(Bach::PaintingDetailsLine details)
     // Not sure yet how to determine AA for lines.
     painter.setRenderHints(QPainter::Antialiasing, false);
 
-    auto const& path = feature.line();
+    const QPainterPath &path = feature.line();
     QTransform transform = details.transformIn;
     transform.scale(1 / 4096.0, 1 / 4096.0);
-    auto newPath = transform.map(path);
+    const QPainterPath newPath = transform.map(path);
 
     painter.drawPath(newPath);
 }

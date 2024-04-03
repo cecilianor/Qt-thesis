@@ -254,9 +254,9 @@ void Bach::paintSingleTileFeature_Point(
     const int tileSize,
     QVector<QRect> &rects)
 {
-    auto &painter = *details.painter;
-    auto &layerStyle = *details.layerStyle;
-    auto &feature = *details.feature;
+    QPainter &painter = *details.painter;
+    const SymbolLayerStyle &layerStyle = *details.layerStyle;
+    const PointFeature &feature = *details.feature;
     //Get the text to be rendered.
     QString textToDraw = getTextContent(layerStyle, feature, details.mapZoom, details.vpZoom);
     //If there is no text then there is nothing to render, we return
@@ -278,12 +278,12 @@ void Bach::paintSingleTileFeature_Point(
     QList<QString> correctedText = getCorrectedText(textToDraw, textFont, layerStyle.m_textMaxWidth.toInt());
 
     //Get the coordinates for the text rendering
-    auto const& coordinates = feature.points().at(0);
+    const QPoint &coordinates = feature.points().at(0);
     QTransform transform = {};
     transform.scale(1 / 4096.0, 1 / 4096.0);
     transform.scale(tileSize, tileSize);
     //Remap the original coordinates so that they are positioned correctly.
-    auto newCoordinates = transform.map(coordinates);
+    const QPoint newCoordinates = transform.map(coordinates);
 
     //The text is rendered differently depending on it it wraps or not.
     if(correctedText.size() == 1) //In case there is only one string to be rendered (no wrapping)
