@@ -23,6 +23,34 @@ namespace Bach {
      */
     const int defaultDesiredTileSizePixels = 512;
 
+    struct PaintingDetailsPolygon{
+        QPainter *painter;
+        const FillLayerStyle *layerStyle = nullptr;
+        const PolygonFeature *feature = nullptr;
+        int mapZoom{};
+        double vpZoom{};
+        QTransform transformIn;
+    };
+
+    struct PaintingDetailsLine{
+        QPainter *painter;
+        const LineLayerStyle *layerStyle = nullptr;
+        const LineFeature *feature = nullptr;
+        int mapZoom{};
+        double vpZoom{};
+        QTransform transformIn;
+    };
+
+    struct PaintingDetailsPoint{
+        QPainter *painter;
+        const SymbolLayerStyle *layerStyle = nullptr;
+        const PointFeature *feature = nullptr;
+        int mapZoom{};
+        double vpZoom{};
+        QTransform transformIn;
+    };
+
+
     QPair<double, double> lonLatToWorldNormCoord(double lon, double lat);
     QPair<double, double> lonLatToWorldNormCoordDegrees(double lon, double lat);
     QPair<double, double> calcViewportSizeNorm(double viewportZoom, double viewportAspect);
