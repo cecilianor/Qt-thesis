@@ -14,7 +14,7 @@ private:
     AbstractLayerStyle *backgroundLayer;
     AbstractLayerStyle *fillLayer;
     AbstractLayerStyle *lineLayer;
-    AbstractLayerStyle *symbolLyaer;
+    AbstractLayerStyle *symbolLayer;
     AbstractLayerStyle *unknownLayer;
 
 private slots:
@@ -27,7 +27,6 @@ private slots:
     void test_symbol_layer_parsing();
     void test_unknown_layer_parsing();
     void cleanupTestCase();
-
 };
 
 QTEST_MAIN(UnitTesting)
@@ -226,40 +225,40 @@ void UnitTesting::test_line_layer_parsing()
 
     testError = QString("The layer style is expected to be of type LineLayerStyle");
     QVERIFY2(lineLayer->type() == AbstractLayerStyle::LayerType::line, testError.toUtf8());
-    auto const& lineLyaerStyle = *static_cast<LineLayerStyle const*>(lineLayer);
+    auto const& lineLayerStyle = *static_cast<LineLayerStyle const*>(lineLayer);
 
     testError =  QString("The layerStyle id does not match, expected %1 but got %2")
                     .arg(expectedId)
-                    .arg(lineLyaerStyle.m_id);
-    QVERIFY2(lineLyaerStyle.m_id == expectedId, testError.toUtf8());
+                    .arg(lineLayerStyle.m_id);
+    QVERIFY2(lineLayerStyle.m_id == expectedId, testError.toUtf8());
 
     testError =  QString("The layerStyle source does not match, expected %1 but got %2")
                     .arg(expectedSource)
-                    .arg(lineLyaerStyle.m_source);
-    QVERIFY2(lineLyaerStyle.m_source == expectedSource, testError.toUtf8());
+                    .arg(lineLayerStyle.m_source);
+    QVERIFY2(lineLayerStyle.m_source == expectedSource, testError.toUtf8());
 
     testError =  QString("The layerStyle source layer does not match, expected %1 but got %2")
                     .arg(expectedSourceLayer)
-                    .arg(lineLyaerStyle.m_sourceLayer);
-    QVERIFY2(lineLyaerStyle.m_sourceLayer == expectedSourceLayer, testError.toUtf8());
+                    .arg(lineLayerStyle.m_sourceLayer);
+    QVERIFY2(lineLayerStyle.m_sourceLayer == expectedSourceLayer, testError.toUtf8());
 
     testError =  QString("The layerStyle visibility does not match, expected %1 but got %2")
                     .arg(expectedVisibility)
-                    .arg(lineLyaerStyle.m_visibility);
-    QVERIFY2(lineLyaerStyle.m_visibility == expectedVisibility, testError.toUtf8());
+                    .arg(lineLayerStyle.m_visibility);
+    QVERIFY2(lineLayerStyle.m_visibility == expectedVisibility, testError.toUtf8());
 
     testError =  QString("The layerStyle minZoom does not match, expected %1 but got %2")
                     .arg(expectedMinZoom)
-                    .arg(lineLyaerStyle.m_minZoom);
-    QVERIFY2(lineLyaerStyle.m_minZoom == expectedMinZoom, testError.toUtf8());
+                    .arg(lineLayerStyle.m_minZoom);
+    QVERIFY2(lineLayerStyle.m_minZoom == expectedMinZoom, testError.toUtf8());
 
     testError =  QString("The layerStyle maxZoom does not match, expected %1 but got %2")
                     .arg(expectedMaxZoom)
-                    .arg(lineLyaerStyle.m_maxZoom);
-    QVERIFY2(lineLyaerStyle.m_maxZoom == expectedMaxZoom, testError.toUtf8());
+                    .arg(lineLayerStyle.m_maxZoom);
+    QVERIFY2(lineLayerStyle.m_maxZoom == expectedMaxZoom, testError.toUtf8());
 
     testError =  QString("The line color variable type is not correct at zoom %1").arg(1);
-    QVariant colorVariant = lineLyaerStyle.getLineColorAtZoom(1);
+    QVariant colorVariant = lineLayerStyle.getLineColorAtZoom(1);
     QVERIFY2(colorVariant.typeId() == QMetaType::Type::QColor, testError.toUtf8());
 
     QColor lineColor = colorVariant.value<QColor>();
@@ -272,7 +271,7 @@ void UnitTesting::test_line_layer_parsing()
 
 
     for(int i = 0; i < 19; i++){
-        int lineWidth = lineLyaerStyle.getLineWidthAtZoom(i).toInt();
+        int lineWidth = lineLayerStyle.getLineWidthAtZoom(i).toInt();
         testError =  QString("The line width does not match at zoom %1, expected %2 but got %3")
                         .arg(i)
                         .arg(expectedLineWidthStop1)
@@ -280,16 +279,16 @@ void UnitTesting::test_line_layer_parsing()
         QVERIFY2(lineWidth == expectedLineWidthStop1, testError.toUtf8());
     }
 
-    int lineWidth = lineLyaerStyle.getLineWidthAtZoom(19).toInt();
+    int lineWidth = lineLayerStyle.getLineWidthAtZoom(19).toInt();
     testError =  QString("The line width does not match at zoom 19, expected %1 but got %2")
                     .arg(expectedLineWidthStop2)
                     .arg(lineWidth);
     QVERIFY2(lineWidth == expectedLineWidthStop2, testError.toUtf8());
 
     testError =  QString("The line opacity variable type is not correct");
-    QVERIFY2(lineLyaerStyle.getLineOpacityAtZoom(1).typeId() == QMetaType::Type::QJsonArray, testError.toUtf8());
+    QVERIFY2(lineLayerStyle.getLineOpacityAtZoom(1).typeId() == QMetaType::Type::QJsonArray, testError.toUtf8());
 
-    int lineOpacitySize = lineLyaerStyle.getLineOpacityAtZoom(1).toJsonArray().size();
+    int lineOpacitySize = lineLayerStyle.getLineOpacityAtZoom(1).toJsonArray().size();
     testError =  QString("The line opacity json array size does not match, expected %1 but got %2")
                     .arg(expectedLineOpacitySize)
                     .arg(lineOpacitySize);
@@ -297,8 +296,8 @@ void UnitTesting::test_line_layer_parsing()
 
     testError =  QString("The Filter size json array does not match, expected %1 but got %2")
                     .arg(expectedFilterSize)
-                    .arg(lineLyaerStyle.m_filter.size());
-    QVERIFY2(lineLyaerStyle.m_filter.size() == expectedFilterSize, testError.toUtf8());
+                    .arg(lineLayerStyle.m_filter.size());
+    QVERIFY2(lineLayerStyle.m_filter.size() == expectedFilterSize, testError.toUtf8());
 }
 
 // Tests symbol layer parsing
@@ -324,8 +323,8 @@ void UnitTesting::test_symbol_layer_parsing()
     int expectedFilterSize = 2;
 
     testError = QString("The layer style is expected to be of type SymbolLayerStyle");
-    QVERIFY2(symbolLyaer->type() == AbstractLayerStyle::LayerType::symbol, testError.toUtf8());
-    auto const& symbolLayerStyle = *static_cast<SymbolLayerStyle const*>(symbolLyaer);
+    QVERIFY2(symbolLayer->type() == AbstractLayerStyle::LayerType::symbol, testError.toUtf8());
+    auto const& symbolLayerStyle = *static_cast<SymbolLayerStyle const*>(symbolLayer);
 
     testError =  QString("The layerStyle id does not match, expected %1 but got %2")
                     .arg(expectedId)
@@ -456,7 +455,7 @@ void UnitTesting::parseSheet_returns_basic_values()
     backgroundLayer = sheet.m_layerStyles.at(0);
     fillLayer = sheet.m_layerStyles.at(1);
     lineLayer = sheet.m_layerStyles.at(2);
-    symbolLyaer = sheet.m_layerStyles.at(3);
+    symbolLayer = sheet.m_layerStyles.at(3);
     unknownLayer = sheet.m_layerStyles.at(4);
 }
 
