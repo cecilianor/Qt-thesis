@@ -169,8 +169,8 @@ static void paintSingleTile(
                  if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
                      continue;
                  //Add the feature along with its "rank" (if present, defaults to 100) to the labels map.
-                 if(feature.fetureMetaData.contains("rank")){
-                     labels.append(QPair<int, PointFeature>(feature.fetureMetaData["rank"].toInt(), feature));
+                 if(feature.featureMetaData.contains("rank")){
+                     labels.append(QPair<int, PointFeature>(feature.featureMetaData["rank"].toInt(), feature));
                  }else{
                      labels.append(QPair<int, PointFeature>(100, feature));
                  }
