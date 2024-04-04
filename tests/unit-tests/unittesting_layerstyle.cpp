@@ -1,4 +1,4 @@
-#include <QObject>
+#include <QObject>feture
 #include <QTest>
 
 #include "Layerstyle.h"
@@ -11,11 +11,11 @@ private:
     const QString path = ":/unitTestResources/styleTest.json";
     QFile styleFile;
     QJsonDocument styleSheetDoc;
-    AbstractLayereStyle *backgroundLayer;
-    AbstractLayereStyle *fillLayer;
-    AbstractLayereStyle *lineLayer;
-    AbstractLayereStyle *symbolLyaer;
-    AbstractLayereStyle *unknownLayer;
+    AbstractLayerStyle *backgroundLayer;
+    AbstractLayerStyle *fillLayer;
+    AbstractLayerStyle *lineLayer;
+    AbstractLayerStyle *symbolLyaer;
+    AbstractLayerStyle *unknownLayer;
 
 private slots:
     void initTestCase();
@@ -79,7 +79,7 @@ void UnitTesting::test_background_layer_parsing()
     int expectedMaxZoom = 24;
 
     testError = QString("The layer style is expected to be of type BackgroundLayerStyle");
-    QVERIFY2(backgroundLayer->type() == AbstractLayereStyle::LayerType::background, testError.toUtf8());
+    QVERIFY2(backgroundLayer->type() == AbstractLayerStyle::LayerType::background, testError.toUtf8());
     auto const& backgroundStyle = *static_cast<BackgroundStyle const*>(backgroundLayer);
 
     testError =  QString("The layerStyle id does not match, expected %1 but got %2")
@@ -149,7 +149,7 @@ void UnitTesting::test_fill_layer_parsing()
     int expectedFilterSize = 3;
 
     testError = QString("The layer style is expected to be of type FillLayerStyle");
-    QVERIFY2(fillLayer->type() == AbstractLayereStyle::LayerType::fill, testError.toUtf8());
+    QVERIFY2(fillLayer->type() == AbstractLayerStyle::LayerType::fill, testError.toUtf8());
     auto const& filllayerStyle = *static_cast<FillLayerStyle const*>(fillLayer);
 
     testError =  QString("The layerStyle id does not match, expected %1 but got %2")
@@ -225,7 +225,7 @@ void UnitTesting::test_line_layer_parsing()
     int expectedFilterSize = 3;
 
     testError = QString("The layer style is expected to be of type LineLayerStyle");
-    QVERIFY2(lineLayer->type() == AbstractLayereStyle::LayerType::line, testError.toUtf8());
+    QVERIFY2(lineLayer->type() == AbstractLayerStyle::LayerType::line, testError.toUtf8());
     auto const& lineLyaerStyle = *static_cast<LineLayerStyle const*>(lineLayer);
 
     testError =  QString("The layerStyle id does not match, expected %1 but got %2")
@@ -301,7 +301,7 @@ void UnitTesting::test_line_layer_parsing()
     QVERIFY2(lineLyaerStyle.m_filter.size() == expectedFilterSize, testError.toUtf8());
 }
 
-
+// Tests symbol layer parsing
 void UnitTesting::test_symbol_layer_parsing()
 {
     QString testError;
@@ -324,7 +324,7 @@ void UnitTesting::test_symbol_layer_parsing()
     int expectedFilterSize = 2;
 
     testError = QString("The layer style is expected to be of type SymbolLayerStyle");
-    QVERIFY2(symbolLyaer->type() == AbstractLayereStyle::LayerType::symbol, testError.toUtf8());
+    QVERIFY2(symbolLyaer->type() == AbstractLayerStyle::LayerType::symbol, testError.toUtf8());
     auto const& symbolLayerStyle = *static_cast<SymbolLayerStyle const*>(symbolLyaer);
 
     testError =  QString("The layerStyle id does not match, expected %1 but got %2")
@@ -417,16 +417,12 @@ void UnitTesting::test_unknown_layer_parsing()
 {
     QString testError;
     testError = QString("The layer style is expected to be of type NotImpleneted");
-    QVERIFY2(unknownLayer->type() == AbstractLayereStyle::LayerType::notImplemented, testError.toUtf8());
+    QVERIFY2(unknownLayer->type() == AbstractLayerStyle::LayerType::notImplemented, testError.toUtf8());
 }
-
-
 
 //Test the parsing functionality of the StyleSheet class.
 void UnitTesting::parseSheet_returns_basic_values()
 {
-
-
     QString testError;
     StyleSheet sheet;
     sheet.parseSheet(styleSheetDoc);
