@@ -58,7 +58,7 @@ static void paintSingleTileDebug(
 }
 
 // Determines whether this layer is hidden.
-static bool isLayerHidden(const AbstractLayereStyle &layerStyle, int mapZoom)
+static bool isLayerHidden(const AbstractLayerStyle &layerStyle, int mapZoom)
 {
     return
         layerStyle.m_visibility == "none" ||
@@ -69,7 +69,7 @@ static bool isLayerHidden(const AbstractLayereStyle &layerStyle, int mapZoom)
 // Determines whether a feature should be included when rendering this layer-style.
 // Returns true if the feature should be included.
 static bool includeFeature(
-    const AbstractLayereStyle &layerStyle,
+    const AbstractLayerStyle &layerStyle,
     const AbstractLayerFeature &feature,
     int mapZoom,
     double vpZoom)
@@ -117,7 +117,7 @@ static void paintSingleTile(
         auto const& layer = **layerIt;
 
         // We do different types of rendering based on whether the layer is a polygon, line, or symbol(text).
-        if (abstractLayerStyle->type() == AbstractLayereStyle::LayerType::fill) {
+        if (abstractLayerStyle->type() == AbstractLayerStyle::LayerType::fill) {
             auto const& layerStyle = *static_cast<FillLayerStyle const*>(abstractLayerStyle);
 
             // Iterate over all the features, and filter out anything that is not fill.
@@ -131,16 +131,10 @@ static void paintSingleTile(
 
                 // Render the feature in question.
                 painter.save();
-                Bach::paintSingleTileFeature_Fill_Polygon(
-                    painter,
-                    feature,
-                    layerStyle,
-                    mapZoom,
-                    vpZoom,
-                    transformIn);
+                Bach::paintSingleTileFeature_Polygon({&painter, &layerStyle, &feature, mapZoom, vpZoom, transformIn});
                 painter.restore();
             }
-        } else if (abstractLayerStyle->type() == AbstractLayereStyle::LayerType::line) {
+        } else if (abstractLayerStyle->type() == AbstractLayerStyle::LayerType::line) {
             auto const& layerStyle = *static_cast<LineLayerStyle const*>(abstractLayerStyle);
 
             // Iterate over all the features, and filter out anything that is not line.
@@ -155,16 +149,10 @@ static void paintSingleTile(
 
                 // Render the feature in question.
                 painter.save();
-                Bach::paintSingleTileFeature_Line(
-                    painter,
-                    feature,
-                    layerStyle,
-                    mapZoom,
-                    vpZoom,
-                    transformIn);
+                Bach::paintSingleTileFeature_Line({&painter, &layerStyle, &feature, mapZoom, vpZoom, transformIn});
                 painter.restore();
             }
-        } else if(abstractLayerStyle->type() == AbstractLayereStyle::LayerType::symbol){
+        } else if(abstractLayerStyle->type() == AbstractLayerStyle::LayerType::symbol){
              auto const& layerStyle = *static_cast<const SymbolLayerStyle *>(abstractLayerStyle);
 
              // Iterate over all the features, and filter out anything that is not point  (rendering of line features for curved text in the symbol layer is not yet implemented).
@@ -177,8 +165,8 @@ static void paintSingleTile(
                  if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
                      continue;
                  //Add the feature along with its "rank" (if present, defaults to 100) to the labels map.
-                 if(feature.fetureMetaData.contains("rank")){
-                     labels.append(QPair<int, PointFeature>(feature.fetureMetaData["rank"].toInt(), feature));
+                 if(feature.featureMetaData.contains("rank")){
+                     labels.append(QPair<int, PointFeature>(feature.featureMetaData["rank"].toInt(), feature));
                  }else{
                      labels.append(QPair<int, PointFeature>(100, feature));
                  }
@@ -191,14 +179,10 @@ static void paintSingleTile(
             for(const auto &pair : labels){
                  painter.save();
                 Bach::paintSingleTileFeature_Point(
-                     painter,
-                     pair.second,
-                     layerStyle,
-                     mapZoom,
-                     vpZoom,
-                     transformIn,
-                     tileSize,
-                     laberRects);
+                    {&painter, &layerStyle, &pair.second, mapZoom, vpZoom, transformIn},
+                    tileSize,
+                    laberRects);
+
                  painter.restore();
              }
         }
@@ -219,7 +203,7 @@ static void drawBackgroundColor(
     for (auto const& abstractLayerStyle : styleSheet.m_layerStyles) {
         // Background is a special case and has no associated layer.
         // We just draw it and move onto the next layer style.
-        if (abstractLayerStyle->type() == AbstractLayereStyle::LayerType::background) {
+        if (abstractLayerStyle->type() == AbstractLayerStyle::LayerType::background) {
             // Fill the entire tile with a single color
             const auto& layerStyle = *static_cast<const BackgroundStyle*>(abstractLayerStyle);
 

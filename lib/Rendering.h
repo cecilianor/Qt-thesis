@@ -23,36 +23,49 @@ namespace Bach {
      */
     const int defaultDesiredTileSizePixels = 512;
 
+    struct PaintingDetailsPolygon{
+        QPainter *painter;
+        const FillLayerStyle *layerStyle = nullptr;
+        const PolygonFeature *feature = nullptr;
+        int mapZoom{};
+        double vpZoom{};
+        QTransform transformIn;
+    };
+
+    struct PaintingDetailsLine{
+        QPainter *painter;
+        const LineLayerStyle *layerStyle = nullptr;
+        const LineFeature *feature = nullptr;
+        int mapZoom{};
+        double vpZoom{};
+        QTransform transformIn;
+    };
+
+    struct PaintingDetailsPoint{
+        QPainter *painter;
+        const SymbolLayerStyle *layerStyle = nullptr;
+        const PointFeature *feature = nullptr;
+        int mapZoom{};
+        double vpZoom{};
+        QTransform transformIn;
+    };
+
+
     QPair<double, double> lonLatToWorldNormCoord(double lon, double lat);
     QPair<double, double> lonLatToWorldNormCoordDegrees(double lon, double lat);
     QPair<double, double> calcViewportSizeNorm(double viewportZoom, double viewportAspect);
     double normalizeValueToZeroOneRange(double value, double min, double max);
 
-    void paintSingleTileFeature_Fill_Polygon(
-        QPainter &painter,
-        const PolygonFeature &feature,
-        const FillLayerStyle &layerStyle,
-        const int mapZoom,
-        const double vpZoom,
-        const QTransform &transformIn);
+    void paintSingleTileFeature_Polygon(PaintingDetailsPolygon details);
 
-    void paintSingleTileFeature_Line(
-        QPainter &painter,
-        const LineFeature &feature,
-        const LineLayerStyle &layerStyle,
-        const int mapZoom,
-        const double vpZoom,
-        const QTransform &transformIn);
+    void paintSingleTileFeature_Line(PaintingDetailsLine details);
+
 
     void paintSingleTileFeature_Point(
-        QPainter &painter,
-        const PointFeature &feature,
-        const SymbolLayerStyle &layerStyle,
-        const int mapZoom,
-        const double vpZoom,
-        const QTransform &transformIn,
+        PaintingDetailsPoint details,
         const int tileSize,
         QVector<QRect> &rects);
+
 
     int calcMapZoomLevelForTileSizePixels(
         int vpWidth,

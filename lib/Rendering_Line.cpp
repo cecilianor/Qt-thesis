@@ -65,22 +65,19 @@ static int getLineWidth(
  *
  * Assumes the painters origin has moved to the tiles origin.
  */
-void Bach::paintSingleTileFeature_Line(
-    QPainter &painter,
-    const LineFeature &feature,
-    const LineLayerStyle &layerStyle,
-    const int mapZoom,
-    const double vpZoom,
-    const QTransform &transformIn)
+void Bach::paintSingleTileFeature_Line(Bach::PaintingDetailsLine details)
 {
-    auto pen = painter.pen();
+    QPainter &painter = *details.painter;
+    const LineFeature &feature = *details.feature;
+    const LineLayerStyle &layerStyle = *details.layerStyle;
+    QPen pen = painter.pen();
 
-    pen.setColor(getLineColor(layerStyle, feature, mapZoom, vpZoom));
+    pen.setColor(getLineColor(layerStyle, feature, details.mapZoom, details.vpZoom));
     // Not sure how to take opacity into account yet.
     // There's some interaction happening with the color.
     //painter.setOpacity(getLineOpacity(layerStyle, feature, mapZoom, vpZoom));
 
-    pen.setWidth(getLineWidth(layerStyle, feature, mapZoom, vpZoom));
+    pen.setWidth(getLineWidth(layerStyle, feature, details.mapZoom, details.vpZoom));
     pen.setCapStyle(layerStyle.getCapStyle());
     pen.setJoinStyle(layerStyle.getJoinStyle());
 
@@ -90,10 +87,11 @@ void Bach::paintSingleTileFeature_Line(
     // Not sure yet how to determine AA for lines.
     painter.setRenderHints(QPainter::Antialiasing, false);
 
-    auto const& path = feature.line();
-    QTransform transform = transformIn;
+    const QPainterPath &path = feature.line();
+    QTransform transform = details.transformIn;
     transform.scale(1 / 4096.0, 1 / 4096.0);
-    auto newPath = transform.map(path);
+    const QPainterPath newPath = transform.map(path);
 
     painter.drawPath(newPath);
 }
+

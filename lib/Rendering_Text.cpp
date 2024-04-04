@@ -87,10 +87,10 @@ static QString getTextContent(
         QString textFieldKey = textVariant.toString();
         textFieldKey.remove("{");
         textFieldKey.remove("}");
-        if(!feature.fetureMetaData.contains(textFieldKey)){
+        if(!feature.featureMetaData.contains(textFieldKey)){
             return "";
         }
-        return feature.fetureMetaData[textFieldKey].toString();
+        return feature.featureMetaData[textFieldKey].toString();
     }
 }
 
@@ -250,26 +250,24 @@ static void paintCompositeText(
  * Assumes the painters origin has moved to the tiles origin.
  */
 void Bach::paintSingleTileFeature_Point(
-    QPainter &painter,
-    const PointFeature &feature,
-    const SymbolLayerStyle &layerStyle,
-    const int mapZoom,
-    const double vpZoom,
-    const QTransform &transformIn,
+    PaintingDetailsPoint details,
     const int tileSize,
     QVector<QRect> &rects)
 {
+    QPainter &painter = *details.painter;
+    const SymbolLayerStyle &layerStyle = *details.layerStyle;
+    const PointFeature &feature = *details.feature;
     //Get the text to be rendered.
-    QString textToDraw = getTextContent(layerStyle, feature, mapZoom, vpZoom);
+    QString textToDraw = getTextContent(layerStyle, feature, details.mapZoom, details.vpZoom);
     //If there is no text then there is nothing to render, we return
     if(textToDraw == "") return;
 
     //Get the rendering parameters from the layerstyle and set the relevant painter field.
     painter.setBrush(Qt::NoBrush);
-    int textSize = getTextSize(layerStyle, feature, mapZoom, vpZoom);
+    int textSize = getTextSize(layerStyle, feature, details.mapZoom, details.vpZoom);
     QFont textFont = QFont(layerStyle.m_textFont);
     textFont.setPixelSize(textSize);
-    painter.setOpacity(getTextOpacity(layerStyle, feature, mapZoom, vpZoom));
+    painter.setOpacity(getTextOpacity(layerStyle, feature, details.mapZoom, details.vpZoom));
     const int outlineSize = layerStyle.m_textHaloWidth.toInt();
     QColor outlineColor = layerStyle.m_textHaloColor.value<QColor>();
     //Text is always antialised (otherwise it does not look good)
@@ -280,12 +278,12 @@ void Bach::paintSingleTileFeature_Point(
     QList<QString> correctedText = getCorrectedText(textToDraw, textFont, layerStyle.m_textMaxWidth.toInt());
 
     //Get the coordinates for the text rendering
-    auto const& coordinates = feature.points().at(0);
+    const QPoint &coordinates = feature.points().at(0);
     QTransform transform = {};
     transform.scale(1 / 4096.0, 1 / 4096.0);
     transform.scale(tileSize, tileSize);
     //Remap the original coordinates so that they are positioned correctly.
-    auto newCoordinates = transform.map(coordinates);
+    const QPoint newCoordinates = transform.map(coordinates);
 
     //The text is rendered differently depending on it it wraps or not.
     if(correctedText.size() == 1) //In case there is only one string to be rendered (no wrapping)
@@ -299,8 +297,8 @@ void Bach::paintSingleTileFeature_Point(
             painter,
             feature,
             layerStyle,
-            mapZoom,
-            vpZoom);
+            details.mapZoom,
+            details.vpZoom);
     else{ //In case there are multiple strings to be redered (text wrapping)
         paintCompositeText(
             correctedText,
@@ -312,7 +310,8 @@ void Bach::paintSingleTileFeature_Point(
             painter,
             feature,
             layerStyle,
-            mapZoom,
-            vpZoom);
+            details.mapZoom,
+            details.vpZoom);
     }
 }
+

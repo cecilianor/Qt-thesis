@@ -70,8 +70,8 @@ void Evaluator::setupExpressionMap()
 QVariant Evaluator::get(const QJsonArray & array, const AbstractLayerFeature * feature, int mapZoomLevel, float vpZoomeLevel)
 {
     QString property = array.at(1).toString();
-    if(feature->fetureMetaData.contains(property)){
-        return feature->fetureMetaData[property];
+    if(feature->featureMetaData.contains(property)){
+        return feature->featureMetaData[property];
     }else{
         return {};
     }
@@ -90,7 +90,7 @@ QVariant Evaluator::get(const QJsonArray & array, const AbstractLayerFeature * f
 QVariant Evaluator::has(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
 {
     QString property = array.at(1).toString();
-    return feature->fetureMetaData.contains(property);
+    return feature->featureMetaData.contains(property);
 }
 
 /*Resolve the "in" expression which checks if a feature's property is in a range of values
@@ -106,8 +106,8 @@ QVariant Evaluator::has(const QJsonArray &array, const AbstractLayerFeature *fea
 QVariant Evaluator::in(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
 {
     QString keyword = array.at(1).toString();
-    if(feature->fetureMetaData.contains(keyword)){
-        QVariant value = feature->fetureMetaData[keyword];
+    if(feature->featureMetaData.contains(keyword)){
+        QVariant value = feature->featureMetaData[keyword];
 
         auto temp = array.toVariantList().sliced(2).contains(value);
         auto startsWithNot = array.first().toString().startsWith("!");
@@ -155,7 +155,7 @@ QVariant Evaluator::compare(const QJsonArray &array, const AbstractLayerFeature 
                 break;
             }
         }else{
-            operand1 = feature->fetureMetaData.contains(temp) ? feature->fetureMetaData[temp] : QVariant();
+            operand1 = feature->featureMetaData.contains(temp) ? feature->featureMetaData[temp] : QVariant();
         }
     }else{
         QString temp = array.at(1).toString();
@@ -174,7 +174,7 @@ QVariant Evaluator::compare(const QJsonArray &array, const AbstractLayerFeature 
                 break;
             }
         }else{
-            operand1 = feature->fetureMetaData.contains(temp) ? feature->fetureMetaData[temp] : QVariant();
+            operand1 = feature->featureMetaData.contains(temp) ? feature->featureMetaData[temp] : QVariant();
         }
     }
 

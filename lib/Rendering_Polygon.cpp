@@ -46,25 +46,23 @@ static QColor getFillColor(
  * Assumes the painter's position has been moved to the origin of the tile.
  *
  */
-void Bach::paintSingleTileFeature_Fill_Polygon(
-    QPainter &painter,
-    const PolygonFeature &feature,
-    const FillLayerStyle &layerStyle,
-    const int mapZoom,
-    const double vpZoom,
-    const QTransform &transformIn)
+void Bach::paintSingleTileFeature_Polygon(Bach::PaintingDetailsPolygon details)
 {
-    auto brushColor = getFillColor(layerStyle, feature, mapZoom, vpZoom);
+    const FillLayerStyle &layerStyle = *details.layerStyle;
+    const PolygonFeature &feature = *details.feature;
+    QColor brushColor = getFillColor(layerStyle, feature, details.mapZoom, details.vpZoom);
 
+    QPainter &painter = *details.painter;
     painter.setBrush(brushColor);
     painter.setRenderHints(QPainter::Antialiasing, layerStyle.m_antialias);
     painter.setPen(Qt::NoPen);
 
-    auto const& path = feature.polygon();
+    const QPainterPath &path = feature.polygon();
 
-    QTransform transform = transformIn;
+    QTransform transform = details.transformIn;
     transform.scale(1 / 4096.0, 1 / 4096.0);
-    auto newPath = transform.map(path);
+    const QPainterPath newPath = transform.map(path);
 
     painter.drawPath(newPath);
 }
+
