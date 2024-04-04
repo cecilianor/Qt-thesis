@@ -1,15 +1,7 @@
 #include "Evaluator.h"
 #include "Rendering.h"
 
-/*  Information about what's on this file:
-    It consists of two major sections:
-
-    1. Rendering helper functions only used in `Rendering.cpp`.
-    2. Rendering functions that can be used externally, declared in `Rendering.h`.
-
-    Rendering helper functions follow below.
-*/
-
+#include <functional>
 
 /*!
  * \internal
@@ -91,6 +83,62 @@ static bool includeFeature(
         vpZoom).toBool();
 }
 
+static void paintVectorLayer_Fill(
+    QPainter &painter,
+    const FillLayerStyle &layerStyle,
+    const TileLayer& layer,
+    double vpZoom,
+    int mapZoom,
+    int tileWidthPixels)
+{
+    // Iterate over all the features, and filter out anything that is not fill.
+    for (const AbstractLayerFeature *abstractFeature : layer.m_features) {
+        if (abstractFeature->type() != AbstractLayerFeature::featureType::polygon)
+            continue;
+
+        const auto &feature = *static_cast<const PolygonFeature*>(abstractFeature);
+
+        if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
+            continue;
+
+        QTransform geometryTransform;
+        geometryTransform.scale(tileWidthPixels, tileWidthPixels);
+
+        // Render the feature in question.
+        painter.save();
+        Bach::paintSingleTileFeature_Polygon({&painter, &layerStyle, &feature, mapZoom, vpZoom, geometryTransform});
+        painter.restore();
+    }
+}
+
+static void paintVectorLayer_Line(
+    QPainter &painter,
+    const LineLayerStyle &layerStyle,
+    const TileLayer& layer,
+    double vpZoom,
+    int mapZoom,
+    int tileWidthPixels)
+{
+    // Iterate over all the features, and filter out anything that is not line.
+    for (const AbstractLayerFeature *abstractFeature : layer.m_features) {
+        if (abstractFeature->type() != AbstractLayerFeature::featureType::line)
+            continue;
+        const auto &feature = *static_cast<const LineFeature*>(abstractFeature);
+
+        // Tests whether the feature should be rendered at all based on possible expression.
+        if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
+            continue;
+
+        QTransform geometryTransform;
+        geometryTransform.scale(tileWidthPixels, tileWidthPixels);
+
+        // Render the feature in question.
+        painter.save();
+        Bach::paintSingleTileFeature_Line({&painter, &layerStyle, &feature, mapZoom, vpZoom, geometryTransform});
+        painter.restore();
+    }
+}
+
 /* This function takes care of rendering a single tile.
  *
  * This is called repeatedly from the 'paintTiles' function.
@@ -99,20 +147,23 @@ static bool includeFeature(
  *
  * This does not handle background color.
  */
-static void paintSingleTile(
+static void paintVectorTile(
     const VectorTile &tileData,
     QPainter &painter,
     int mapZoom,
     double vpZoom,
     const StyleSheet &styleSheet,
-    const QTransform &transformIn,
     int tileSize)
 {
+    QTransform geometryTransform;
+    geometryTransform.scale(tileSize, tileSize);
+
     QVector<QPair<int, PointFeature>> labels; //Used to order text rendering operation based on "rank" property.
     QVector<QRect> laberRects; //Used to prevent text overlapping.
+
     // We start by iterating over each layer style, it determines the order
     // at which we draw the elements of the map.
-    for (auto const& abstractLayerStyle : styleSheet.m_layerStyles) {
+    for (const AbstractLayerStyle *abstractLayerStyle : styleSheet.m_layerStyles) {
         if (isLayerHidden(*abstractLayerStyle, mapZoom))
             continue;
 
@@ -122,46 +173,28 @@ static void paintSingleTile(
             continue;
         }
         // If we find it, we dereference it to access it's data.
-        auto const& layer = **layerIt;
+        const TileLayer& layer = **layerIt;
 
         // We do different types of rendering based on whether the layer is a polygon, line, or symbol(text).
         if (abstractLayerStyle->type() == AbstractLayerStyle::LayerType::fill) {
-            auto const& layerStyle = *static_cast<FillLayerStyle const*>(abstractLayerStyle);
+            paintVectorLayer_Fill(
+                painter,
+                *static_cast<const FillLayerStyle*>(abstractLayerStyle),
+                layer,
+                vpZoom,
+                mapZoom,
+                tileSize);
 
-            // Iterate over all the features, and filter out anything that is not fill.
-            for (auto const& abstractFeature : layer.m_features) {
-                if (abstractFeature->type() != AbstractLayerFeature::featureType::polygon)
-                    continue;
-                const auto& feature = *static_cast<const PolygonFeature*>(abstractFeature);
-
-                if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
-                    continue;
-
-                // Render the feature in question.
-                painter.save();
-                Bach::paintSingleTileFeature_Polygon({&painter, &layerStyle, &feature, mapZoom, vpZoom, transformIn});
-                painter.restore();
-            }
         } else if (abstractLayerStyle->type() == AbstractLayerStyle::LayerType::line) {
-            auto const& layerStyle = *static_cast<LineLayerStyle const*>(abstractLayerStyle);
-
-            // Iterate over all the features, and filter out anything that is not line.
-            for (auto const& abstractFeature : layer.m_features) {
-                if (abstractFeature->type() != AbstractLayerFeature::featureType::line)
-                    continue;
-                const auto &feature = *static_cast<const LineFeature*>(abstractFeature);
-
-                // Tests whether the feature should be rendered at all based on possible expression.
-                if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
-                    continue;
-
-                // Render the feature in question.
-                painter.save();
-                Bach::paintSingleTileFeature_Line({&painter, &layerStyle, &feature, mapZoom, vpZoom, transformIn});
-                painter.restore();
-            }
+            paintVectorLayer_Line(
+                painter,
+                *static_cast<const LineLayerStyle*>(abstractLayerStyle),
+                layer,
+                vpZoom,
+                mapZoom,
+                tileSize);
         } else if(abstractLayerStyle->type() == AbstractLayerStyle::LayerType::symbol){
-             auto const& layerStyle = *static_cast<const SymbolLayerStyle *>(abstractLayerStyle);
+            const auto &layerStyle = *static_cast<const SymbolLayerStyle*>(abstractLayerStyle);
 
              // Iterate over all the features, and filter out anything that is not point  (rendering of line features for curved text in the symbol layer is not yet implemented).
              for (auto const& abstractFeature : layer.m_features) {
@@ -179,6 +212,7 @@ static void paintSingleTile(
                      labels.append(QPair<int, PointFeature>(100, feature));
                  }
             }
+             qDebug() << "Yo";
              //Sort the labels map in increasing order based on the laber's "rank"
              std::sort(labels.begin(), labels.end(), [](const QPair<int, PointFeature>& a, const QPair<int, PointFeature>& b) {
                  return a.first < b.first;
@@ -187,7 +221,7 @@ static void paintSingleTile(
             for(const auto &pair : labels){
                  painter.save();
                 Bach::paintSingleTileFeature_Point(
-                    {&painter, &layerStyle, &pair.second, mapZoom, vpZoom, transformIn},
+                    {&painter, &layerStyle, &pair.second, mapZoom, vpZoom, geometryTransform},
                     tileSize,
                     laberRects);
 
@@ -208,12 +242,12 @@ static void drawBackgroundColor(
 
     // We start by iterating over each layer style, it determines the order
     // at which we draw the elements of the map.
-    for (auto const& abstractLayerStyle : styleSheet.m_layerStyles) {
+    for (const AbstractLayerStyle *abstractLayerStyle : styleSheet.m_layerStyles) {
         // Background is a special case and has no associated layer.
         // We just draw it and move onto the next layer style.
         if (abstractLayerStyle->type() == AbstractLayerStyle::LayerType::background) {
             // Fill the entire tile with a single color
-            const auto& layerStyle = *static_cast<const BackgroundStyle*>(abstractLayerStyle);
+            const BackgroundStyle& layerStyle = *static_cast<const BackgroundStyle*>(abstractLayerStyle);
 
             color = layerStyle.getColorAtZoom(mapZoom).value<QColor>();
             styleFound = true;
@@ -233,12 +267,22 @@ static void drawBackgroundColor(
     }
 }
 
+/*!
+ * \brief The TileScreenPlacement class is a class that describes a tiles
+ * position and size within the viewport.
+ */
 struct TileScreenPlacement {
     int pixelPosX;
     int pixelPosY;
     int pixelWidth;
 };
 
+/*!
+ * \internal
+ *
+ * \brief The TilePosCalculator class
+ * is a helper class for positioning tiles within the viewport.
+ */
 struct TilePosCalculator {
     int vpWidth;
     int vpHeight;
@@ -312,11 +356,79 @@ TilePosCalculator createTilePosCalculator(
     return out;
 }
 
+static void paintTilesGeneric(
+    QPainter &painter,
+    double vpX,
+    double vpY,
+    double vpZoom,
+    int mapZoom,
+    const std::function<void(TileCoord, TileScreenPlacement)> &paintSingleTileFn,
+    const StyleSheet &styleSheet,
+    bool drawDebug)
+{
+    // Start by drawing the background color on the entire canvas.
+    drawBackgroundColor(painter, styleSheet, mapZoom);
+
+    // Gather viewport width and height, in pixels.
+    int vpWidth = painter.window().width();
+    int vpHeight = painter.window().height();
+
+    TilePosCalculator tilePosCalc = createTilePosCalculator(
+        vpWidth,
+        vpHeight,
+        vpX,
+        vpY,
+        vpZoom,
+        mapZoom);
+
+    // Aspect ratio of the viewport.
+    double vpAspect = (double)vpWidth / (double)vpHeight;
+    // Calculate the set of visible tiles that fit in the viewport.
+    QVector<TileCoord> visibleTiles = Bach::calcVisibleTiles(
+        vpX,
+        vpY,
+        vpAspect,
+        vpZoom,
+        mapZoom);
+
+    // Iterate over all possible tiles that can possibly fit in this viewport.
+    for (TileCoord tileCoord : visibleTiles) {
+        TileScreenPlacement tilePlacement = tilePosCalc.calcTileSizeData(tileCoord);
+
+        painter.save();
+
+        // We move the origin point of the painter to the top-left of the tile.
+        // We do not apply scaling because it interferes with other sized elements,
+        // like the size of pen width.
+        painter.translate(tilePlacement.pixelPosX, tilePlacement.pixelPosY);
+
+        // We create a clip rect around our tile, as to only render into
+        // the region on-screen the tile occupies.
+        painter.setClipRect(
+            0,
+            0,
+            tilePlacement.pixelWidth,
+            tilePlacement.pixelWidth);
+
+        // Draw the single tile.
+        paintSingleTileFn(tileCoord, tilePlacement);
+
+        // Paint debug lines around the tile.
+        if (drawDebug) {
+            paintSingleTileDebug(
+                painter,
+                tileCoord,
+                tilePlacement.pixelWidth);
+        }
+        painter.restore();
+    }
+}
+
 /*!
  * \brief Bach::paintVectorTiles renders vector tiles to the map.
  *  The function will iterate over multiple tiles and place them correctly on screen.
  *
- * \param painter is a QPainter object that renders the tile data to the screen.
+ * \param painter is a QPainter object to draw into.
  * \param vpX
  * \param vpY
  * \param viewportZoomLevel
@@ -335,82 +447,31 @@ void Bach::paintVectorTiles(
     const StyleSheet &styleSheet,
     bool drawDebug)
 {
-    // Start by drawing the background color on the entire canvas.
-    drawBackgroundColor(painter, styleSheet, mapZoomLevel);
-
-    // Gather viewport width and height, in pixels.
-    int vpWidth = painter.window().width();
-    int vpHeight = painter.window().height();
-
-    TilePosCalculator tilePosCalc = createTilePosCalculator(
-        vpWidth,
-        vpHeight,
-        vpX,
-        vpY,
-        viewportZoomLevel,
-        mapZoomLevel);
-
-    // Aspect ratio of the viewport.
-    double vpAspect = (double)vpWidth / (double)vpHeight;
-    // Calculate the set of visible tiles that fit in the viewport.
-    QVector<TileCoord> visibleTiles = calcVisibleTiles(
-        vpX,
-        vpY,
-        vpAspect,
-        viewportZoomLevel,
-        mapZoomLevel);
-
-    // Iterate over all possible tiles that can possibly fit in this viewport.
-    for (const auto& tileCoord : visibleTiles) {
-        TileScreenPlacement tilePlacement = tilePosCalc.calcTileSizeData(tileCoord);
-
-        painter.save();
-
-        // We move the origin point of the painter to the top-left of the tile.
-        // We do not apply scaling because it interferes with other sized elements,
-        // like the size of pen width.
-        painter.translate(tilePlacement.pixelPosX, tilePlacement.pixelPosY);
-
-        // Temporary. Should likely just be passed as a single scalar to tile-drawing function.
-        QTransform geometryTransform;
-        geometryTransform.scale(tilePlacement.pixelWidth, tilePlacement.pixelWidth);
-
+    auto paintSingleTileFn = [&](TileCoord tileCoord, TileScreenPlacement tilePlacement) {
         // See if the tile being rendered has any tile-data associated with it.
         auto tileIt = tileContainer.find(tileCoord);
-        if (tileIt != tileContainer.end()) {
-            auto const& tileData = **tileIt;
-            painter.save();
+        if (tileIt == tileContainer.end())
+            return;
 
-            // We create a clip rect around our tile, as to only render into
-            // the region on-screen the tile occupies.
-            painter.setClipRect(
-                0,
-                0,
-                tilePlacement.pixelWidth,
-                tilePlacement.pixelWidth);
+        const VectorTile &tileData = **tileIt;
+        paintVectorTile(
+            tileData,
+            painter,
+            mapZoomLevel,
+            viewportZoomLevel,
+            styleSheet,
+            tilePlacement.pixelWidth);
+    };
 
-            // Run the rendering function for a single tile.
-            paintSingleTile(
-                tileData,
-                painter,
-                mapZoomLevel,
-                viewportZoomLevel,
-                styleSheet,
-                geometryTransform,
-                tilePlacement.pixelWidth);
-
-            painter.restore();
-        }
-
-        // Paint debug lines around the tile.
-        if (drawDebug) {
-            paintSingleTileDebug(
-                painter,
-                tileCoord,
-                tilePlacement.pixelWidth);
-        }
-        painter.restore();
-    }
+    paintTilesGeneric(
+        painter,
+        vpX,
+        vpY,
+        viewportZoomLevel,
+        mapZoomLevel,
+        paintSingleTileFn,
+        styleSheet,
+        drawDebug);
 }
 
 void Bach::paintRasterTiles(
@@ -423,62 +484,28 @@ void Bach::paintRasterTiles(
     const StyleSheet &styleSheet,
     bool drawDebug)
 {
-    // Start by drawing the background color on the entire canvas.
-    drawBackgroundColor(painter, styleSheet, mapZoomLevel);
-
-    // Gather viewport width and height, in pixels.
-    int vpWidth = painter.window().width();
-    int vpHeight = painter.window().height();
-
-    TilePosCalculator tilePosCalc = createTilePosCalculator(
-        vpWidth,
-        vpHeight,
-        vpX,
-        vpY,
-        viewportZoomLevel,
-        mapZoomLevel);
-
-    // Aspect ratio of the viewport.
-    double vpAspect = (double)vpWidth / (double)vpHeight;
-    // Calculate the set of visible tiles that fit in the viewport.
-    QVector<TileCoord> visibleTiles = calcVisibleTiles(
-        vpX,
-        vpY,
-        vpAspect,
-        viewportZoomLevel,
-        mapZoomLevel);
-
-    // Iterate over all possible tiles that can possibly fit in this viewport.
-    for (const auto& tileCoord : visibleTiles) {
-        TileScreenPlacement tilePlacement = tilePosCalc.calcTileSizeData(tileCoord);
-
-        painter.save();
-
-        // We move the origin point of the painter to the top-left of the tile.
-        // We do not apply scaling because it interferes with other sized elements,
-        // like the size of pen width.
-        painter.translate(tilePlacement.pixelPosX, tilePlacement.pixelPosY);
-
+    auto paintSingleTileFn = [&](TileCoord tileCoord, TileScreenPlacement tilePlacement) {
         // See if the tile being rendered has any tile-data associated with it.
-       auto tileIt = tileContainer.find(tileCoord);
-       if (tileIt != tileContainer.end()) {
-            const QImage &tileData = **tileIt;
-            QRect target {
-                0,
-                0,
-                tilePlacement.pixelWidth,
-                tilePlacement.pixelWidth, };
-            painter.drawImage(target, tileData);
-        }
+        auto tileIt = tileContainer.find(tileCoord);
+        if (tileIt == tileContainer.end())
+            return;
 
-        // Paint debug lines around the tile.
-        if (drawDebug) {
-            paintSingleTileDebug(
-                painter,
-                tileCoord,
-                tilePlacement.pixelWidth);
-        }
+        const QImage &tileData = **tileIt;
+        QRect target {
+            0,
+            0,
+            tilePlacement.pixelWidth,
+            tilePlacement.pixelWidth, };
+        painter.drawImage(target, tileData);
+    };
 
-        painter.restore();
-    }
+    paintTilesGeneric(
+        painter,
+        vpX,
+        vpY,
+        viewportZoomLevel,
+        mapZoomLevel,
+        paintSingleTileFn,
+        styleSheet,
+        drawDebug);
 }
