@@ -61,14 +61,14 @@ int main(int argc, char *argv[])
     QString pngUrlTemplate;
     if (useWeb) {
         ParsedLink pbfUrlTemplateResult = Bach::getPbfUrlTemplate(styleSheetJson, "maptiler_planet");
-        ParsedLink pngUrlTemplateResult = Bach::getPngUrlTemplate(mapType, mapTilerKeyOpt);
+        ParsedLink rasterUrlTemplateResult = Bach::getRasterUrlTemplate(mapType, mapTilerKeyOpt);
         if (pbfUrlTemplateResult.resultType != ResultType::Success)
             useWeb = false;
-        else if (pngUrlTemplateResult.resultType != ResultType::Success)
+        else if (rasterUrlTemplateResult.resultType != ResultType::Success)
             useWeb = false;
         else {
             pbfUrlTemplate = pbfUrlTemplateResult.link;
-            pngUrlTemplate = pngUrlTemplateResult.link;
+            pngUrlTemplate = rasterUrlTemplateResult.link;
         }
     }
 

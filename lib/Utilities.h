@@ -1,9 +1,9 @@
 #ifndef UTILITIES_H
 #define UTILITIES_H
 
-#include <QObject>
-#include <QString>
 #include <QByteArray>
+#include <QJsonDocument>
+#include <QString>
 
 #include <optional>
 
@@ -151,11 +151,7 @@ struct ParsedLink {
 };
 
 namespace Bach {
-    /*! \brief
-     *  Contains the name of the environment variable where we expect
-     *  the MapTiler key to be stored.
-    */
-    const QString mapTilerKeyEnvName = "MAPTILER_KEY";
+    extern const QString mapTilerKeyEnvName;
 
     std::optional<QString> rasterTilesheetUrlFromMapType(MapType maptype);
 
@@ -165,35 +161,22 @@ namespace Bach {
 
     HttpResponse requestAndWait(const QString &url);
 
-    HttpResponse requestStyleSheetFromWeb(MapType type, const QString &key);
-
-    HttpResponse loadStyleSheetBytes(
-        MapType type,
-        const std::optional<QString> &mapTilerKey);
-
     std::optional<QJsonDocument> loadStyleSheetJson(
         MapType type,
         const std::optional<QString> &mapTilerKey);
 
-    std::optional<QJsonDocument> loadVectorTileSheet(
+    // This function is currently only exposed for unit-tests.
+    // TODO: Could potentially place functions like this into private header files
+    // that unit-tests can access.
+    ParsedLink getTilesheetUrlFromStyleSheet(
         const QJsonDocument &styleSheet,
         const QString &sourceType);
-
-    std::optional<QJsonDocument> loadRasterTileSheet(
-        MapType mapType,
-        std::optional<QString> mapTilerKey);
-
-    ParsedLink getTilesLinkFromStyleSheet(
-        const QJsonDocument &styleSheet,
-        const QString &sourceType);
-
-    ParsedLink getTileUrlTemplateFromTileSheet(const QJsonDocument &tileSheet);
 
     ParsedLink getPbfUrlTemplate(
         const QJsonDocument &styleSheet,
         const QString &sourceType);
 
-    ParsedLink getPngUrlTemplate(
+    ParsedLink getRasterUrlTemplate(
         MapType mapType,
         std::optional<QString> mapTilerKey);
 }

@@ -57,10 +57,6 @@ static void paintSingleTileDebug(
     }
 }
 
-
-
-
-
 // Determines whether this layer is hidden.
 static bool isLayerHidden(const AbstractLayereStyle &layerStyle, int mapZoom)
 {

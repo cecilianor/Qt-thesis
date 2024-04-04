@@ -6,6 +6,12 @@
 #include "TileLoader.h"
 #include "Utilities.h"
 
+/*! \brief
+ *  Contains the name of the environment variable where we expect
+ *  the MapTiler key to be stored.
+*/
+const QString Bach::mapTilerKeyEnvName = "MAPTILER_KEY";
+
 /*!
  * \brief Bach::rasterTilesheetUrlFromMapType gets a raster tile sheet based on the chosen map type.
  * \param mapType is the mapType to get the correspoding raster tile URL for.
@@ -83,8 +89,9 @@ bool Bach::writeNewFileHelper(const QString& path, const QByteArray &bytes)
 }
 
 /*!
- * \brief Reads MapTiler key from file.
- * \param filePath is the relative path + filename that's storing the key.
+ * \brief Reads MapTiler key either from environment variable, or from file path.
+ *
+ * \param filePath is the path + filename that's storing the key.
  * \return The key if successfully read from file.
  */
 std::optional<QString> Bach::readMapTilerKey(const QString &filePath)
@@ -96,7 +103,6 @@ std::optional<QString> Bach::readMapTilerKey(const QString &filePath)
             return envValue;
         }
     }
-
 
     QFile file(filePath);
 
@@ -111,7 +117,8 @@ std::optional<QString> Bach::readMapTilerKey(const QString &filePath)
 
 /*!
  * \brief Helper function to make a network request.
- * This function makes a simple GET request to the URL supplied.
+ * This function makes a simple GET request to the URL supplied and
+ * returns the body as a QByteArray.
  *
  * It waits for the response before
  * returning the result.
@@ -162,7 +169,7 @@ HttpResponse Bach::requestAndWait(const QString &url)
  * \param key The MapTiler key.
  * \return The byte array response from MapTiler.
  */
-HttpResponse Bach::requestStyleSheetFromWeb(MapType type, const QString &key)
+static HttpResponse requestStyleSheetFromWeb(MapType type, const QString &key)
 {
     switch(type) {
         case (MapType::BasicV2) : {
@@ -177,12 +184,16 @@ HttpResponse Bach::requestStyleSheetFromWeb(MapType type, const QString &key)
 }
 
 /*!
- * \brief Loads the bytes of the stylesheet.
+ * \internal
+ * \reentrant
+ *
+ * \brief Loads the bytes of the stylesheet as QByteArray.
+ *
  * Will attempt to load from cache first, then try downloading from web.
  * If loaded from web, it will then try to write the result to disk cache.
  * This is a blocking and re-entrant function.
  */
-HttpResponse Bach::loadStyleSheetBytes(
+static HttpResponse loadStyleSheetBytes(
     MapType type,
     const std::optional<QString> &mapTilerKey)
 {
@@ -215,19 +226,33 @@ HttpResponse Bach::loadStyleSheetBytes(
         return { {}, ResultType::UnknownError };
 
     // Make and wait for the web request.
-    HttpResponse webResponse = Bach::requestStyleSheetFromWeb(type, mapTilerKey.value());
+    HttpResponse webResponse = requestStyleSheetFromWeb(type, mapTilerKey.value());
     if (webResponse.resultType != ResultType::Success)
         return webResponse;
 
     // From here we want try to write this stylesheet to disk cache.
     // If it failed, we consider the entire function a failure.
-    bool writeSuccess = writeNewFileHelper(styleSheetCachePath, webResponse.response);
+    bool writeSuccess = Bach::writeNewFileHelper(styleSheetCachePath, webResponse.response);
     if (!writeSuccess)
         return { {}, ResultType::UnknownError };
 
     return webResponse;
 }
 
+/*!
+ * \reentrant
+ *
+ * \brief Bach::loadStyleSheetJson
+ *
+ * Will attempt to load from cache first, then try downloading from web.
+ * If loaded from web, it will then try to write the result to disk cache.
+ *
+ * This is a blocking and re-entrant function.
+ *
+ * \param type
+ * \param mapTilerKey, if set to nullopt
+ * \return The stylesheet as QJsonDocument
+ */
 std::optional<QJsonDocument> Bach::loadStyleSheetJson(
     MapType type,
     const std::optional<QString> &mapTilerKey)
@@ -252,7 +277,98 @@ std::optional<QJsonDocument> Bach::loadStyleSheetJson(
     return styleSheetJson;
 }
 
-std::optional<QJsonDocument> Bach::loadVectorTileSheet(
+/*!
+ * \brief Gets a tile template URL from a tilesheet.
+ *
+ * The function returns either a success message or an error message and error code.
+ *
+ * \param tileSheetUrl the link/url to the stylesheet.
+ * \return The templated URL to tiles. This string has patterns {x}, {y} and {z} that
+ * need to be replaced with the tile-coordinate.
+ */
+static ParsedLink getTileUrlTemplateFromTileSheet(const QJsonDocument &tileSheet)
+{
+    if (tileSheet.isObject()) {
+        QJsonObject jsonObject = tileSheet.object();
+        if(jsonObject.contains("tiles") && jsonObject["tiles"].isArray()) {
+            QJsonArray tilesArray = jsonObject["tiles"].toArray();
+            for (const QJsonValueRef &tileValue : tilesArray) {
+                QString tileLink = tileValue.toString();
+                //qDebug() << "\n\t" <<"Link to PBF tiles: " << tileLink <<"\n";
+                return { tileLink, ResultType::Success };
+            }
+        }
+        else {
+            qWarning() << "No 'tiles' array was found in the JSON object...";
+        }
+    } else if (tileSheet.isArray()) {
+        //The else if branch is just used for testing. Do NOT pushto final version!!
+        qWarning() << "A JSON array was found. The current functionality doesn't support this...";
+    }
+    else {
+        qWarning() << "There is an unknown error with the loaded JSON data...";
+    }
+    return { QString(), ResultType::UnknownError };
+}
+
+/*!
+ * \brief Finds the to a mapTiler tilesheet given a stylesheet
+ * \param styleSheet is the stylesheet to get the link from
+ * \param sourceType is the map source type passed as a QString
+ * \return link as a string
+ */
+ParsedLink Bach::getTilesheetUrlFromStyleSheet(
+    const QJsonDocument &styleSheet,
+    const QString &sourceType)
+{
+    // Convert stylesheet to a Json Object.
+    QJsonObject jsonObject = styleSheet.object();
+
+    if (jsonObject.contains("sources") && jsonObject["sources"].isObject()) {
+        QJsonObject sourcesObject = jsonObject["sources"].toObject();
+
+        if (sourcesObject.contains(sourceType) && sourcesObject[sourceType].isObject()) {
+            QJsonObject maptilerObject = sourcesObject[sourceType].toObject();
+
+            // Return the tile sheet if the url to it was found.
+            if (maptilerObject.contains("url")) {
+                QString link = maptilerObject["url"].toString();
+                return {link, ResultType::Success};
+            } else {
+                qWarning() << PrintResultTypeInfo(ResultType::TileSheetNotFound);
+                return {QString(), ResultType::TileSheetNotFound};
+            }
+        } else {
+            qWarning() << PrintResultTypeInfo(ResultType::UnknownSourceType);
+            return {QString(), ResultType::UnknownSourceType};
+        }
+    } else {
+        qWarning() << "The stylesheet doesn't contain 'sources' field like it should.\n"
+                   << "Check if MapTiler API has been updated to store map sources differently.\n";
+        return {QString(), ResultType::ParseError};
+    }
+
+    qWarning() << PrintResultTypeInfo(ResultType::UnknownError);
+    return {QString(), ResultType::UnknownError};
+}
+
+/*!
+ * \internal
+ * \reentrant
+ *
+ * \brief Bach::loadVectorTileSheet
+ * Loads the vector-tile sheet for given stylesheet.
+ * Will attempt to load from disk cache first. If not found,
+ * will try to load from web and write result to disk cache
+ * before returning.
+ *
+ * \param styleSheet JSON
+ * \param sourceType String that says which source to use. Example: maptiler_planet
+ *
+ * \return Returns the tilesheet as a JSON document if success. If something failed,
+ * returns nullopt.
+ */
+static std::optional<QJsonDocument> loadVectorTileSheet(
     const QJsonDocument &styleSheet,
     const QString &sourceType)
 {
@@ -286,7 +402,7 @@ std::optional<QJsonDocument> Bach::loadVectorTileSheet(
     // We didn't find it in cache, we need to download it.
 
     // First we need to find the URL to the tiles document.
-    ParsedLink tilesUrlResult = getTilesLinkFromStyleSheet(styleSheet, sourceType);
+    ParsedLink tilesUrlResult = Bach::getTilesheetUrlFromStyleSheet(styleSheet, sourceType);
     if (tilesUrlResult.resultType != ResultType::Success) {
         qWarning() << "Unable to grab tilesheet URL from stylesheet.";
         return std::nullopt;
@@ -316,7 +432,26 @@ std::optional<QJsonDocument> Bach::loadVectorTileSheet(
     return tileSheetJson;
 }
 
-std::optional<QJsonDocument> Bach::loadRasterTileSheet(
+/*!
+ * \internal
+ * \reentrant
+ *
+ * \brief loadRasterTileSheetJson
+ *
+ * This will attempt to load the respective tilesheet from disk cache.
+ * If not found, will try to load from web and then write result into disk cache
+ * before returning.
+ *
+ * This is a blocking and re-entrant function.
+ *
+ * \param mapType
+ * \param mapTilerKeyOpt The MapTiler key to use for web connection. Pass nullopt
+ * to only use local cache.
+ *
+ * \return Returns the tilesheet as JSON document if successful.
+ * Returns nullopt if anything fails.
+ */
+static std::optional<QJsonDocument> loadRasterTileSheetJson(
     MapType mapType,
     std::optional<QString> mapTilerKeyOpt)
 {
@@ -358,7 +493,7 @@ std::optional<QJsonDocument> Bach::loadRasterTileSheet(
 
     // TODO: In the future, this needs a switch case to choose the correct
     // URL based on the maptype. For now it's hardcoded to basic-v2.
-    std::optional<QString> tileSheetUrlOpt = rasterTilesheetUrlFromMapType(mapType);
+    std::optional<QString> tileSheetUrlOpt = Bach::rasterTilesheetUrlFromMapType(mapType);
     if (!tileSheetUrlOpt.has_value()) {
         // Couldn't find the corresponding Url for this maptype.
         return std::nullopt;
@@ -393,11 +528,20 @@ std::optional<QJsonDocument> Bach::loadRasterTileSheet(
 }
 
 /*!
+ * \reentrant
+ *
  * \brief getPbfLinkTemplate
- * Finds the PBF link template from the stylesheet JSON.
+ * Finds the PBF link template from the stylesheet JSON. This is a and re-entrant blocking
+ * function.
+ *
+ * This loads the tilesheet associated with the stylesheet. This
+ * tilesheet is first attempted to load from disk cache. If not
+ * found in disk cache, it will attempt to load from web and then
+ * write the result into disk cache.
  *
  * \param styleSheet
- * \param sourceType
+ * \param sourceType String that says which source for tiles to use. Example: maptiler_planet
+ *
  * \return Returns the string that can be turned into the URL.
  * This string will have patterns {z}/{x}/{y} where the tile indices
  * need to be inserted.
@@ -406,107 +550,45 @@ ParsedLink Bach::getPbfUrlTemplate(
     const QJsonDocument &styleSheet,
     const QString &sourceType)
 {
-    std::optional<QJsonDocument> tileSheetJsonOpt = Bach::loadVectorTileSheet(
+    std::optional<QJsonDocument> tileSheetJsonOpt = loadVectorTileSheet(
         styleSheet,
         sourceType);
     if (!tileSheetJsonOpt.has_value())
         return { {}, ResultType::UnknownError };
 
     QJsonDocument &tileSheetJson = tileSheetJsonOpt.value();
-    return Bach::getTileUrlTemplateFromTileSheet(tileSheetJson);
-}
-/*
-ParsedLink Bach::getPngTileLinkTemplate(
-    const QJsonDocument &tileSheet,
-    const QString &sourceType)
-{
-    ParsedLink PngTilesUrlResult = getTilesLinkFromTileSheet(tileSheet);
-}
-*/
-
-/*!
- * @brief Finds the to a mapTiler tilesheet given a stylesheet
- * @param styleSheet is the stylesheet to get the link from
- * @param sourceType is the map source type passed as a QString
- * @return link as a string
- */
-ParsedLink Bach::getTilesLinkFromStyleSheet(
-    const QJsonDocument &styleSheet,
-    const QString &sourceType)
-{
-    // Convert stylesheet to a Json Object.
-    QJsonObject jsonObject = styleSheet.object();
-
-    if (jsonObject.contains("sources") && jsonObject["sources"].isObject()) {
-        QJsonObject sourcesObject = jsonObject["sources"].toObject();
-
-        if (sourcesObject.contains(sourceType) && sourcesObject[sourceType].isObject()) {
-            QJsonObject maptilerObject = sourcesObject[sourceType].toObject();
-
-            // Return the tile sheet if the url to it was found.
-            if (maptilerObject.contains("url")) {
-                QString link = maptilerObject["url"].toString();
-                return {link, ResultType::Success};
-            } else {
-                qWarning() << PrintResultTypeInfo(ResultType::TileSheetNotFound);
-                return {QString(), ResultType::TileSheetNotFound};
-            }
-        } else {
-            qWarning() << PrintResultTypeInfo(ResultType::UnknownSourceType);
-            return {QString(), ResultType::UnknownSourceType};
-        }
-    } else {
-        qWarning() << "The stylesheet doesn't contain 'sources' field like it should.\n"
-                   << "Check if MapTiler API has been updated to store map sources differently.\n";
-        return {QString(), ResultType::ParseError};
-    }
-
-    qWarning() << PrintResultTypeInfo(ResultType::UnknownError);
-    return {QString(), ResultType::UnknownError};
+    return getTileUrlTemplateFromTileSheet(tileSheetJson);
 }
 
 /*!
- * \brief Gets a PBF link based on the url to a tile sheet.
+ * \reentrant
  *
- * The function returns either a success message or an error message and error code.
+ * \brief Bach::getRasterUrlTemplate
  *
- * \param tileSheetUrl the link/url to the stylesheet.
- * \return The link to PBF tiles.
+ * This loads the tilesheet associated with the stylesheet. This
+ * tilesheet is first attempted to load from disk cache. If not
+ * found in disk cache, it will attempt to load from web and then
+ * write the result into disk cache.
+ *
+ * This is a blocking and re-entrant function.
+ *
+ * \param mapType
+ * \param mapTilerKey
+ * \return Returns the string that can be turned into the URL.
+ * This string will have patterns {z}/{x}/{y} where the tile indices
+ * need to be inserted.
  */
-ParsedLink Bach::getTileUrlTemplateFromTileSheet(const QJsonDocument &tileSheet)
-{
-    if (tileSheet.isObject()) {
-        QJsonObject jsonObject = tileSheet.object();
-        if(jsonObject.contains("tiles") && jsonObject["tiles"].isArray()) {
-            QJsonArray tilesArray = jsonObject["tiles"].toArray();
-            for (const QJsonValueRef &tileValue : tilesArray) {
-                QString tileLink = tileValue.toString();
-                //qDebug() << "\n\t" <<"Link to PBF tiles: " << tileLink <<"\n";
-                return { tileLink, ResultType::Success };
-            }
-        }
-        else {
-            qWarning() << "No 'tiles' array was found in the JSON object...";
-        }
-    } else if (tileSheet.isArray()) {
-        //The else if branch is just used for testing. Do NOT pushto final version!!
-        qWarning() << "A JSON array was found. The current functionality doesn't support this...";
-    }
-    else {
-        qWarning() << "There is an unknown error with the loaded JSON data...";
-    }
-    return { QString(), ResultType::UnknownError };
-}
-
-ParsedLink Bach::getPngUrlTemplate(
+ParsedLink Bach::getRasterUrlTemplate(
     MapType mapType,
     std::optional<QString> mapTilerKey)
 {
-    std::optional<QJsonDocument> tileSheetOpt = Bach::loadRasterTileSheet(mapType, mapTilerKey);
+    std::optional<QJsonDocument> tileSheetOpt = loadRasterTileSheetJson(
+        mapType,
+        mapTilerKey);
     if (!tileSheetOpt.has_value()) {
         return { {}, ResultType::UnknownError };
     }
 
     QJsonDocument &tileSheet = tileSheetOpt.value();
-    return Bach::getTileUrlTemplateFromTileSheet(tileSheet);
+    return getTileUrlTemplateFromTileSheet(tileSheet);
 }

@@ -124,7 +124,7 @@ void UnitTesting::getTilesLink_valid_style_sheet_returns_success()
     QJsonDocument styleSheet(jsonObject);
 
     // Call the function with the valid style sheet and source type
-    ParsedLink parsedLink = Bach::getTilesLinkFromStyleSheet(styleSheet, "maptiler_planet");
+    ParsedLink parsedLink = Bach::getTilesheetUrlFromStyleSheet(styleSheet, "maptiler_planet");
 
     // Verify that the parsed link and result type are as expected
     QCOMPARE(parsedLink.link, QString("https://example.com/tiles"));
@@ -134,7 +134,6 @@ void UnitTesting::getTilesLink_valid_style_sheet_returns_success()
 // Test the getTilesLink function with an unknown source type
 void UnitTesting::getTilesLink_unknown_source_type_returns_unknown_source_type_error()
 {
-
     QString unknownType = ("random_string");
     // Create a valid JSON style sheet with a different source type
     QJsonObject sourcesObject;
@@ -146,7 +145,7 @@ void UnitTesting::getTilesLink_unknown_source_type_returns_unknown_source_type_e
     QJsonDocument styleSheet(jsonObject);
 
     // Call the function with the style sheet and an unknown source type
-    ParsedLink parsedLink = Bach::getTilesLinkFromStyleSheet(styleSheet, unknownType);
+    ParsedLink parsedLink = Bach::getTilesheetUrlFromStyleSheet(styleSheet, unknownType);
 
     // Verify that the result type is unknown source type
     QCOMPARE(parsedLink.resultType, ResultType::UnknownSourceType);
@@ -164,7 +163,7 @@ void UnitTesting::getTilesLink_missing_url_returns_tile_sheet_not_found_error()
     QJsonDocument styleSheet(jsonObject);
 
     // Call the function with the style sheet
-    ParsedLink parsedLink = Bach::getTilesLinkFromStyleSheet(styleSheet, "maptiler_planet");
+    ParsedLink parsedLink = Bach::getTilesheetUrlFromStyleSheet(styleSheet, "maptiler_planet");
 
     // Verify that the result type is tile sheet not found
     QCOMPARE(parsedLink.resultType, ResultType::TileSheetNotFound);
@@ -325,8 +324,10 @@ void UnitTesting::check_new_tileLoader_has_no_tiles()
     std::unique_ptr<TileLoader> tileLoaderPtr = TileLoader::newDummy("");
     TileLoader &tileLoader = *tileLoaderPtr;
     QScopedPointer<Bach::RequestTilesResult> result = tileLoader.requestTiles({});
-    const QMap<TileCoord, const VectorTile*> &map = result->vectorMap();
-    QVERIFY(map.size() == 0);
+    const QMap<TileCoord, const VectorTile*> &vectorMap = result->vectorMap();
+    QVERIFY(vectorMap.size() == 0);
+    const QMap<TileCoord, const QImage*> &rasterMap = result->rasterImageMap();
+    QVERIFY(rasterMap.size() == 0);
 }
 
 
