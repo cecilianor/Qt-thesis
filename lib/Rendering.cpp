@@ -1,126 +1,14 @@
+#include "Evaluator.h"
 #include "Rendering.h"
 
-#include "Evaluator.h"
+/*  Information about what's on this file:
+    It consists of two major sections:
 
-QPair<double, double> Bach::lonLatToWorldNormCoord(double lon, double lat)
-{
-    constexpr double webMercatorPhiCutoff = 1.4844222297;
+    1. Rendering helper functions only used in `Rendering.cpp`.
+    2. Rendering functions that can be used externally, declared in `Rendering.h`.
 
-    // Function to normalize a value from its original range to [0, 1]
-    auto normalize = [](double value, double min, double max) {
-        return (value - min) / (max - min);
-    };
-
-    // Convert longitude and latitude to radians
-    auto lambda = lon;
-    auto phi = lat;
-
-    // Convert to Web Mercator
-    auto x = lambda;
-    auto y = std::log(std::tan(M_PI / 4.0 + phi / 2.0));
-
-    // Normalize x and y to [0, 1]
-    // Assuming the Web Mercator x range is [-π, π] and y range is calculated from latitude range
-    auto xNormalized = normalize(x, -M_PI, M_PI);
-    // We have to flip the sign of Y, because Mercator has positive Y moving up,
-    // while the world-normalized coordinate space has Y moving down.
-    auto yNormalized = normalize(
-        -y,
-        std::log(std::tan(M_PI / 4.0 + -webMercatorPhiCutoff / 2.0)),
-        std::log(std::tan(M_PI / 4.0 + webMercatorPhiCutoff / 2.0)));
-
-
-    return { xNormalized, yNormalized };
-}
-
-QPair<double, double> Bach::lonLatToWorldNormCoordDegrees(double lon, double lat)
-{
-    auto degToRad = [](double deg) {
-        return deg * M_PI / 180.0;
-    };
-    return lonLatToWorldNormCoord(degToRad(lon), degToRad(lat));
-}
-
-int Bach::calcMapZoomLevelForTileSizePixels(
-    int vpWidth,
-    int vpHeight,
-    double vpZoom,
-    int desiredTileWidth)
-{
-    // Calculate current tile size based on the largest dimension and current scale
-    int currentTileSize = qMax(vpWidth, vpHeight);
-
-    // Calculate desired scale factor
-    double desiredScale = (double)desiredTileWidth / currentTileSize;
-
-    // Figure out how the difference between the zoom levels of viewport and map
-    // needed to satisfy the pixel-size requirement.
-    double newMapZoomLevel = vpZoom - log2(desiredScale);
-
-    // Round to int, and clamp output to zoom level range.
-    return std::clamp((int)round(newMapZoomLevel), 0, maxZoomLevel);
-}
-
-QPair<double, double> Bach::calcViewportSizeNorm(double vpZoomLevel, double viewportAspect) {
-    // Math formula can be seen in the figure in the report, with the caption
-    // "Calculating viewport size as a factor of the world map"
-    auto temp = 1 / pow(2, vpZoomLevel);
-    return {
-        temp * qMin(1.0, viewportAspect),
-        temp * qMin(1.0, 1 / viewportAspect)
-    };
-}
-
-QVector<TileCoord> Bach::calcVisibleTiles(
-    double vpX,
-    double vpY,
-    double vpAspect,
-    double vpZoomLevel,
-    int mapZoomLevel)
-{
-    mapZoomLevel = qMax(0, mapZoomLevel);
-
-    // We need to calculate the width and height of the viewport in terms of
-    // world-normalized coordinates.
-    auto [vpWidthNorm, vpHeightNorm] = calcViewportSizeNorm(vpZoomLevel, vpAspect);
-
-    // Figure out the 4 edges in world-normalized coordinate space.
-    auto vpMinNormX = vpX - (vpWidthNorm / 2.0);
-    auto vpMaxNormX = vpX + (vpWidthNorm / 2.0);
-    auto vpMinNormY = vpY - (vpHeightNorm / 2.0);
-    auto vpMaxNormY = vpY + (vpHeightNorm / 2.0);
-
-    // Amount of tiles in each direction for this map zoom level.
-    auto tileCount = 1 << mapZoomLevel;
-
-    auto clampToGrid = [&](int i) {
-        return std::clamp(i, 0, tileCount-1);
-    };
-
-    // Convert edges into the index-based grid coordinates, and apply a clamp operation
-    // in case the viewport goes outside the map.
-    auto leftTileX = clampToGrid((int)floor(vpMinNormX * tileCount));
-    auto rightTileX = clampToGrid((int)floor(vpMaxNormX * tileCount));
-    auto topTileY = clampToGrid((int)floor(vpMinNormY * tileCount));
-    auto botTileY = clampToGrid((int)floor(vpMaxNormY * tileCount));
-
-    // Iterate over our two ranges to build our list.
-
-    if (mapZoomLevel == 0 &&
-        rightTileX - leftTileX == 0 &&
-        botTileY - topTileY == 0)
-    {
-        return { { 0, 0, 0 } };
-    } else {
-        QVector<TileCoord> visibleTiles;
-        for (int y = topTileY; y <= botTileY; y++) {
-            for (int x = leftTileX; x <= rightTileX; x++) {
-                visibleTiles += { mapZoomLevel, x, y };
-            }
-        }
-        return visibleTiles;
-    }
-}
+    Rendering helper functions follow below.
+*/
 
 /* This is a helper function for visualizing the boundaries of each tile.
  *
@@ -169,171 +57,9 @@ static void paintSingleTileDebug(
     }
 }
 
-/* Finds the fill color of given feature at the given zoom level.
- *
- * This function also takes opacity into account.
- */
-static QColor getFillColor(
-    const FillLayerStyle &layerStyle,
-    const AbstractLayerFeature &feature,
-    int mapZoom,
-    double vpZoom)
-{
-    QVariant colorVariant = layerStyle.getFillColorAtZoom(mapZoom);
-    QColor color;
-    // The layer style might return an expression, we need to resolve it.
-    if(colorVariant.typeId() == QMetaType::Type::QJsonArray){
-        color = Evaluator::resolveExpression(
-            colorVariant.toJsonArray(),
-            &feature,
-            mapZoom,
-            vpZoom).value<QColor>();
-    } else {
-        color = colorVariant.value<QColor>();
-    }
-
-    QVariant fillOpacityVariant = layerStyle.getFillOpacityAtZoom(mapZoom);
-    float fillOpacity;
-    // The layer style might return an expression, we need to resolve it.
-    if (fillOpacityVariant.typeId() == QMetaType::Type::QJsonArray){
-        fillOpacity = Evaluator::resolveExpression(
-          fillOpacityVariant.toJsonArray(),
-          &feature,
-          mapZoom,
-          vpZoom).value<float>();
-    } else {
-        fillOpacity = fillOpacityVariant.value<float>();
-    }
-
-    color.setAlphaF(fillOpacity * color.alphaF());
-    return color;
-}
-
-/* Render a single feature of a tile, where the feature is of type polygon.
- *
- * Assumes the painter's position has been moved to the origin of the tile.
- *
- */
-static void paintSingleTileFeature_Fill_Polygon(
-    QPainter &painter,
-    const PolygonFeature &feature,
-    const FillLayerStyle &layerStyle,
-    int mapZoom,
-    double vpZoom,
-    const QTransform &transformIn)
-{
-    auto brushColor = getFillColor(layerStyle, feature, mapZoom, vpZoom);
-
-    painter.setBrush(brushColor);
-    painter.setRenderHints(QPainter::Antialiasing, layerStyle.m_antialias);
-    painter.setPen(Qt::NoPen);
-
-    auto const& path = feature.polygon();
-
-    QTransform transform = transformIn;
-    transform.scale(1 / 4096.0, 1 / 4096.0);
-    auto newPath = transform.map(path);
-
-    painter.drawPath(newPath);
-}
-
-/* Finds the line color of given feature at the given zoom level.
- */
-static QColor getLineColor(
-    const LineLayerStyle &layerStyle,
-    const LineFeature &feature,
-    int mapZoom,
-    double vpZoom)
-{
-    QVariant color = layerStyle.getLineColorAtZoom(mapZoom);
-    // The layer style might return an expression, we need to resolve it.
-    if(color.typeId() == QMetaType::Type::QJsonArray){
-        color = Evaluator::resolveExpression(
-            color.toJsonArray(),
-            &feature,
-            mapZoom,
-            vpZoom);
-    }
-    return color.value<QColor>();
-}
-
-/* Finds the line opacity of given feature at the given zoom level.
- */
-static float getLineOpacity(
-    const LineLayerStyle &layerStyle,
-    const LineFeature &feature,
-    int mapZoom,
-    double vpZoom)
-{
-    QVariant lineOpacity = layerStyle.getLineOpacityAtZoom(mapZoom);
-    // The layer style might return an expression, we need to resolve it.
-    if(lineOpacity.typeId() == QMetaType::Type::QJsonArray){
-        lineOpacity = Evaluator::resolveExpression(
-            lineOpacity.toJsonArray(),
-            &feature,
-            mapZoom,
-            vpZoom);
-    }
-    return lineOpacity.value<float>();
-}
-
-/* Finds the line width of this feature at given zoom level.
- */
-static int getLineWidth(
-    const LineLayerStyle &layerStyle,
-    const LineFeature &feature,
-    int mapZoom,
-    double vpZoom)
-{
-    QVariant lineWidth = layerStyle.getLineWidthAtZoom(mapZoom);
-    // The layer style might return an expression, we need to resolve it.
-    if(lineWidth.typeId() == QMetaType::Type::QJsonArray){
-        lineWidth = Evaluator::resolveExpression(
-            lineWidth.toJsonArray(),
-            &feature,
-            mapZoom,
-            vpZoom);
-    }
-    return lineWidth.value<int>();
-}
 
 
-/* Paints a single Line feature within a tile.
- *
- * Assumes the painters origin has moved to the tiles origin.
- */
-static void paintSingleTileFeature_Line(
-    QPainter &painter,
-    const LineFeature &feature,
-    const LineLayerStyle &layerStyle,
-    int mapZoom,
-    double vpZoom,
-    const QTransform &transformIn)
-{
-    auto pen = painter.pen();
 
-    pen.setColor(getLineColor(layerStyle, feature, mapZoom, vpZoom));
-    // Not sure how to take opacity into account yet.
-    // There's some interaction happening with the color.
-    //painter.setOpacity(getLineOpacity(layerStyle, feature, mapZoom, vpZoom));
-
-    pen.setWidth(getLineWidth(layerStyle, feature, mapZoom, vpZoom));
-    pen.setCapStyle(layerStyle.getCapStyle());
-    pen.setJoinStyle(layerStyle.getJoinStyle());
-
-    painter.setPen(pen);
-    painter.setBrush(Qt::NoBrush);
-
-    // Not sure yet how to determine AA for lines.
-    painter.setRenderHints(QPainter::Antialiasing, false);
-
-    auto const& path = feature.line();
-    QTransform transform = transformIn;
-    transform.scale(1 / 4096.0, 1 / 4096.0);
-    auto newPath = transform.map(path);
-
-    painter.drawPath(newPath);
-}
 
 // Determines whether this layer is hidden.
 static bool isLayerHidden(const AbstractLayereStyle &layerStyle, int mapZoom)
@@ -341,7 +67,7 @@ static bool isLayerHidden(const AbstractLayereStyle &layerStyle, int mapZoom)
     return
         layerStyle.m_visibility == "none" ||
         layerStyle.m_maxZoom < mapZoom ||
-        layerStyle.m_minZoom > mapZoom;
+        layerStyle.m_minZoom >= mapZoom;
 }
 
 // Determines whether a feature should be included when rendering this layer-style.
@@ -375,8 +101,11 @@ static void paintSingleTile(
     int mapZoom,
     double vpZoom,
     const StyleSheet &styleSheet,
-    const QTransform &transformIn)
+    const QTransform &transformIn,
+    int tileSize)
 {
+    QVector<QPair<int, PointFeature>> labels; //Used to order text rendering operation based on "rank" property.
+    QVector<QRect> laberRects; //Used to prevent text overlapping.
     // We start by iterating over each layer style, it determines the order
     // at which we draw the elements of the map.
     for (auto const& abstractLayerStyle : styleSheet.m_layerStyles) {
@@ -391,8 +120,7 @@ static void paintSingleTile(
         // If we find it, we dereference it to access it's data.
         auto const& layer = **layerIt;
 
-        // We do different types of rendering based on whether the layer is a polygon
-        // or line.
+        // We do different types of rendering based on whether the layer is a polygon, line, or symbol(text).
         if (abstractLayerStyle->type() == AbstractLayereStyle::LayerType::fill) {
             auto const& layerStyle = *static_cast<FillLayerStyle const*>(abstractLayerStyle);
 
@@ -407,20 +135,13 @@ static void paintSingleTile(
 
                 // Render the feature in question.
                 painter.save();
-                paintSingleTileFeature_Fill_Polygon(
-                    painter,
-                    feature,
-                    layerStyle,
-                    mapZoom,
-                    vpZoom,
-                    transformIn);
+                Bach::paintSingleTileFeature_Polygon({&painter, &layerStyle, &feature, mapZoom, vpZoom, transformIn});
                 painter.restore();
             }
-        }
-        else if (abstractLayerStyle->type() == AbstractLayereStyle::LayerType::line) {
+        } else if (abstractLayerStyle->type() == AbstractLayereStyle::LayerType::line) {
             auto const& layerStyle = *static_cast<LineLayerStyle const*>(abstractLayerStyle);
 
-            // Iterate over all the features, and filter out anything that is not fill.
+            // Iterate over all the features, and filter out anything that is not line.
             for (auto const& abstractFeature : layer.m_features) {
                 if (abstractFeature->type() != AbstractLayerFeature::featureType::line)
                     continue;
@@ -432,15 +153,42 @@ static void paintSingleTile(
 
                 // Render the feature in question.
                 painter.save();
-                paintSingleTileFeature_Line(
-                    painter,
-                    feature,
-                    layerStyle,
-                    mapZoom,
-                    vpZoom,
-                    transformIn);
+                Bach::paintSingleTileFeature_Line({&painter, &layerStyle, &feature, mapZoom, vpZoom, transformIn});
                 painter.restore();
             }
+        } else if(abstractLayerStyle->type() == AbstractLayereStyle::LayerType::symbol){
+             auto const& layerStyle = *static_cast<const SymbolLayerStyle *>(abstractLayerStyle);
+
+             // Iterate over all the features, and filter out anything that is not point  (rendering of line features for curved text in the symbol layer is not yet implemented).
+             for (auto const& abstractFeature : layer.m_features) {
+                 if (abstractFeature->type() != AbstractLayerFeature::featureType::point) //For normal text (continents /countries / cities / places / ...)
+                     continue;
+                 const auto &feature = *static_cast<const PointFeature*>(abstractFeature);
+
+                 // Tests whether the feature should be rendered at all based on possible expression.
+                 if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
+                     continue;
+                 //Add the feature along with its "rank" (if present, defaults to 100) to the labels map.
+                 if(feature.fetureMetaData.contains("rank")){
+                     labels.append(QPair<int, PointFeature>(feature.fetureMetaData["rank"].toInt(), feature));
+                 }else{
+                     labels.append(QPair<int, PointFeature>(100, feature));
+                 }
+            }
+             //Sort the labels map in increasing order based on the laber's "rank"
+             std::sort(labels.begin(), labels.end(), [](const QPair<int, PointFeature>& a, const QPair<int, PointFeature>& b) {
+                 return a.first < b.first;
+             });
+            //Loop over the ordered label map and render text ignoring labels that would cause an overlap.
+            for(const auto &pair : labels){
+                 painter.save();
+                Bach::paintSingleTileFeature_Point(
+                    {&painter, &layerStyle, &pair.second, mapZoom, vpZoom, transformIn},
+                    tileSize,
+                    laberRects);
+
+                 painter.restore();
+             }
         }
     }
 }
@@ -481,7 +229,22 @@ static void drawBackgroundColor(
     }
 }
 
-void Bach::paintTiles(
+// Exported rendering functionality.
+
+/*!
+ * \brief Bach::paintVectorTiles renders vector tiles to the map.
+ *  The function will iterate over multiple tiles and place them correctly on screen.
+ *
+ * \param painter is a QPainter object that renders the tile data to the screen.
+ * \param vpX
+ * \param vpY
+ * \param viewportZoomLevel
+ * \param mapZoomLevel
+ * \param tileContainer contains all the tile-data available at this point in time.
+ * \param styleSheet contains layer styling data.
+ * \param drawDebug determines if debug lines should be drawn or not.
+ */
+void Bach::paintVectorTiles(
     QPainter &painter,
     double vpX,
     double vpY,
@@ -493,7 +256,6 @@ void Bach::paintTiles(
 {
     // Start by drawing the background color on the entire canvas.
     drawBackgroundColor(painter, styleSheet, mapZoomLevel);
-
 
     // Gather width and height of the viewport, in pixels..
     auto vpWidth = painter.window().width();
@@ -562,7 +324,6 @@ void Bach::paintTiles(
         auto tileIt = tileContainer.find(tileCoord);
         if (tileIt != tileContainer.end()) {
             auto const& tileData = **tileIt;
-
             painter.save();
 
             // We create a clip rect around our tile, as to only render into
@@ -580,7 +341,106 @@ void Bach::paintTiles(
                 mapZoomLevel,
                 viewportZoomLevel,
                 styleSheet,
-                geometryTransform);
+                geometryTransform,
+                tileSizePixels);
+
+            painter.restore();
+        }
+
+        // Paint debug lines around the tile.
+        if (drawDebug) {
+            paintSingleTileDebug(
+                painter,
+                tileCoord,
+                vpMaxDim * tileSizeNorm);
+        }
+        painter.restore();
+    }
+}
+
+void Bach::paintPngTiles(
+    QPainter &painter,
+    double vpX,
+    double vpY,
+    double viewportZoomLevel,
+    int mapZoomLevel,
+    const QMap<TileCoord, const QImage*> &tileContainer,
+    const StyleSheet &styleSheet,
+    bool drawDebug)
+{
+    // Start by drawing the background color on the entire canvas.
+    drawBackgroundColor(painter, styleSheet, mapZoomLevel);
+
+    // Gather width and height of the viewport, in pixels..
+    auto vpWidth = painter.window().width();
+    auto vpHeight = painter.window().height();
+
+    // Aspect ratio of the viewport.
+    auto vpAspect = (double)vpWidth / (double)vpHeight;
+
+    // The longest length between vpWidth and vpHeight
+    auto vpMaxDim = qMax(vpWidth, vpHeight);
+
+    // Helper function to turn coordinates that are expressed as fraction of the viewport,
+    // into pixel coordinates.
+    auto toPixelSpace = [&](double in) { return (int)round(in * vpMaxDim); };
+
+    // Calculate the set of visible tiles that fit in the viewport.
+    auto visibleTiles = calcVisibleTiles(
+        vpX,
+        vpY,
+        vpAspect,
+        viewportZoomLevel,
+        mapZoomLevel);
+
+    // The scale of the world map as a fraction of the viewport.
+    auto vpScale = pow(2, viewportZoomLevel);
+    // The scale of a single tile as a fraction of the viewport.
+    auto tileSizeNorm = vpScale / (1 << mapZoomLevel);
+
+    // Calculate where the top-left origin of the world map is relative to the viewport.
+    double worldOriginX = vpX * vpScale - 0.5;
+    double worldOriginY = vpY * vpScale - 0.5;
+    // The world such that our worldmap is still centered around our center-coordinate
+    // when the aspect ratio changes.
+    if (vpAspect < 1.0) {
+        worldOriginX += -0.5 * vpAspect + 0.5;
+    } else if (vpAspect > 1.0) {
+        worldOriginY += -0.5 / vpAspect + 0.5;
+    }
+
+    // Iterate over all possible tiles that can possibly fit in this viewport.
+    for (const auto& tileCoord : visibleTiles) {
+        // Position the top-left of the tile inside the world map, as a fraction of the viewport size.
+        // We use the tile index coords and the size of a tile to generate the offset.
+        auto posNormX = (tileCoord.x * tileSizeNorm) - worldOriginX;
+        auto posNormY = (tileCoord.y * tileSizeNorm) - worldOriginY;
+
+        // Convert tile position and size to pixels.
+        auto tilePixelPosX = toPixelSpace(posNormX);
+        auto tilePixelPosY = toPixelSpace(posNormY);
+        auto tileSizePixels = toPixelSpace(tileSizeNorm);
+
+        painter.save();
+
+        // We move the origin point of the painter to the top-left of the tile.
+        // We do not apply scaling because it interferes with other sized elements,
+        // like the size of pen width.
+        QTransform transform;
+        transform.translate(tilePixelPosX, tilePixelPosY);
+        painter.setTransform(transform);
+
+        // See if the tile being rendered has any tile-data associated with it.
+       auto tileIt = tileContainer.find(tileCoord);
+       if (tileIt != tileContainer.end()) {
+            const QImage &tileData = **tileIt;
+
+            painter.save();
+
+            QRectF target(0.0, 0.0, tileSizePixels, tileSizePixels);
+            QRectF source(0.0, 0.0, 512.0, 512.0);
+
+            painter.drawImage(target, tileData, source);
 
             painter.restore();
         }

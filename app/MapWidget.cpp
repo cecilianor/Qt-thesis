@@ -7,6 +7,20 @@
 #include <QKeyEvent>
 #include <QPainter>
 
+/*!
+ * \brief The TileType enum determines what tile type to render.
+ *
+ * Supported types:
+ *
+ * * VectorTile
+ * * ImageTile
+ */
+enum class TileType {
+    VectorTile,
+    ImageTile, // Can be png, jpg, ...
+};
+
+
 MapWidget::MapWidget(QWidget *parent) : QWidget(parent)
 {
     // Establish and install our keypress filter.
@@ -39,8 +53,19 @@ void MapWidget::keyPressEvent(QKeyEvent* event)
     }
 }
 
-void MapWidget::paintEvent(QPaintEvent* event)
+void MapWidget::paintEvent(QPaintEvent *event)
 {
+    auto tileType = TileType::VectorTile;
+
+    if (isRenderingVector())
+    {
+        tileType = TileType::VectorTile;
+    }
+    else
+    {
+        tileType = TileType::ImageTile;
+    }
+
     auto visibleTiles = calcVisibleTiles();
     std::set<TileCoord> tilesRequested{ visibleTiles.begin(), visibleTiles.end()};
 
@@ -59,15 +84,30 @@ void MapWidget::paintEvent(QPaintEvent* event)
         signalFn);
 
     QPainter painter(this);
-    Bach::paintTiles(
-        painter,
-        x,
-        y,
-        getViewportZoomLevel(),
-        getMapZoomLevel(),
-        requestResult->map(),
-        requestResult->styleSheet(),
-        isShowingDebug());
+
+    if ( tileType ==TileType::VectorTile) {
+        Bach::paintVectorTiles(
+            painter,
+            x,
+            y,
+            getViewportZoomLevel(),
+            getMapZoomLevel(),
+            requestResult->vectorMap(),
+            requestResult->styleSheet(),
+            isShowingDebug());
+    }
+
+    else if (tileType == TileType::ImageTile) {
+        Bach::paintPngTiles(
+            painter,
+            x,
+            y,
+            getViewportZoomLevel(),
+            getMapZoomLevel(),
+            requestResult->rasterImageMap(),
+            requestResult->styleSheet(),
+            isShowingDebug());
+    }
 }
 
 double MapWidget::getViewportZoomLevel() const
@@ -192,5 +232,11 @@ bool MapWidget::KeyPressFilter::eventFilter(QObject *obj, QEvent *event)
 void MapWidget::toggleIsShowingDebug()
 {
     showDebug = !showDebug;
+    update();
+}
+
+void MapWidget::toggleIsRenderingVectorTile()
+{
+    renderVectorTile = !renderVectorTile;
     update();
 }

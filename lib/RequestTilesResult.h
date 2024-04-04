@@ -21,7 +21,8 @@ namespace Bach {
     public:
         virtual ~RequestTilesResult() {}
         // Returns the map of returned tiles.
-        virtual const QMap<TileCoord, const VectorTile*> &map() const = 0;
+        virtual const QMap<TileCoord, const VectorTile*> &vectorMap() const = 0;
+        virtual const QMap<TileCoord, const QImage*> &rasterImageMap() const = 0;
         virtual const StyleSheet &styleSheet() const = 0;
     };
 }
