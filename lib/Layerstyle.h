@@ -17,10 +17,10 @@
  *  all the layers styles follow the maptiler layer style specification : https://docs.maptiler.com/gl-style-specification/layers/
  */
 
-class AbstractLayereStyle
+class AbstractLayerStyle
 {
 public:
-    AbstractLayereStyle() {};
+    AbstractLayerStyle() {};
     enum class LayerType : quint8
     {
         background,
@@ -30,7 +30,7 @@ public:
         notImplemented,
     };
 
-    static AbstractLayereStyle* fromJson(const QJsonObject &json);
+    static AbstractLayerStyle* fromJson(const QJsonObject &json);
     virtual LayerType type() const = 0;
     QString m_id;
     QString m_sourceLayer;
@@ -41,13 +41,13 @@ public:
     QJsonArray m_filter;
 };
 
-class BackgroundStyle : public AbstractLayereStyle
+class BackgroundStyle : public AbstractLayerStyle
 {
 public:
     BackgroundStyle(){};
     ~BackgroundStyle(){};
     static BackgroundStyle* fromJson(const QJsonObject &json);
-    AbstractLayereStyle::LayerType type() const override {return AbstractLayereStyle::LayerType::background;};
+    AbstractLayerStyle::LayerType type() const override {return AbstractLayerStyle::LayerType::background;};
     QVariant getColorAtZoom(int zoomLevel) const;
     QVariant getOpacityAtZoom(int zoomLevel) const;
     //void addBackgroundPatternImage(QImage img);//Not used for first iteration
@@ -58,13 +58,13 @@ private:
 
 };
 
-class FillLayerStyle : public AbstractLayereStyle
+class FillLayerStyle : public AbstractLayerStyle
 {
 public:
     FillLayerStyle(){};
     ~FillLayerStyle(){};
     static FillLayerStyle* fromJson(const QJsonObject &json);
-    AbstractLayereStyle::LayerType type() const override {return AbstractLayereStyle::LayerType::fill;};
+    AbstractLayerStyle::LayerType type() const override {return AbstractLayerStyle::LayerType::fill;};
     QVariant getFillColorAtZoom(int zoomLevel) const;
     QVariant getFillOpacityAtZoom(int zoomLevel) const;
     QVariant getFillOutLineColorAtZoom(int zoomLevel) const;
@@ -84,13 +84,13 @@ private:
     QVariant m_fillOutlineColor;
     //QList<QPair<int, QPair<int, int>>> m_fillTranslate;//Not used for first iteration
 };
-class LineLayerStyle : public AbstractLayereStyle
+class LineLayerStyle : public AbstractLayerStyle
 {
 public:
     LineLayerStyle(){};
     ~LineLayerStyle(){};
     static LineLayerStyle* fromJson(const QJsonObject &json);
-    LayerType type() const override {return AbstractLayereStyle::LayerType::line;};
+    LayerType type() const override {return AbstractLayerStyle::LayerType::line;};
     QVariant getLineColorAtZoom(int zoomLevel) const;
     QVariant getLineOpacityAtZoom(int zoomLevel) const;
     QVariant getLineWidthAtZoom(int zoomLevel) const;
@@ -121,13 +121,13 @@ private:
     QVariant m_lineWidth;
 };
 
-class SymbolLayerStyle : public AbstractLayereStyle
+class SymbolLayerStyle : public AbstractLayerStyle
 {
 public:
     SymbolLayerStyle(){};
     ~SymbolLayerStyle(){};
     static SymbolLayerStyle* fromJson(const QJsonObject &json);
-    AbstractLayereStyle::LayerType type() const override {return AbstractLayereStyle::LayerType::symbol;};
+    AbstractLayerStyle::LayerType type() const override {return AbstractLayerStyle::LayerType::symbol;};
     QVariant getTextSizeAtZoom(int zoomLevel) const;
     QVariant getTextColorAtZoom(int zoomLevel) const;
     QVariant getTextOpacityAtZoom(int zoomLevel) const;
@@ -195,13 +195,13 @@ private:
      //QList<QPair<int, QPair<int, int>>> m_textTranslate;//Not used for first iteration
 };
 
-class NotImplementedStyle : public AbstractLayereStyle
+class NotImplementedStyle : public AbstractLayerStyle
 {
 public:
     NotImplementedStyle(){};
     ~NotImplementedStyle(){};
     static NotImplementedStyle* fromJson(const QJsonObject &json);
-    AbstractLayereStyle::LayerType type() const override {return AbstractLayereStyle::LayerType::notImplemented;};
+    AbstractLayerStyle::LayerType type() const override {return AbstractLayerStyle::LayerType::notImplemented;};
 };
 
 class StyleSheet
@@ -216,7 +216,7 @@ public:
     int m_version;
     QString m_name;
     //QMap<QString, QString> m_sources;//should have a separate class for tile sources //Not used for first iteration
-    QVector<AbstractLayereStyle*> m_layerStyles;
+    QVector<AbstractLayerStyle*> m_layerStyles;
 
 };
 
