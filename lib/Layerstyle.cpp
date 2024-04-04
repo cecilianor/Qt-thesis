@@ -59,7 +59,7 @@ BackgroundStyle *BackgroundStyle::fromJson(const QJsonObject &json)
     BackgroundStyle* returnLayer = new BackgroundStyle();
     //parsing layout properties
     QJsonObject layout = json.value("layout").toObject();
-    //visibility property is parsed in AbstractLayereStyle::fromJson
+    //visibility property is parsed in AbstractLayerStyle::fromJson
 
     //parsing paint properties
     QJsonObject paint = json.value("paint").toObject();
@@ -162,7 +162,7 @@ FillLayerStyle *FillLayerStyle::fromJson(const QJsonObject &json)
 
     //parsing layout properties
     QJsonObject layout = json.value("layout").toObject();
-    //visibility property is parsed in AbstractLayereStyle* AbstractLayereStyle::fromJson(const QJsonObject &json)
+    //visibility property is parsed in AbstractLayerStyle* AbstractLayerStyle::fromJson(const QJsonObject &json)
 
     //parsing paint properties
     QJsonObject paint = json.value("paint").toObject();
@@ -307,7 +307,7 @@ LineLayerStyle *LineLayerStyle::fromJson(const QJsonObject &json)
     LineLayerStyle* returnLayer = new LineLayerStyle();
 
     //parsing layout properties
-    //visibility property is parsed in AbstractLayereStyle* AbstractLayereStyle::fromJson(const QJsonObject &json)
+    //visibility property is parsed in AbstractLayerStyle* AbstractLayerStyle::fromJson(const QJsonObject &json)
     QJsonObject layout = json.value("layout").toObject();
     returnLayer->m_lineCap = layout.contains("line-cap") ? layout.value("line-cap").toString() : QString("butt");
     returnLayer->m_lineJoin = layout.contains("line-join") ? layout.value("line-join").toString() : QString("miter");
@@ -477,7 +477,7 @@ SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
 
     //parsing layout properties
     QJsonObject layout = json.value("layout").toObject();
-    //visibility property is parsed in AbstractLayereStyle* AbstractLayereStyle::fromJson(const QJsonObject &json)
+    //visibility property is parsed in AbstractLayerStyle* AbstractLayerStyle::fromJson(const QJsonObject &json)
 
     if(layout.contains("text-size")){
         QJsonValue textSize = layout.value("text-size");
@@ -662,10 +662,10 @@ NotImplementedStyle* NotImplementedStyle::fromJson(const QJsonObject &json)
      *
      * Returns a pointer of type NotImplementedStyle to the newly created layer with the parsed properties.
      */
-AbstractLayereStyle* AbstractLayereStyle::fromJson(const QJsonObject &json)
+AbstractLayerStyle* AbstractLayerStyle::fromJson(const QJsonObject &json)
 {
     QString layerType = json.value("type").toString();
-    AbstractLayereStyle *newLayer = nullptr;
+    AbstractLayerStyle *newLayer = nullptr;
     if(layerType == "background"){
         newLayer = BackgroundStyle::fromJson(json);
     }else if( layerType == "fill"){
@@ -723,7 +723,7 @@ void StyleSheet::parseSheet(const QJsonDocument &styleSheet)
 
     QJsonArray layers = styleSheetObject.value("layers").toArray();
     for(const auto &layer : layers){
-        m_layerStyles.append(AbstractLayereStyle::fromJson(layer.toObject()));
+        m_layerStyles.append(AbstractLayerStyle::fromJson(layer.toObject()));
     }
 }
 
