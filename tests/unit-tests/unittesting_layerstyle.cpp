@@ -1,4 +1,4 @@
-#include <QObject>feture
+#include <QObject>
 #include <QTest>
 
 #include "Layerstyle.h"
