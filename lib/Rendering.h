@@ -90,8 +90,7 @@ namespace Bach {
         const StyleSheet &styleSheet,
         bool drawDebug);
 
-
-    void paintPngTiles(
+    void paintRasterTiles(
         QPainter &painter,
         double vpX,
         double vpY,

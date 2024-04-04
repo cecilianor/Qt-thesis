@@ -56,7 +56,6 @@ void MapWidget::keyPressEvent(QKeyEvent* event)
 void MapWidget::paintEvent(QPaintEvent *event)
 {
     auto tileType = TileType::VectorTile;
-
     if (isRenderingVector())
     {
         tileType = TileType::VectorTile;
@@ -68,7 +67,6 @@ void MapWidget::paintEvent(QPaintEvent *event)
 
     auto visibleTiles = calcVisibleTiles();
     std::set<TileCoord> tilesRequested{ visibleTiles.begin(), visibleTiles.end()};
-
     // We want this signal to run every time a new tile is loaded later.
     auto signalFn = [this](TileCoord newTile) {
         // Possible optimization:
@@ -77,7 +75,6 @@ void MapWidget::paintEvent(QPaintEvent *event)
 
         update();
     };
-
     // Request tiles
     QScopedPointer<Bach::RequestTilesResult> requestResult = requestTilesFn(
         tilesRequested,
@@ -96,9 +93,8 @@ void MapWidget::paintEvent(QPaintEvent *event)
             requestResult->styleSheet(),
             isShowingDebug());
     }
-
     else if (tileType == TileType::ImageTile) {
-        Bach::paintPngTiles(
+        Bach::paintRasterTiles(
             painter,
             x,
             y,
