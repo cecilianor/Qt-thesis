@@ -87,10 +87,10 @@ static QString getTextContent(
         QString textFieldKey = textVariant.toString();
         textFieldKey.remove("{");
         textFieldKey.remove("}");
-        if(!feature.fetureMetaData.contains(textFieldKey)){
+        if(!feature.featureMetaData.contains(textFieldKey)){
             return "";
         }
-        return feature.fetureMetaData[textFieldKey].toString();
+        return feature.featureMetaData[textFieldKey].toString();
     }
 }
 
