@@ -66,8 +66,16 @@ static bool isLayerHidden(const AbstractLayerStyle &layerStyle, int mapZoom)
         layerStyle.m_minZoom >= mapZoom;
 }
 
-// Determines whether a feature should be included when rendering this layer-style.
-// Returns true if the feature should be included.
+/*!
+ * \brief includeFeature
+ * Determines whether a map feature should be included given the layer style.
+ *
+ * \param layerStyle
+ * \param feature
+ * \param mapZoom Map zoom level
+ * \param vpZoom Viewport zoom level
+ * \return Returns true if this feature should be rendered.
+ */
 static bool includeFeature(
     const AbstractLayerStyle &layerStyle,
     const AbstractLayerFeature &feature,
@@ -139,13 +147,26 @@ static void paintVectorLayer_Line(
     }
 }
 
-/* This function takes care of rendering a single tile.
+/*!
+ * \internal
+ *
+ * \brief paintVectorTile
+ * Paints a single tile using vector-graphics.
  *
  * This is called repeatedly from the 'paintTiles' function.
  *
- * It assumes the painter object has had its origin moved to the tiles origin.
- *
  * This does not handle background color.
+ *
+ * \param tileData The vector-data for this tile.
+ *
+ * \param painter
+ * The painter object to paint into.
+ * It assumes the painter object has had its origin moved to the tiles origin, and is unscaled.
+ *
+ * \param mapZoom The map zoom level being rendered.
+ * \param vpZoom The zoom level of the viewport.
+ * \param styleSheet
+ * \param tileSize The width of the tile in pixels.
  */
 static void paintVectorTile(
     const VectorTile &tileData,
@@ -153,10 +174,10 @@ static void paintVectorTile(
     int mapZoom,
     double vpZoom,
     const StyleSheet &styleSheet,
-    int tileSize)
+    int tileWidthPixels)
 {
     QTransform geometryTransform;
-    geometryTransform.scale(tileSize, tileSize);
+    geometryTransform.scale(tileWidthPixels, tileWidthPixels);
 
     QVector<QPair<int, PointFeature>> labels; //Used to order text rendering operation based on "rank" property.
     QVector<QRect> laberRects; //Used to prevent text overlapping.
@@ -183,7 +204,7 @@ static void paintVectorTile(
                 layer,
                 vpZoom,
                 mapZoom,
-                tileSize);
+                tileWidthPixels);
 
         } else if (abstractLayerStyle->type() == AbstractLayerStyle::LayerType::line) {
             paintVectorLayer_Line(
@@ -192,7 +213,7 @@ static void paintVectorTile(
                 layer,
                 vpZoom,
                 mapZoom,
-                tileSize);
+                tileWidthPixels);
         } else if(abstractLayerStyle->type() == AbstractLayerStyle::LayerType::symbol){
             const auto &layerStyle = *static_cast<const SymbolLayerStyle*>(abstractLayerStyle);
 
@@ -205,6 +226,7 @@ static void paintVectorTile(
                  // Tests whether the feature should be rendered at all based on possible expression.
                  if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
                      continue;
+
                  //Add the feature along with its "rank" (if present, defaults to 100) to the labels map.
                  if(feature.featureMetaData.contains("rank")){
                      labels.append(QPair<int, PointFeature>(feature.featureMetaData["rank"].toInt(), feature));
@@ -221,7 +243,7 @@ static void paintVectorTile(
                  painter.save();
                 Bach::paintSingleTileFeature_Point(
                     {&painter, &layerStyle, &pair.second, mapZoom, vpZoom, geometryTransform},
-                    tileSize,
+                    tileWidthPixels,
                     laberRects);
 
                  painter.restore();
@@ -230,7 +252,6 @@ static void paintVectorTile(
     }
 }
 
-// Assumes the painter is unchanged.
 static void drawBackgroundColor(
     QPainter &painter,
     const StyleSheet &styleSheet,
@@ -355,6 +376,22 @@ TilePosCalculator createTilePosCalculator(
     return out;
 }
 
+/*!
+ * \internal
+ * \brief A helper class for painting vector-tiles and raster-tiles while reusing code.
+ *
+ * Places tiles correctly on screen and also draws the debug boundaries.
+ *
+ * This function does not take care of rendering background.
+ *
+ * \param painter The painter object to draw into
+ * \param vpX center-coordinate X of the viewport in world-normalized coordinates.
+ * \param vpY center-coordinate Y of the viewport in world-normalized coordinates.
+ * \param vpZoom Zoom level of the viewport.
+ * \param mapZoom Zoom level of the map.
+ * \param paintSingleTileFn The function to call to draw a single tile.
+ *
+ */
 static void paintTilesGeneric(
     QPainter &painter,
     double vpX,
@@ -424,8 +461,10 @@ static void paintTilesGeneric(
 }
 
 /*!
- * \brief Bach::paintVectorTiles renders vector tiles to the map.
- *  The function will iterate over multiple tiles and place them correctly on screen.
+ * \brief Bach::paintVectorTiles renders multiple vector tiles to a QPainter object.
+ *
+ *  The function will iterate over multiple tiles and place them correctly on screen
+ *  and render them.
  *
  * \param painter is a QPainter object to draw into.
  * \param vpX
@@ -473,6 +512,10 @@ void Bach::paintVectorTiles(
         drawDebug);
 }
 
+/*!
+ *  \brief paintRasterTiles
+ *  Paints all tiles into a painter object, using raster-graphics.
+ */
 void Bach::paintRasterTiles(
     QPainter &painter,
     double vpX,
