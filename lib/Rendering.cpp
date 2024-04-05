@@ -245,9 +245,9 @@ static void paintVectorTile(
                     {&painter, &layerStyle, &pair.second, mapZoom, vpZoom, geometryTransform},
                     tileWidthPixels,
                     laberRects);
-
                  painter.restore();
              }
+            labels.clear();
         }
     }
 }
