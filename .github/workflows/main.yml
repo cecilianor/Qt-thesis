@@ -20,7 +20,7 @@ jobs:
       run: apt update
       
     - name: Upgrade apt
-      run: apt upgrade
+      run: apt upgrade -y
 
     - name: search apt
       run: apt search imagemagick
