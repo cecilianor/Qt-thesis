@@ -97,7 +97,8 @@ static void paintVectorLayer_Fill(
     const TileLayer& layer,
     double vpZoom,
     int mapZoom,
-    int tileWidthPixels)
+    int tileWidthPixels,
+    QTransform geometryTransform)
 {
     // Iterate over all the features, and filter out anything that is not fill.
     for (const AbstractLayerFeature *abstractFeature : layer.m_features) {
@@ -108,9 +109,6 @@ static void paintVectorLayer_Fill(
 
         if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
             continue;
-
-        QTransform geometryTransform;
-        geometryTransform.scale(tileWidthPixels, tileWidthPixels);
 
         // Render the feature in question.
         painter.save();
@@ -125,7 +123,8 @@ static void paintVectorLayer_Line(
     const TileLayer& layer,
     double vpZoom,
     int mapZoom,
-    int tileWidthPixels)
+    int tileWidthPixels,
+    QTransform geometryTransform)
 {
     // Iterate over all the features, and filter out anything that is not line.
     for (const AbstractLayerFeature *abstractFeature : layer.m_features) {
@@ -136,9 +135,6 @@ static void paintVectorLayer_Line(
         // Tests whether the feature should be rendered at all based on possible expression.
         if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
             continue;
-
-        QTransform geometryTransform;
-        geometryTransform.scale(tileWidthPixels, tileWidthPixels);
 
         // Render the feature in question.
         painter.save();
@@ -204,7 +200,8 @@ static void paintVectorTile(
                 layer,
                 vpZoom,
                 mapZoom,
-                tileWidthPixels);
+                tileWidthPixels,
+                geometryTransform);
 
         } else if (abstractLayerStyle->type() == AbstractLayerStyle::LayerType::line) {
             paintVectorLayer_Line(
@@ -213,7 +210,8 @@ static void paintVectorTile(
                 layer,
                 vpZoom,
                 mapZoom,
-                tileWidthPixels);
+                tileWidthPixels,
+                geometryTransform);
         } else if(abstractLayerStyle->type() == AbstractLayerStyle::LayerType::symbol){
             const auto &layerStyle = *static_cast<const SymbolLayerStyle*>(abstractLayerStyle);
 
