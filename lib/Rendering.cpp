@@ -91,13 +91,25 @@ static bool includeFeature(
         vpZoom).toBool();
 }
 
+/*!
+ * \brief paintVectorLayer_Fill
+ * Call the polygon rendering function on all the layer's features that pass the layerStyle filter
+ *
+ * \param painter
+ * The painter object to paint into.
+ * It assumes the painter object has had its origin moved to the tiles origin, and is unscaled.
+ * \param layerStyle the layerStyle to be used to filter/style this layer's features.
+ * \param layer the TileLayer containing the features to be rendered.
+ * \param mapZoom The map zoom level being rendered.
+ * \param vpZoom The zoom level of the viewport.
+ * \param geometryTransform the transform to be used to map the features into the correct position.
+ */
 static void paintVectorLayer_Fill(
     QPainter &painter,
     const FillLayerStyle &layerStyle,
     const TileLayer& layer,
     double vpZoom,
     int mapZoom,
-    int tileWidthPixels,
     QTransform geometryTransform)
 {
     // Iterate over all the features, and filter out anything that is not fill.
@@ -117,13 +129,25 @@ static void paintVectorLayer_Fill(
     }
 }
 
+/*!
+ * \brief paintVectorLayer_Line
+  * Call the line rendering function on all the layer's features that pass the layerStyle filter
+ *
+ * \param painter
+ * The painter object to paint into.
+ * It assumes the painter object has had its origin moved to the tiles origin, and is unscaled.
+ * \param layerStyle the layerStyle to be used to filter/style this layer's features.
+ * \param layer the TileLayer containing the features to be rendered.
+ * \param mapZoom The map zoom level being rendered.
+ * \param vpZoom The zoom level of the viewport.
+ * \param geometryTransform the transform to be used to map the features into the correct position.
+ */
 static void paintVectorLayer_Line(
     QPainter &painter,
     const LineLayerStyle &layerStyle,
     const TileLayer& layer,
     double vpZoom,
     int mapZoom,
-    int tileWidthPixels,
     QTransform geometryTransform)
 {
     // Iterate over all the features, and filter out anything that is not line.
@@ -143,6 +167,20 @@ static void paintVectorLayer_Line(
     }
 }
 
+/*!
+ * \brief paintVectorLayer_Point
+ * Call the text rendering function on all the layer's features that pass the layerStyle filter.
+ * The rendering function is called after that the features have been ordered according to the rank property.
+ * \param painter
+ * The painter object to paint into.
+ * It assumes the painter object has had its origin moved to the tiles origin, and is unscaled.
+ * \param layerStyle the layerStyle to be used to filter/style this layer's features.
+ * \param layer the TileLayer containing the features to be rendered.
+ * \param mapZoom The map zoom level being rendered.
+ * \param vpZoom The zoom level of the viewport.
+ * \param geometryTransform the transform to be used to map the features into the correct position.
+ * \param labelRects
+ */
 static void paintVectorLayer_Point(
     QPainter &painter,
     const SymbolLayerStyle &layerStyle,
@@ -246,7 +284,6 @@ static void paintVectorTile(
                 layer,
                 vpZoom,
                 mapZoom,
-                tileWidthPixels,
                 geometryTransform);
 
         } else if (abstractLayerStyle->type() == AbstractLayerStyle::LayerType::line) {
@@ -256,7 +293,6 @@ static void paintVectorTile(
                 layer,
                 vpZoom,
                 mapZoom,
-                tileWidthPixels,
                 geometryTransform);
         } else if(abstractLayerStyle->type() == AbstractLayerStyle::LayerType::symbol){
             const auto &layerStyle = *static_cast<const SymbolLayerStyle*>(abstractLayerStyle);
