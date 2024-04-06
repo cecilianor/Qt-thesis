@@ -143,6 +143,52 @@ static void paintVectorLayer_Line(
     }
 }
 
+static void paintVectorLayer_Point(
+    QPainter &painter,
+    const SymbolLayerStyle &layerStyle,
+    const TileLayer& layer,
+    double vpZoom,
+    int mapZoom,
+    int tileWidthPixels,
+    QTransform geometryTransform,
+    QVector<QRect> &labelRects)
+{
+    QVector<QPair<int, PointFeature>> labels; //Used to order text rendering operation based on "rank" property.
+    // Iterate over all the features, and filter out anything that is not point  (rendering of line features for curved text in the symbol layer is not yet implemented).
+    for (auto const& abstractFeature : layer.m_features) {
+        if (abstractFeature->type() != AbstractLayerFeature::featureType::point) //For normal text (continents /countries / cities / places / ...)
+            continue;
+        const auto &feature = *static_cast<const PointFeature*>(abstractFeature);
+
+        // Tests whether the feature should be rendered at all based on possible expression.
+        if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
+            continue;
+
+        //Add the feature along with its "rank" (if present, defaults to 100) to the labels map.
+        if(feature.featureMetaData.contains("rank")){
+            labels.append(QPair<int, PointFeature>(feature.featureMetaData["rank"].toInt(), feature));
+        }else{
+            labels.append(QPair<int, PointFeature>(100, feature));
+        }
+    }
+
+    //Sort the labels map in increasing order based on the laber's "rank"
+    std::sort(labels.begin(), labels.end(), [](const QPair<int, PointFeature>& a, const QPair<int, PointFeature>& b) {
+        return a.first < b.first;
+    });
+
+    //Loop over the ordered label map and render text ignoring labels that would cause an overlap.
+    for(const auto &pair : labels){
+        painter.save();
+        Bach::paintSingleTileFeature_Point(
+            {&painter, &layerStyle, &pair.second, mapZoom, vpZoom, geometryTransform},
+            tileWidthPixels,
+            labelRects);
+        painter.restore();
+    }
+}
+
+
 /*!
  * \internal
  *
@@ -176,7 +222,7 @@ static void paintVectorTile(
     geometryTransform.scale(tileWidthPixels, tileWidthPixels);
 
     QVector<QPair<int, PointFeature>> labels; //Used to order text rendering operation based on "rank" property.
-    QVector<QRect> laberRects; //Used to prevent text overlapping.
+    QVector<QRect> labelRects; //Used to prevent text overlapping.
 
     // We start by iterating over each layer style, it determines the order
     // at which we draw the elements of the map.
@@ -214,38 +260,16 @@ static void paintVectorTile(
                 geometryTransform);
         } else if(abstractLayerStyle->type() == AbstractLayerStyle::LayerType::symbol){
             const auto &layerStyle = *static_cast<const SymbolLayerStyle*>(abstractLayerStyle);
+            paintVectorLayer_Point(
+                painter,
+                *static_cast<const SymbolLayerStyle*>(abstractLayerStyle),
+                layer,
+                vpZoom,
+                mapZoom,
+                tileWidthPixels,
+                geometryTransform,
+                labelRects);
 
-             // Iterate over all the features, and filter out anything that is not point  (rendering of line features for curved text in the symbol layer is not yet implemented).
-             for (auto const& abstractFeature : layer.m_features) {
-                 if (abstractFeature->type() != AbstractLayerFeature::featureType::point) //For normal text (continents /countries / cities / places / ...)
-                     continue;
-                 const auto &feature = *static_cast<const PointFeature*>(abstractFeature);
-
-                 // Tests whether the feature should be rendered at all based on possible expression.
-                 if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
-                     continue;
-
-                 //Add the feature along with its "rank" (if present, defaults to 100) to the labels map.
-                 if(feature.featureMetaData.contains("rank")){
-                     labels.append(QPair<int, PointFeature>(feature.featureMetaData["rank"].toInt(), feature));
-                 }else{
-                     labels.append(QPair<int, PointFeature>(100, feature));
-                 }
-            }
-             //Sort the labels map in increasing order based on the laber's "rank"
-             std::sort(labels.begin(), labels.end(), [](const QPair<int, PointFeature>& a, const QPair<int, PointFeature>& b) {
-                 return a.first < b.first;
-             });
-            //Loop over the ordered label map and render text ignoring labels that would cause an overlap.
-            for(const auto &pair : labels){
-                 painter.save();
-                Bach::paintSingleTileFeature_Point(
-                    {&painter, &layerStyle, &pair.second, mapZoom, vpZoom, geometryTransform},
-                    tileWidthPixels,
-                    laberRects);
-                 painter.restore();
-             }
-            labels.clear();
         }
     }
 }
