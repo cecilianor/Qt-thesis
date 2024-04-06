@@ -189,4 +189,41 @@ if (BUILD_TESTS)
     add_test(NAME LayerStyleTest COMMAND layerstyle_test)
     add_test(NAME VectorTileTest COMMAND vectortile_test)
     add_test(NAME EvaluatorTest COMMAND evaluator_test)
+
+    set(RENDER_OUTPUT_TESTER_BASELINE_RELATIVE_PATH "unitTestResources/RenderOutputTesterBaseline")
+    file(
+        GLOB
+        RENDER_OUTPUT_TESTER_BASELINE_SOURCES
+        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
+        "${RENDER_OUTPUT_TESTER_BASELINE_RELATIVE_PATH}/*.mvt")
+    qt_add_executable(rebuild_rendering_output_baseline
+        tests/rendering/rebuild_baseline.cpp
+        tests/rendering/OutputTester.h
+        tests/rendering/OutputTester.cpp)
+    target_compile_definitions(
+        rebuild_rendering_output_baseline
+        PUBLIC
+        BACH_RENDEROUTPUT_BASELINE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/${RENDER_OUTPUT_TESTER_BASELINE_RELATIVE_PATH}")
+    target_link_libraries(rebuild_rendering_output_baseline PUBLIC maplib)
+    qt_add_resources(rebuild_rendering_output_baseline "rebuild_rendering_output_baseline_resources"
+        PREFIX "/"
+        FILES
+        "${RENDER_OUTPUT_TESTER_BASELINE_RELATIVE_PATH}/styleSheet.json"
+        ${RENDER_OUTPUT_TESTER_BASELINE_SOURCES})
+
+    find_program(image_magick NAMES ImageMagick magick REQUIRED)
+    qt_add_executable(rendering_output_tests
+        tests/rendering/rendering_output_tests.cpp
+        tests/rendering/OutputTester.h
+        tests/rendering/OutputTester.cpp)
+    target_compile_definitions(
+        rendering_output_tests
+        PUBLIC
+        BACH_RENDEROUTPUT_BASELINE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/${RENDER_OUTPUT_TESTER_BASELINE_RELATIVE_PATH}")
+    qt_add_resources(rendering_output_tests "rendering_output_tests_resources"
+        PREFIX "/"
+        FILES
+        "${RENDER_OUTPUT_TESTER_BASELINE_RELATIVE_PATH}/styleSheet.json")
+    target_link_libraries(rendering_output_tests PUBLIC maplib Qt6::Test)
+    add_test(NAME RenderOutputTest COMMAND rendering_output_tests)
 endif()

@@ -156,6 +156,7 @@ namespace Bach {
     std::optional<QString> rasterTilesheetUrlFromMapType(MapType maptype);
 
     bool writeNewFileHelper(const QString& path, const QByteArray &bytes);
+    bool writeImageToNewFileHelper(const QString& path, const QImage &image);
 
     std::optional<QString> readMapTilerKey(const QString &filePath);
 

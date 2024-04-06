@@ -303,6 +303,11 @@ bool VectorTile::DeserializeMessage(QByteArray data)
     return true;
 }
 
+std::optional<VectorTile> VectorTile::fromByteArray(const QByteArray &bytes)
+{
+    return Bach::tileFromByteArray(bytes);
+}
+
 std::optional<VectorTile> Bach::tileFromByteArray(const QByteArray &bytes)
 {
     QProtobufSerializer serializer;

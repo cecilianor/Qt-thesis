@@ -88,6 +88,19 @@ bool Bach::writeNewFileHelper(const QString& path, const QByteArray &bytes)
     return true;
 }
 
+bool Bach::writeImageToNewFileHelper(const QString& path, const QImage &image)
+{
+    QByteArray fileBytes;
+    QBuffer buffer(&fileBytes);
+    if (!buffer.open(QIODevice::WriteOnly)) {
+        return false;
+    }
+    if (!image.save(&buffer, "PNG")) {
+        return false;
+    }
+    return writeNewFileHelper(path, fileBytes);
+}
+
 /*!
  * \brief Reads MapTiler key either from environment variable, or from file path.
  *

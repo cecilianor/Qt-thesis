@@ -126,6 +126,8 @@ public:
 
     bool DeserializeMessage(QByteArray data);
     QMap<QString, TileLayer*> m_layers;
+
+    static std::optional<VectorTile> fromByteArray(const QByteArray &bytes);
 };
 
 namespace Bach {
