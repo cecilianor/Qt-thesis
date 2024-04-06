@@ -39,3 +39,9 @@ jobs:
       run: |
         export QT_QPA_PLATFORM=offscreen
         ctest --rerun-failed --output-on-failure
+        
+    - name: Upload failed rendering-output report
+      uses: actions/upload-artifact@v2
+      with:
+        name: renderoutput_failures
+        path: ${{github.workspace}}/build/renderoutput_failures
