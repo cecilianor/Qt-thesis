@@ -10,7 +10,7 @@
  * \param feature the feature to be used in case the QVariant is an expression
  * \param mapZoom the map zoom level to be used in case the QVariant is an expression
  * \param vpZoom the viewport zoom level to be used in case the QVariant is an expression
- * \return the color to be used to render the line
+ * \return the QColor to be used to render the line
  */
 static QColor getLineColor(
     const LineLayerStyle &layerStyle,
@@ -38,7 +38,7 @@ static QColor getLineColor(
  * \param feature the feature to be used in case the QVariant is an expression
  * \param mapZoom the map zoom level to be used in case the QVariant is an expression
  * \param vpZoom the viewport zoom level to be used in case the QVariant is an expression
- * \return the opacity to be used to render the line
+ * \return a float for the opacity to be used to render the line
  */
 static float getLineOpacity(
     const LineLayerStyle &layerStyle,
@@ -61,12 +61,12 @@ static float getLineOpacity(
 /*!
  * \brief getLineWidth
  * Get the QVariant of the line width from the layerStyle and resolve and return it if its an expression,
- * or return it as a float otherwise
+ * or return it as an int otherwise
  * \param layerStyle the layerStyle containing the line width variable
  * \param feature the feature to be used in case the QVariant is an expression
  * \param mapZoom the map zoom level to be used in case the QVariant is an expression
  * \param vpZoom the viewport zoom level to be used in case the QVariant is an expression
- * \return the line width value to be used to render the line
+ * \return an int for the line width value to be used to render the line
  */
 static int getLineWidth(
     const LineLayerStyle &layerStyle,
