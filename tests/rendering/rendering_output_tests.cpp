@@ -47,6 +47,163 @@ namespace Bach::TestUtils {
     private:
         QString _dir;
     };
+};
+
+struct RunImageComparison_Result {
+    bool success;
+    QString errorString;
+};
+
+RunImageComparison_Result runImageMagickV7(
+    const QString &baselinePath,
+    const QString &generatedPath,
+    const QString &diffPath)
+{
+    QProcess process;
+    QStringList arguments;
+
+    arguments << "compare";
+    arguments << "-metric";
+    arguments << "AE";
+    //arguments << "-fuzz";
+    //arguments << "5%"; // Adjust the fuzz factor as needed
+    arguments << baselinePath;
+    arguments << generatedPath;
+    arguments << diffPath;
+
+    process.start("magick", arguments);
+
+    bool finished = process.waitForFinished();
+    if (!finished) {
+        return {
+            false,
+            "Unable to run ImageMagick to compare images..."
+        };
+    }
+    if (process.exitStatus() != QProcess::NormalExit) {
+        return {
+            false,
+            "ImageMagick did not finish normally during comparison."
+        };
+    }
+
+    if (process.exitCode() != 0) {
+        return {
+            false,
+            "Reconstructed image is not equal to baseline."
+        };
+    }
+
+    return {
+        true,
+        ""
+    };
+}
+
+RunImageComparison_Result runImageMagickV6(
+    const QString &baselinePath,
+    const QString &generatedPath,
+    const QString &diffPath)
+{
+    QProcess process;
+    QStringList arguments;
+
+    arguments << "-metric";
+    arguments << "AE";
+    //arguments << "-fuzz";
+    //arguments << "5%"; // Adjust the fuzz factor as needed
+    arguments << baselinePath;
+    arguments << generatedPath;
+    arguments << diffPath;
+
+    process.start("compare", arguments);
+
+    bool finished = process.waitForFinished();
+    if (!finished) {
+        return {
+            false,
+            "Unable to run ImageMagick to compare images..."
+        };
+    }
+    if (process.exitStatus() != QProcess::NormalExit) {
+        return {
+            false,
+            "ImageMagick did not finish normally during comparison."
+        };
+    }
+
+    if (process.exitCode() != 0) {
+        return {
+            false,
+            "Reconstructed image is not equal to baseline."
+        };
+    }
+
+    return {
+        true,
+        ""
+    };
+}
+
+RunImageComparison_Result runImageComparison(
+    const QString &baselinePath,
+    const QString &generatedPath,
+    const QString &diffPath)
+{
+// Compile-check that the required defines are present.
+#ifndef BACH_USE_IMAGEMAGICK_V7
+#error "Program needs to know whether ImageMagick v6 or v7 should be used, \
+    but couldn't find corresponding #define. \
+    Likely a build error."
+#endif
+    // It's crucial that a macro defined as empty is not incorrectly processed as a 'false' value
+    // This lambda is just a small fix to make sure this can't happen.
+    auto makebool = [](bool in) { return in; };
+    constexpr bool useImageMagickV7 = makebool(BACH_USE_IMAGEMAGICK_V7);
+
+    if (useImageMagickV7) {
+        return runImageMagickV7(baselinePath, generatedPath, diffPath);
+    } else {
+        return runImageMagickV6(baselinePath, generatedPath, diffPath);
+    }
+}
+
+void writeIntoFailureReport(
+    int testId,
+    const QString &baselinePath,
+    const QImage &generatedImg,
+    const QString &diffPath)
+{
+    QDir dir { "renderoutput_failures" };
+    // QFile won't create our directories for us.
+    // We gotta make them ourselves.
+    if (!dir.exists() && !dir.mkpath(dir.absolutePath())) {
+        qCritical() << "tried writing to file. Creating parent directory failed.\n";
+    }
+
+    QString failureReportDir = QString("renderoutput_failures");
+
+    QString expectedOutputPath =
+        failureReportDir +
+        QDir::separator() +
+        QString("%1_expected.png").arg(testId);
+    bool expectedCopySuccess = QFile::copy(baselinePath, expectedOutputPath);
+    if (!expectedCopySuccess) {
+        qCritical() << "Failed to copy baseline file into failure report directory.";
+    }
+
+    bool generatedImgSaveSuccess = generatedImg.save(
+        QString("renderoutput_failures/%1_generated.png").arg(testId));
+    if (!generatedImgSaveSuccess) {
+        qCritical() << "Failed to copy generated image into failure report directory.";
+    }
+
+    bool differCopySuccess = QFile::copy(
+        diffPath,
+        QString("renderoutput_failures/%1_diff.png").arg(testId));
+    if (!differCopySuccess) {
+        qCritical() << "Failed to copy failed baseline file into failure report directory.";
+    }
 }
 
 void RenderingTest::compare_generated_images_to_baseline() {
@@ -58,67 +215,46 @@ void RenderingTest::compare_generated_images_to_baseline() {
 
     Bach::TestUtils::TempDir tempDir;
 
-    bool success = Bach::OutputTester::test([&](int testId, const QImage &generatedImg) {
+    bool testSuccess = true;
+
+    bool iterateCasesSuccess = Bach::OutputTester::test([&](int testId, const QImage &generatedImg) {
         QString baselinePath = Bach::OutputTester::buildBaselineExpectedOutputPath(testId);
 
         QString generatedPath = QString(tempDir.path() + QDir::separator() + "%1.png")
             .arg(testId);
         bool writeSuccess = Bach::writeImageToNewFileHelper(generatedPath, generatedImg);
-        QVERIFY2(writeSuccess, "Unable to write generated image to temporary file.");
+        if (!writeSuccess) {
+            qCritical() << "Unable to write generated image to temporary file." ;
+        }
 
         QString diffPath = tempDir.path() + QDir::separator() + "different.png";
 
-        QProcess process;
-        QStringList arguments;
-        // Compare the image to the baseline.
-        // Construct the command arguments
-        arguments << "compare";
-        arguments << "-metric";
-        arguments << "AE";
-        //arguments << "-fuzz";
-        //arguments << "5%"; // Adjust the fuzz factor as needed
-        arguments << baselinePath;
-        arguments << generatedPath;
-        arguments << diffPath; // Discard output image
+        RunImageComparison_Result imgCompareResult = runImageComparison(
+            baselinePath,
+            generatedPath,
+            diffPath);
 
-        // Set the program to 'magick' (or just 'compare' depending on your ImageMagick installation)
-        process.start("magick", arguments);
+        if (!imgCompareResult.success) {
+            testSuccess = false;
+            qCritical() <<
+                QString("Error during comparison on test-case #%1: ").arg(testId) +
+                imgCompareResult.errorString;
 
-        // Wait for the process to finish
-        bool finished = process.waitForFinished();
-        QVERIFY2(finished, "Unable to run ImageMagick to compare images...");
-        QVERIFY2(process.exitStatus() == QProcess::NormalExit, "ImageMagick did not finish normally during comparison.");
-        int exitCode = process.exitCode();
-        if (exitCode != 0)
-        {
-            QDir dir { "renderoutput_failures" };
-            // QFile won't create our directories for us.
-            // We gotta make them ourselves.
-            if (!dir.exists() && !dir.mkpath(dir.absolutePath())) {
-                qCritical() << "tried writing to file. Creating parent directory failed.\n";
-            }
-            // If it failed we want to store the failed tests.
-
-            QString expectedOutputPath = QString("renderoutput_failures/") + QString("%1_expected.png").arg(QString::number(testId));
-            bool expectedCopySuccess = QFile::copy(
+            // Start writing the files to the failure report.
+            writeIntoFailureReport(
+                testId,
                 baselinePath,
-                expectedOutputPath);
-            QVERIFY2(expectedCopySuccess, "Failed to copy failed baseline file into failure report directory.");
-
-            bool generatedImgSaveSuccess = generatedImg.save(QString("renderoutput_failures/%1_generated.png").arg(testId));
-            QVERIFY2(generatedImgSaveSuccess, "Failed to copy failed baseline file into failure report directory.");
-
-            bool differCopySuccess = QFile::copy(
-                diffPath,
-                QString("renderoutput_failures/%1_diff.png").arg(testId));
-            QVERIFY2(expectedCopySuccess, "Failed to copy failed baseline file into failure report directory.");
+                generatedImg,
+                diffPath);
         }
-
-        QString errorMsg = QString("ImageMagic said difference was too high at %1.").arg(exitCode);
-        QVERIFY2(
-            exitCode == 0,
-            errorMsg.toUtf8());
     });
 
-    QVERIFY2(success, "");
+    if (!iterateCasesSuccess) {
+        testSuccess = false;
+    }
+
+    if (!testSuccess) {
+        qCritical() << "Failure report can be found in folder 'renderoutput_failures'";
+    }
+    QVERIFY(testSuccess);
 }

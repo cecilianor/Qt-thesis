@@ -211,15 +211,37 @@ if (BUILD_TESTS)
         "${RENDER_OUTPUT_TESTER_BASELINE_RELATIVE_PATH}/styleSheet.json"
         ${RENDER_OUTPUT_TESTER_BASELINE_SOURCES})
 
-    find_program(image_magick NAMES ImageMagick magick REQUIRED)
+
+
+
+    # There's a problem when using ImageMagick on Ubuntu and Windows.
+    # At the time of writing, the commonly available ImagMagick version on Windows is
+    # v7. Ubuntu 22.04 only ships with v6. These two versions differ slightly on how the
+    # comparison command is used and this code attempts to detect the difference, and
+    # pass appropriate data to the C++ code.
+    find_program(image_magick NAMES magick)
+    if (NOT image_magick)
+        find_program(image_magick NAMES compare REQUIRED)
+        # We found the "compare" executable
+        set(USE_IMAGEMAGICK_V7 false)
+    else()
+        # Image magick program "magick" found
+        set(USE_IMAGEMAGICK_V7 true)
+    endif()
     qt_add_executable(rendering_output_tests
         tests/rendering/rendering_output_tests.cpp
         tests/rendering/OutputTester.h
         tests/rendering/OutputTester.cpp)
+    # Make sure our variable is set to either 'true' or 'false' since it
+    # has to be passed into our C++ code as boolean.
+    if (NOT USE_IMAGEMAGICK_V7 STREQUAL true AND NOT USE_IMAGEMAGICK_V7 STREQUAL false)
+        message(FATAL_ERROR "Variable 'USE_IMAGEMAGICK_V7' was not set correctly.")
+    endif()
     target_compile_definitions(
         rendering_output_tests
         PUBLIC
-        BACH_RENDEROUTPUT_BASELINE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/${RENDER_OUTPUT_TESTER_BASELINE_RELATIVE_PATH}")
+        BACH_RENDEROUTPUT_BASELINE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/${RENDER_OUTPUT_TESTER_BASELINE_RELATIVE_PATH}"
+        BACH_USE_IMAGEMAGICK_V7=${USE_IMAGEMAGICK_V7})
     qt_add_resources(rendering_output_tests "rendering_output_tests_resources"
         PREFIX "/"
         FILES

@@ -4,7 +4,7 @@
 #include <QFile>
 #include <QJsonDocument>
 
-#include "LayerStyle.h"
+#include "Layerstyle.h"
 #include "Rendering.h"
 #include "VectorTiles.h"
 
