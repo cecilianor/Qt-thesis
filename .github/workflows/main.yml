@@ -41,6 +41,7 @@ jobs:
         ctest --rerun-failed --output-on-failure
         
     - name: Upload failed rendering-output report
+      if: failure()
       uses: actions/upload-artifact@v2
       with:
         name: renderoutput_failures
