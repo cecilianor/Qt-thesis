@@ -236,7 +236,7 @@ static void paintVectorTile(
             continue;
         }
         // If we find it, we dereference it to access it's data.
-        const TileLayer& layer = **layerIt;
+        const TileLayer& layer = *layerIt->second;
 
         // We do different types of rendering based on whether the layer is a polygon, line, or symbol(text).
         if (abstractLayerStyle->type() == AbstractLayerStyle::LayerType::fill) {

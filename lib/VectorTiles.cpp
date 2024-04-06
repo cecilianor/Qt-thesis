@@ -241,9 +241,6 @@ void populateFeatureMetaData(AbstractLayerFeature* feature, QList<QString> &keys
 VectorTile::VectorTile() {
 }
 
-VectorTile::~VectorTile() {
-}
-
 /* Deserialize and extracts all the layers in the tile protocol buffer,
      * then iterates therough each layer's features and
      * calls the apropriate function to decode the feature's geometry.
@@ -266,12 +263,11 @@ bool VectorTile::DeserializeMessage(QByteArray data)
     }
 
     //iterate throught the layer's features and call the apropriate decoding function on the feature.
-    for (auto layer : tile.layers()) {
-        //qDebug() << "Parsing layer" << layer.name();
-        //qDebug() << " layer version: " << layer.version();
-        //qDebug() << " layer extent: " << layer.extent();
-        TileLayer *newLayer = new TileLayer(layer.version(), layer.name(), layer.extent());
-        m_layers.insert(layer.name(), newLayer);
+    for (const auto &layer : tile.layers()) {
+        std::unique_ptr<TileLayer> newLayerPtr = std::make_unique<TileLayer>(layer.version(), layer.name(), layer.extent());
+        TileLayer *newLayer = newLayerPtr.get();
+        m_layers.insert({layer.name(), std::move(newLayerPtr)});
+
         AbstractLayerFeature* newFeature = nullptr;
         QList<QString> layerKeys = layer.keys().toList();
         auto lyerValues = layer.values().toList();
@@ -320,12 +316,11 @@ std::optional<VectorTile> Bach::tileFromByteArray(const QByteArray &bytes)
 
     VectorTile output;
 
-    for (auto layer : tile.layers()) {
-        //qDebug() << "Parsing layer" << layer.name();
-        //qDebug() << " layer version: " << layer.version();
-        //qDebug() << " layer extent: " << layer.extent();
-        TileLayer *newLayer = new TileLayer(layer.version(), layer.name(), layer.extent());
-        output.m_layers.insert(layer.name(), newLayer);
+    for (const auto &layer : tile.layers()) {
+        std::unique_ptr<TileLayer> newLayerPtr = std::make_unique<TileLayer>(layer.version(), layer.name(), layer.extent());
+        TileLayer *newLayer = newLayerPtr.get();
+        output.m_layers.insert({layer.name(), std::move(newLayerPtr)});
+
         AbstractLayerFeature* newFeature = nullptr;
         QList<QString> layerKeys = layer.keys().toList();
         auto lyerValues = layer.values().toList();
