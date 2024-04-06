@@ -16,6 +16,15 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    - name: Update apt
+      run: apt update
+      
+    - name: Upgrade apt
+      run: apt upgrade
+
+    - name: search apt
+      run: apt search imagemagick
+
     - name: Install ImageMagick
       run: apt install -y imagemagick
 
