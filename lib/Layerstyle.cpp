@@ -3,15 +3,16 @@
 
 #include "Layerstyle.h"
 
-/* Create a QColor obecject from an hsl color string.
-     *The string is expected to be in one of the following formats:
-     *"hsl(hue, stauration%, lightness%)"
-     *"hsla(hue, stauration%, lightness%, alpha)"
+/*!
+ * \brief getColorFromString creates a QColor object from an HSL color string.
+ *
+ * The string is expected to be in one of the following formats:
+ *      "hsl(hue, stauration%, lightness%)"
+ *      "hsla(hue, stauration%, lightness%, alpha)"
      *
-     * Parameters:
-     *      colorString expects a QString containing the color.
+ * \param colorString is a QString containing color data.
      *
-     * Returns a QColor object.
+ * \return a QColor object.
      */
 static QColor getColorFromString(QString colorString)
 {
@@ -36,6 +37,8 @@ static QColor getColorFromString(QString colorString)
                                     match.capturedTexts().at(4).toFloat());
         }
     }
+
+    /* Should there be some kind of error handling here, or this intended in the final return statement? */
     //In case the color has a different format than expected.
     return QColor::fromString(colorString);
 }
