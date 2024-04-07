@@ -55,17 +55,7 @@ void MapWidget::keyPressEvent(QKeyEvent* event)
 
 void MapWidget::paintEvent(QPaintEvent *event)
 {
-    auto tileType = TileType::VectorTile;
-    if (isRenderingVector())
-    {
-        tileType = TileType::VectorTile;
-    }
-    else
-    {
-        tileType = TileType::ImageTile;
-    }
-
-    auto visibleTiles = calcVisibleTiles();
+    QVector<TileCoord> visibleTiles = calcVisibleTiles();
     std::set<TileCoord> tilesRequested{ visibleTiles.begin(), visibleTiles.end()};
     // We want this signal to run every time a new tile is loaded later.
     auto signalFn = [this](TileCoord newTile) {
@@ -82,7 +72,15 @@ void MapWidget::paintEvent(QPaintEvent *event)
 
     QPainter painter(this);
 
-    if ( tileType ==TileType::VectorTile) {
+    if (isRenderingVector())
+    {
+        // Set up the paint settings based on the MapWidget configuration.
+        Bach::PaintVectorTileSettings paintSettings = Bach::PaintVectorTileSettings::getDefault();
+        paintSettings.drawFill = isRenderingFill();
+        paintSettings.drawLines = isRenderingLines();
+        paintSettings.drawText = isRenderingText();
+
+        // Then run the function to paint all vector tiles into this MapWidget.
         Bach::paintVectorTiles(
             painter,
             x,
@@ -91,9 +89,11 @@ void MapWidget::paintEvent(QPaintEvent *event)
             getMapZoomLevel(),
             requestResult->vectorMap(),
             requestResult->styleSheet(),
+            paintSettings,
             isShowingDebug());
     }
-    else if (tileType == TileType::ImageTile) {
+    else
+    {
         Bach::paintRasterTiles(
             painter,
             x,
@@ -114,15 +114,10 @@ double MapWidget::getViewportZoomLevel() const
 int MapWidget::getMapZoomLevel() const
 {
     // Calculate the map zoom level based on the viewport,
-    // or just return the overriden value.
-    if (overrideMapZoom) {
-        return overrideMapZoomLevel;
-    } else {
-        return Bach::calcMapZoomLevelForTileSizePixels(
-            width(),
-            height(),
-            getViewportZoomLevel());
-    }
+    return Bach::calcMapZoomLevelForTileSizePixels(
+        width(),
+        height(),
+        getViewportZoomLevel());
 }
 
 QVector<TileCoord> MapWidget::calcVisibleTiles() const
@@ -223,6 +218,24 @@ bool MapWidget::KeyPressFilter::eventFilter(QObject *obj, QEvent *event)
     }
     // Pass the event on to the parent class for default processing
     return QObject::eventFilter(obj, event);
+}
+
+void MapWidget::setShouldDrawFill(bool drawFill)
+{
+    renderFill = drawFill;
+    update();
+}
+
+void MapWidget::setShouldDrawLines(bool drawLines)
+{
+    renderLines = drawLines;
+    update();
+}
+
+void MapWidget::setShouldDrawText(bool drawText)
+{
+    renderText = drawText;
+    update();
 }
 
 void MapWidget::toggleIsShowingDebug()

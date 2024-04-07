@@ -5,7 +5,9 @@
 #include "MapWidget.h"
 
 namespace Bach {
-    /* Contains the group of controls for zooming,
+    /*!
+     * \class
+     * Contains the group of controls for zooming,
      * made to be used in tandem with MapWidget.
      */
     class MapZoomControlWidget : public QWidget {

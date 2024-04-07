@@ -23,6 +23,7 @@ int main(int argc, char *argv[])
     QApplication a(argc, argv);
     QCoreApplication::setApplicationName("qt_thesis_app");
 
+    // Print the cache folder to the terminal.
     qDebug() << "Current file cache can be found in: " << TileLoader::getGeneralCacheFolder();
 
     // Read key from file.
@@ -34,7 +35,7 @@ int main(int argc, char *argv[])
     }
 
     // The style sheet type to load (can be many different types).
-    auto mapType = MapType::BasicV2;
+    MapType mapType = MapType::BasicV2;
 
     std::optional<QJsonDocument> styleSheetJsonResult = Bach::loadStyleSheetJson(
         mapType,

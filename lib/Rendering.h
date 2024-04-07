@@ -64,6 +64,7 @@ namespace Bach {
     void paintSingleTileFeature_Point(
         PaintingDetailsPoint details,
         const int tileSize,
+        bool forceNoChangeFontType,
         QVector<QRect> &rects);
 
 
@@ -80,14 +81,48 @@ namespace Bach {
         double vpZoomLevel,
         int mapZoomLevel);
 
+
+    /*!
+     * \class Collection of settings that modify how vector tiles are rendered.
+     */
+    struct PaintVectorTileSettings {
+        /*!
+         *  \brief
+         *  Controls whether fill elements should be rendered.
+         */
+        bool drawFill = {};
+
+        /*!
+         *  \brief
+         *  Controls whether line elements should be rendered.
+         */
+        bool drawLines = {};
+
+        /*!
+         *  \brief
+         *  Controls whether text elements should be rendered.
+         */
+        bool drawText = {};
+
+        /*!
+         *  \brief
+         *  Forces text rendering to never change the font beyond
+         *  the one that is already set by the QPainter beforehand.
+         */
+        bool forceNoChangeFontType = {};
+
+        static PaintVectorTileSettings getDefault();
+    };
+
     void paintVectorTiles(
         QPainter &painter,
         double vpX,
         double vpY,
-        double viewportZoomLevel,
-        int mapZoomLevel,
+        double viewportZoom,
+        int mapZoom,
         const QMap<TileCoord, const VectorTile*> &tileContainer,
         const StyleSheet &styleSheet,
+        const PaintVectorTileSettings &settings,
         bool drawDebug);
 
     void paintRasterTiles(

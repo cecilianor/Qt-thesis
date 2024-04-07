@@ -328,11 +328,17 @@ static void paintCompositeText(
  * along with the styling information to one of the two rendering functions above depending if the text is a one liner or if it requires multiple lines.
  * \param details the struct containig all the elemets needed to paint the feature includeing the layerStyle and the feature itself.
  * \param tileSize the size of the current tile in pixels, used to scale the the transform.
+ *
+ * \param forceNoChangeFontType If set to true, the text font
+ * rendered will be the one currently set by the QPainter object.
+ * If set to false, it will try to use the font suggested by the stylesheet.
+ *
  * \param rects the list of rectangles used to check for text overlapping.
  */
 void Bach::paintSingleTileFeature_Point(
     PaintingDetailsPoint details,
     const int tileSize,
+    bool forceNoChangeFontType,
     QVector<QRect> &rects)
 {
     QPainter &painter = *details.painter;
@@ -346,7 +352,14 @@ void Bach::paintSingleTileFeature_Point(
     //Get the rendering parameters from the layerstyle and set the relevant painter field.
     painter.setBrush(Qt::NoBrush);
     int textSize = getTextSize(layerStyle, feature, details.mapZoom, details.vpZoom);
-    QFont textFont = QFont(layerStyle.m_textFont);
+
+    QFont textFont;
+    if (forceNoChangeFontType) {
+        textFont = painter.font();
+    } else {
+        textFont = QFont(layerStyle.m_textFont);
+    }
+
     textFont.setPixelSize(textSize);
     painter.setOpacity(getTextOpacity(layerStyle, feature, details.mapZoom, details.vpZoom));
     const int outlineSize = layerStyle.m_textHaloWidth.toInt();

@@ -3,6 +3,15 @@
 #include "Evaluator.h"
 #include "Rendering.h"
 
+Bach::PaintVectorTileSettings Bach::PaintVectorTileSettings::getDefault()
+{
+    Bach::PaintVectorTileSettings out;
+    out.drawFill = true;
+    out.drawLines = true;
+    out.drawText = true;
+    return out;
+}
+
 /*!
  * \internal
  * \threadsafe
@@ -179,6 +188,11 @@ static void paintVectorLayer_Line(
  * \param mapZoom The map zoom level being rendered.
  * \param vpZoom The zoom level of the viewport.
  * \param geometryTransform the transform to be used to map the features into the correct position.
+ *
+ * \param forceNoChangeFontType If set to true, the text font
+ * rendered will be the one currently set by the QPainter object.
+ * If set to false, it will try to use the font suggested by the stylesheet.
+ *
  * \param labelRects
  */
 static void paintVectorLayer_Point(
@@ -189,6 +203,7 @@ static void paintVectorLayer_Point(
     int mapZoom,
     int tileWidthPixels,
     QTransform geometryTransform,
+    bool forceNoChangeFontType,
     QVector<QRect> &labelRects)
 {
     QVector<QPair<int, PointFeature>> labels; //Used to order text rendering operation based on "rank" property.
@@ -196,7 +211,7 @@ static void paintVectorLayer_Point(
     for (auto const& abstractFeature : layer.m_features) {
         if (abstractFeature->type() != AbstractLayerFeature::featureType::point) //For normal text (continents /countries / cities / places / ...)
             continue;
-        const auto &feature = *static_cast<const PointFeature*>(abstractFeature);
+        const PointFeature &feature = *static_cast<const PointFeature*>(abstractFeature);
 
         // Tests whether the feature should be rendered at all based on possible expression.
         if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
@@ -221,6 +236,7 @@ static void paintVectorLayer_Point(
         Bach::paintSingleTileFeature_Point(
             {&painter, &layerStyle, &pair.second, mapZoom, vpZoom, geometryTransform},
             tileWidthPixels,
+            forceNoChangeFontType,
             labelRects);
         painter.restore();
     }
@@ -254,7 +270,8 @@ static void paintVectorTile(
     int mapZoom,
     double vpZoom,
     const StyleSheet &styleSheet,
-    int tileWidthPixels)
+    int tileWidthPixels,
+    const Bach::PaintVectorTileSettings &settings)
 {
     QTransform geometryTransform;
     geometryTransform.scale(tileWidthPixels, tileWidthPixels);
@@ -276,6 +293,8 @@ static void paintVectorTile(
 
         // We do different types of rendering based on whether the layer is a polygon, line, or symbol(text).
         if (abstractLayerStyle->type() == AbstractLayerStyle::LayerType::fill) {
+            if (!settings.drawFill)
+                continue;
             paintVectorLayer_Fill(
                 painter,
                 *static_cast<const FillLayerStyle*>(abstractLayerStyle),
@@ -285,6 +304,8 @@ static void paintVectorTile(
                 geometryTransform);
 
         } else if (abstractLayerStyle->type() == AbstractLayerStyle::LayerType::line) {
+            if (!settings.drawLines)
+                continue;
             paintVectorLayer_Line(
                 painter,
                 *static_cast<const LineLayerStyle*>(abstractLayerStyle),
@@ -293,7 +314,8 @@ static void paintVectorTile(
                 mapZoom,
                 geometryTransform);
         } else if(abstractLayerStyle->type() == AbstractLayerStyle::LayerType::symbol){
-            const auto &layerStyle = *static_cast<const SymbolLayerStyle*>(abstractLayerStyle);
+            if (!settings.drawText)
+                continue;
             paintVectorLayer_Point(
                 painter,
                 *static_cast<const SymbolLayerStyle*>(abstractLayerStyle),
@@ -302,8 +324,8 @@ static void paintVectorTile(
                 mapZoom,
                 tileWidthPixels,
                 geometryTransform,
+                settings.forceNoChangeFontType,
                 labelRects);
-
         }
     }
 }
@@ -446,7 +468,6 @@ TilePosCalculator createTilePosCalculator(
  * \param vpZoom Zoom level of the viewport.
  * \param mapZoom Zoom level of the map.
  * \param paintSingleTileFn The function to call to draw a single tile.
- *
  */
 static void paintTilesGeneric(
     QPainter &painter,
@@ -535,10 +556,11 @@ void Bach::paintVectorTiles(
     QPainter &painter,
     double vpX,
     double vpY,
-    double viewportZoomLevel,
-    int mapZoomLevel,
+    double viewportZoom,
+    int mapZoom,
     const QMap<TileCoord, const VectorTile*> &tileContainer,
     const StyleSheet &styleSheet,
+    const PaintVectorTileSettings &settings,
     bool drawDebug)
 {
     auto paintSingleTileFn = [&](TileCoord tileCoord, TileScreenPlacement tilePlacement) {
@@ -551,18 +573,19 @@ void Bach::paintVectorTiles(
         paintVectorTile(
             tileData,
             painter,
-            mapZoomLevel,
-            viewportZoomLevel,
+            mapZoom,
+            viewportZoom,
             styleSheet,
-            tilePlacement.pixelWidth);
+            tilePlacement.pixelWidth,
+            settings);
     };
 
     paintTilesGeneric(
         painter,
         vpX,
         vpY,
-        viewportZoomLevel,
-        mapZoomLevel,
+        viewportZoom,
+        mapZoom,
         paintSingleTileFn,
         styleSheet,
         drawDebug);

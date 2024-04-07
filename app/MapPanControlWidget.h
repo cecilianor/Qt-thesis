@@ -5,7 +5,9 @@
 #include "MapWidget.h"
 
 namespace Bach {
-    /* Contains the group of controls for panning,
+    /*!
+     * \class
+     * Contains the group of controls for panning,
      * made to be used in tandem with MapWidget.
      */
     class MapPanControlWidget : public QWidget {
