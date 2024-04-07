@@ -37,7 +37,7 @@ int main(int argc, char *argv[]) {
     }
     const QFont &font = fontOpt.value();
 
-    bool success = Bach::OutputTester::test(
+    bool success = Bach::OutputTester::iterateOverTestCases(
         font,
         [](int testId, const QImage &generatedImg) {
 

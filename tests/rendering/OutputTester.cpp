@@ -85,9 +85,9 @@ static std::optional<TileMapT> loadTiles(QVector<TileCoord> tileCoords) {
     return tileStorage;
 }
 
-bool Bach::OutputTester::test(
+bool Bach::OutputTester::iterateOverTestCases(
     const QFont &font,
-    const std::function<void(int, const QImage&)> &fn)
+    const std::function<void(int, const QImage&)> &processFn)
 {
     QFile styleSheetFile { Bach::OutputTester::getStyleSheetPath() };
     styleSheetFile.open(QFile::ReadOnly);
@@ -134,6 +134,12 @@ bool Bach::OutputTester::test(
         QImage generatedImg { testItem.imageWidth, testItem.imageHeight, QImage::Format_ARGB32};
         QPainter painter{ &generatedImg };
         painter.setFont(font);
+
+        Bach::PaintVectorTileSettings paintSettings = {};
+        paintSettings.drawFill = true;
+        paintSettings.drawLines = true;
+        paintSettings.drawText = testItem.drawText;
+        paintSettings.forceNoChangeFontType = true;
         Bach::paintVectorTiles(
             painter,
             testItem.vpX,
@@ -142,11 +148,12 @@ bool Bach::OutputTester::test(
             testItem.mapZoom,
             tempTiles,
             styleSheet,
+            paintSettings,
             false);
 
         painter.end();
 
-        fn(i, generatedImg);
+        processFn(i, generatedImg);
     }
 
     return true;

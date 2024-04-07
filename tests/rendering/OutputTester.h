@@ -19,9 +19,9 @@ namespace Bach::OutputTester {
     QVector<TileCoord> genTileCoordList(int zoom, int minX, int maxX, int minY, int maxY);
 
     std::optional<QFont> loadFont();
-    bool test(
+    bool iterateOverTestCases(
         const QFont &font,
-        const std::function<void(int, const QImage &image)> &fn);
+        const std::function<void(int, const QImage &image)> &processFn);
 
     QString buildBaselinePath();
     QString buildBaselineExpectedOutputPath();
@@ -33,21 +33,25 @@ namespace Bach::OutputTester {
         double vpY;
         double vpZoom;
         int mapZoom;
+        bool drawText;
         QVector<TileCoord> coords;
         bool autoCalcVisibleTiles = false;
         int imageWidth = baseImageSize;
         int imageHeight = baseImageSize;
 
+
+
         double imageAspect() const { return (double)imageWidth / (double)imageHeight; }
     };
 
-    const QVector<TestItem> testItems = {
+    inline const QVector<TestItem> testItems = {
         // First one is an example that should draw only background.
         TestItem {
             0, // vpX
             0, // vpY
             0, // vpZoom
             1, // mapZoom
+            true,
             {}, // coords
             false, // autoCalcVisibleTiles
         },
@@ -56,6 +60,7 @@ namespace Bach::OutputTester {
             0.5,
             0,
             1,
+            true,
             {
                 { 1, 0, 0 }
             }
@@ -65,6 +70,7 @@ namespace Bach::OutputTester {
             0.5,
             1,
             1,
+            true,
             {},
             true
         },
@@ -73,6 +79,7 @@ namespace Bach::OutputTester {
             0.25,
             0.5,
             1,
+            true,
             {},
             true,
         },
@@ -81,9 +88,19 @@ namespace Bach::OutputTester {
             0.25,
             0.5,
             1,
+            true,
             {},
             true,
             (int)(baseImageSize / 0.5),
+        },
+        TestItem {
+            0.25,
+            0.25,
+            0,
+            1,
+            false,
+            {},
+            true,
         },
     };
 }

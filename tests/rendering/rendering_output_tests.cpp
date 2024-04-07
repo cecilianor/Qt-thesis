@@ -254,7 +254,7 @@ void RenderingTest::compare_generated_images_to_baseline() {
 
     bool testSuccess = true;
 
-    bool iterateCasesSuccess = Bach::OutputTester::test(
+    bool iterateCasesSuccess = Bach::OutputTester::iterateOverTestCases(
         this->font(),
         [&](int testId, const QImage &generatedImg)
         {
