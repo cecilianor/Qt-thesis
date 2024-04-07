@@ -88,7 +88,8 @@ struct RunImageComparison_Result {
 RunImageComparison_Result runImageMagickV7(
     const QString &baselinePath,
     const QString &generatedPath,
-    const QString &diffPath)
+    const QString &diffPath,
+    int diffThresholdPercentage)
 {
     QProcess process;
     QStringList arguments;
@@ -96,8 +97,8 @@ RunImageComparison_Result runImageMagickV7(
     arguments << "compare";
     arguments << "-metric";
     arguments << "AE";
-    //arguments << "-fuzz";
-    //arguments << "5%"; // Adjust the fuzz factor as needed
+    arguments << "-fuzz";
+    arguments << QString("%1").arg(diffThresholdPercentage) + "%";
     arguments << baselinePath;
     arguments << generatedPath;
     arguments << diffPath;
@@ -134,15 +135,16 @@ RunImageComparison_Result runImageMagickV7(
 RunImageComparison_Result runImageMagickV6(
     const QString &baselinePath,
     const QString &generatedPath,
-    const QString &diffPath)
+    const QString &diffPath,
+    int diffThresholdPercentage)
 {
     QProcess process;
     QStringList arguments;
 
     arguments << "-metric";
     arguments << "AE";
-    //arguments << "-fuzz";
-    //arguments << "5%"; // Adjust the fuzz factor as needed
+    arguments << "-fuzz";
+    arguments << QString("%1").arg(diffThresholdPercentage) + "%";
     arguments << baselinePath;
     arguments << generatedPath;
     arguments << diffPath;
@@ -179,7 +181,8 @@ RunImageComparison_Result runImageMagickV6(
 RunImageComparison_Result runImageComparison(
     const QString &baselinePath,
     const QString &generatedPath,
-    const QString &diffPath)
+    const QString &diffPath,
+    int diffThresholdPercentage)
 {
 // Compile-check that the required defines are present.
 #ifndef BACH_USE_IMAGEMAGICK_V7
@@ -193,9 +196,17 @@ RunImageComparison_Result runImageComparison(
     constexpr bool useImageMagickV7 = makebool(BACH_USE_IMAGEMAGICK_V7);
 
     if (useImageMagickV7) {
-        return runImageMagickV7(baselinePath, generatedPath, diffPath);
+        return runImageMagickV7(
+            baselinePath,
+            generatedPath,
+            diffPath,
+            diffThresholdPercentage);
     } else {
-        return runImageMagickV6(baselinePath, generatedPath, diffPath);
+        return runImageMagickV6(
+            baselinePath,
+            generatedPath,
+            diffPath,
+            diffThresholdPercentage);
     }
 }
 
@@ -261,7 +272,8 @@ void RenderingTest::compare_generated_images_to_baseline() {
             RunImageComparison_Result imgCompareResult = runImageComparison(
                 baselinePath,
                 generatedPath,
-                diffPath);
+                diffPath,
+                5);
 
             if (!imgCompareResult.success) {
                 testSuccess = false;
