@@ -307,25 +307,21 @@ QVariant FillLayerStyle::getFillOutLineColorAtZoom(int zoomLevel) const
     }
 }
 
-
-/*
- * ----------------------------------------------------------------------------
- */
-
-/*Parses the data from a QJsonObject containing styling properties of a layer of type line.
+/*!
+ * \brief LineLayerStyle::fromJson parses data from a QJsonObject
+ * with styling properties of a 'line' type layer.
      *
-     * Parameters:
-     *     json expects a refrence to the json object containing the data.
-     *
-     * Returns a pointer of type LineLayerStyle to the newly created layer with the parsed properties.
+ * \param jsonObj is the JSON object containing layer style data.
+ * \return a pointer of type LineLayerStyle to the newly created layer.
      */
 LineLayerStyle *LineLayerStyle::fromJson(const QJsonObject &jsonObj)
 {
 
-    LineLayerStyle* returnLayer = new LineLayerStyle();
-
+    // Parsing layout properties.
+    // Visibility property is parsed in:
+    // AbstractLayerStyle* AbstractLayerStyle::fromJson(const QJsonObject &jsonObj)
     QJsonObject layout = jsonObj.value("layout").toObject();
-    //parsing paint properties
+    // Parsing paint properties.
     QJsonObject paint = jsonObj.value("paint").toObject();
     if(paint.contains("line-dasharray")){
         for(const auto &length: paint.value("line-dasharray").toArray()){
@@ -335,7 +331,7 @@ LineLayerStyle *LineLayerStyle::fromJson(const QJsonObject &jsonObj)
 
     if(paint.contains("line-color")){
         QJsonValue lineColor = paint.value("line-color");
-        if(lineColor.isObject()){ //Case where the property is an object that has "Stops"
+            //Case where the property is an object that has "Stops".
             QList<QPair<int, QColor>> stops;
             for(const auto &stop : lineColor.toObject().value("stops").toArray()){
                 int zoomStop = stop.toArray().first().toInt();
@@ -343,16 +339,16 @@ LineLayerStyle *LineLayerStyle::fromJson(const QJsonObject &jsonObj)
                 stops.append(QPair<int , QColor>(zoomStop, colorStop));
             }
             returnLayer->m_lineColor.setValue(stops);
-        }else if(lineColor.isArray()){ //Case where the property is an expression
+            //Case where the property is an expression.
             returnLayer->m_lineColor.setValue(lineColor.toArray());
-        }else{ //Case where the property is a color value
+            //Case where the property is a color value.
             returnLayer->m_lineColor.setValue(getColorFromString(lineColor.toString()));
         }
     }
 
     if(paint.contains("line-opacity")){
         QJsonValue lineOpacity = paint.value("line-opacity");
-        if(lineOpacity.isObject()){ //Case where the property is an object that has "Stops"
+            // Case where the property is an object that has "Stops".
             QList<QPair<int, float>> stops;
             for(const auto &stop : lineOpacity.toObject().value("stops").toArray()){
                 int zoomStop = stop.toArray().first().toInt();
@@ -360,16 +356,16 @@ LineLayerStyle *LineLayerStyle::fromJson(const QJsonObject &jsonObj)
                 stops.append(QPair<int , float>(zoomStop, opacityStop));
             }
             returnLayer->m_lineOpacity.setValue(stops);
-        }else if(lineOpacity.isArray()){ //Case where the property is an expression
+            // Case where the property is an expression.
             returnLayer->m_lineOpacity.setValue(lineOpacity.toArray());
-        }else{ //Case where the property is a numeric value
+        } else { //Case where the property is a numeric value.
             returnLayer->m_lineOpacity.setValue(lineOpacity.toDouble());
         }
     }
 
     if(paint.contains("line-width")){
         QJsonValue lineWidth = paint.value("line-width");
-        if(lineWidth.isObject()){ //Case where the property is an object that has "Stops"
+            // Case where the property is an object that has "Stops".
             QList<QPair<int, int>> stops;
             for(const auto &stop : lineWidth.toObject().value("stops").toArray()){
                 int zoomStop = stop.toArray().first().toInt();
@@ -377,9 +373,9 @@ LineLayerStyle *LineLayerStyle::fromJson(const QJsonObject &jsonObj)
                 stops.append(QPair<int, int>(zoomStop, widthStop));
             }
             returnLayer->m_lineWidth.setValue(stops);
-        }else if(lineWidth.isArray()){ //Case where the property is an expression
+            // Case where the property is an expression.
             returnLayer->m_lineWidth.setValue(lineWidth.toArray());
-        }else{ //Case where the property is a numeric value
+            // Case where the property is a numeric value.
             returnLayer->m_lineWidth.setValue(lineWidth.toInt());
         }
     }
