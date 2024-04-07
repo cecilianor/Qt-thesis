@@ -755,9 +755,17 @@ void StyleSheet::parseSheet(const QJsonDocument &styleSheet)
     }
 }
 
-std::optional<StyleSheet> StyleSheet::fromJson(const QJsonDocument& input)
+/*!
+ * \brief StyleSheet::fromJson parses a style sheet.
+ *
+ * \param styleSheet is a style sheet to parse, passed as a reference to
+ * a QJsonDocument.
+ *
+ * \return  is either the parsed data or a nullopt of there was no data.
+ */
+std::optional<StyleSheet> StyleSheet::fromJson(const QJsonDocument &styleSheet)
 {
     StyleSheet out;
-    out.parseSheet(input);
+    out.parseSheet(styleSheet);
     return out;
 }
