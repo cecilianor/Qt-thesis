@@ -429,18 +429,18 @@ QVariant LineLayerStyle::getLineOpacityAtZoom(int zoomLevel) const
     }
 }
 
-/*Returns the line width for the sepcific zoom. The QVaraiant will contain a float if
-     * the value is not an expression or a QJsonArray otherwise.
+/*!
+ * \brief LineLayerStyle::getLineWidthAtZoom returns line width for a given zoom level.
      *
-     * Parameters:
-     *     zoomLevel the zoom level for which to calculate the width.
+ * The QVariant will contain a float if the value is not an expression,
+ * or a QJsonArray otherwise.
      *
-     * Returns a QVariant containing either a float or a QJsonArray with the information.
+ * \param zoomLevel is the zoom level for which to calculate the line width.
+ * \return a QVariant containing either a float or a QJsonArray with the
      */
-
 QVariant LineLayerStyle::getLineWidthAtZoom(int zoomLevel) const
 {
-    if(m_lineWidth.isNull()){ // The default width in case no width is provided by the style sheet.
+        // The default width in case no width is provided by the style sheet.
         return QVariant(1);
     }else if(m_lineWidth.typeId() != QMetaType::Type::Int && m_lineWidth.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, int>> stops = m_lineWidth.value<QList<QPair<int, int>>>();
