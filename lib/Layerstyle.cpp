@@ -591,20 +591,19 @@ SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
     return returnLayer;
 }
 
-
-/*Returns the text size for the sepcific zoom. The QVaraiant will contain a float if
-     * the value is not an expression or a QJsonArray otherwise.
+/*!
+ * \brief SymbolLayerStyle::getTextSizeAtZoom returns the text size for a given zoom.
      *
-     * Parameters:
-     *     zoomLevel the zoom level for which to calculate the size.
+ * The returned QVariant will contain a float if the value is not an expression,
+ *  or a QJsonArray otherwise
      *
-     * Returns a QVariant containing either a float or a QJsonArray with the information.
+ * \param zoomLevel is the zoom level for which to calculate the size.
+ * \return a QVariant containing either a float or a QJsonArray with data.
      */
-
 QVariant SymbolLayerStyle::getTextSizeAtZoom(int zoomLevel) const
 {
 
-    if(m_textSize.isNull()){ // The default size in case no size is provided by the style sheet.
+        // The default size in case no size is provided by the style sheet.
         return QVariant(16);
     }else if(m_textSize.typeId() != QMetaType::Type::Double && m_textSize.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, int>> stops = m_textSize.value<QList<QPair<int, int>>>();
