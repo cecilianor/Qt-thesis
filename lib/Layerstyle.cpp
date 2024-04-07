@@ -633,19 +633,19 @@ QVariant SymbolLayerStyle::getTextColorAtZoom(int zoomLevel) const
     }
 }
 
-
-/*Returns the opacity for the sepcific zoom. The QVaraiant will contain a float if
-     * the value is not an expression or a QJsonArray otherwise.
+/*!
+ * \brief SymbolLayerStyle::getTextOpacityAtZoom returns the opacity for
+ * a given zoom level.
+ *
+ * The returned QVariant will contain a float if the value is not an expression,
+ * or a QJsonArray otherwise.
      *
-     * Parameters:
-     *     zoomLevel the zoom level for which to calculate the opacity.
-     *
-     * Returns a QVariant containing either a float or a QJsonArray with the information.
+ * \param zoomLevel is the zoom level for which to calculate the opacity.
+ * \return a QVariant containing either a float or a QJsonArray with the data.
      */
-
 QVariant SymbolLayerStyle::getTextOpacityAtZoom(int zoomLevel) const
 {
-    if(m_textOpacity.isNull()){ // The default color in case no color is provided by the style sheet.
+        // The default color in case no color is provided by the style sheet.
         return QVariant(1);
     }else if(m_textOpacity.typeId() != QMetaType::Type::Double && m_textOpacity.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, float>> stops = m_textOpacity.value<QList<QPair<int, float>>>();
