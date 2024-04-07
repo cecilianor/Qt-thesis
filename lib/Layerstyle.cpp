@@ -167,27 +167,30 @@ QVariant BackgroundStyle::getOpacityAtZoom(int zoomLevel) const
  * ----------------------------------------------------------------------------
  */
 
-/*Parses the data from a QJsonObject containing styling properties of a layer of type fill.
+/*!
+ * \brief FillLayerStyle::fromJson parses JSON style data of a layer
+ * with the 'fill' type.
      *
-     * Parameters:
-     *     json expects a refrence to the json object containing the data.
+ * \param jsonObj is a QJsonObject containing the data to parse.
      *
-     * Returns a pointer of type FillLayerStyle to the newly created layer with the parsed properties.
+ * \return a pointer of type FillLayerStyle to the newly created
+ * layer with the parsed properties
      */
 FillLayerStyle *FillLayerStyle::fromJson(const QJsonObject &jsonObj)
 {
     FillLayerStyle* returnLayer = new FillLayerStyle();
 
-    //parsing layout properties
+    //Parsing layout properties.
     QJsonObject layout = jsonObj.value("layout").toObject();
     //visibility property is parsed in AbstractLayerStyle* AbstractLayerStyle::fromJson(const QJsonObject &json)
 
+    //Parsing paint properties.
     QJsonObject paint = jsonObj.value("paint").toObject();
-    //Get the antialiasing property from the style sheet or set it to true as a default.
+    // Get the antialiasing property from the style sheet or set it to true as a default.
     returnLayer->m_antialias = paint.contains("fill-antialias") ? paint.value("fill-antialias").toBool() : true;
     if(paint.contains("fill-color")){
         QJsonValue fillColor = paint.value("fill-color");
-        if(fillColor.isObject()){ //Case where the property is an object that has "Stops"
+            //Case where the property is an object that has "Stops".
             QList<QPair<int, QColor>> stops;
             for(const auto &stop : fillColor.toObject().value("stops").toArray()){
                 int zoomStop = stop.toArray().first().toInt();
@@ -195,16 +198,16 @@ FillLayerStyle *FillLayerStyle::fromJson(const QJsonObject &jsonObj)
                 stops.append(QPair<int, QColor>(zoomStop, colorStop));
             }
             returnLayer->m_fillColor.setValue(stops);
-        }else if(fillColor.isArray()){ //Case where the property is an expression
+            // Case where the property is an expression.
             returnLayer->m_fillColor.setValue(fillColor.toArray());
-        }else{ //Case where the property is a color value
+            // Case where the property is a color value.
             returnLayer->m_fillColor.setValue(getColorFromString(fillColor.toString()));
         }
     }
 
     if(paint.contains("fill-opacity")){
         QJsonValue fillOpacity = paint.value("fill-opacity");
-        if(fillOpacity.isObject()){ //Case where the property is an object that has "Stops"
+            // Case where the property is an object that has "Stops".
             QList<QPair<int, float>> stops;
             for(const auto &stop : fillOpacity.toObject().value("stops").toArray()){
                 int zoomSopt = stop.toArray().first().toInt();
@@ -212,25 +215,27 @@ FillLayerStyle *FillLayerStyle::fromJson(const QJsonObject &jsonObj)
                 stops.append(QPair<int, float>(zoomSopt, opacityStop));
             }
             returnLayer->m_fillOpacity.setValue(stops);
-        }else if(fillOpacity.isArray()){ //Case where the property is an expression
+            // Case where the property is an expression.
             returnLayer->m_fillOpacity.setValue(fillOpacity.toArray());
-        }else{ //Case where the property is a numeric value
+            // Case where the property is a numeric value.
             returnLayer->m_fillOpacity.setValue(fillOpacity.toDouble());
         }
     }
 
     if(paint.contains("fill-outline-color")){
         QJsonValue fillOutlineColor = paint.value("fill-outline-color");
-        if(fillOutlineColor.isObject()){ //Case where the property is an object that has "Stops"
+            // Case where the property is an object that has "Stops".
             QList<QPair<int, QColor>> stops;
-            for(const auto &stop : fillOutlineColor.toObject().value("stops").toArray()){
+                /* BEWARE!*/
+                // This could potentially be a bug. Talk to Eimen to see what to do here.
+                /* BEWARE*/
                 int zoomStop = stop.toArray().first().toInt();
                 QColor colorStop = getColorFromString(stop.toArray().last().toString());
             }
             returnLayer->m_fillOutlineColor.setValue(stops);
-        }else if(fillOutlineColor.isArray()){ //Case where the property is an expression
+            // Case where the property is an expression.
             returnLayer->m_fillOutlineColor.setValue(fillOutlineColor.toArray());
-        }else{ //Case where the property is a color value
+            //Case where the property is a color value.
             returnLayer->m_fillOutlineColor.setValue(getColorFromString(fillOutlineColor.toString()));
         }
     }
