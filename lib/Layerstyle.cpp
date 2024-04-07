@@ -451,6 +451,14 @@ QVariant LineLayerStyle::getLineWidthAtZoom(int zoomLevel) const
     }
 }
 
+/*!
+ * \brief LineLayerStyle::getJoinStyle gets the join style of a pen.
+ *
+ * The style is determined by a QString containing "bevel" or "miter",
+ * otherwise it'll be set to Qt::PenJoinStyle::RoundJoin.
+ *
+ * \return the pen join style.
+ */
 Qt::PenJoinStyle LineLayerStyle::getJoinStyle() const
 {
     if(m_lineJoin == "bevel"){
