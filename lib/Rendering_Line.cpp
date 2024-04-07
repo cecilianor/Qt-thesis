@@ -1,7 +1,16 @@
-#include "Rendering.h"
 #include "Evaluator.h"
+#include "Rendering.h"
 
-/* Finds the line color of given feature at the given zoom level.
+
+/*!
+ * \brief getLineColor
+ * Get the QVariant of the color from the layerStyle and resolve and return it if its an expression,
+ * or return it as a QColor otherwise
+ * \param layerStyle the layerStyle containing the color variable
+ * \param feature the feature to be used in case the QVariant is an expression
+ * \param mapZoom the map zoom level to be used in case the QVariant is an expression
+ * \param vpZoom the viewport zoom level to be used in case the QVariant is an expression
+ * \return the QColor to be used to render the line
  */
 static QColor getLineColor(
     const LineLayerStyle &layerStyle,
@@ -21,7 +30,15 @@ static QColor getLineColor(
     return color.value<QColor>();
 }
 
-/* Finds the line opacity of given feature at the given zoom level.
+/*!
+ * \brief getLineOpacity
+ * Get the QVariant of the opcity from the layerStyle and resolve and return it if its an expression,
+ * or return it as a float otherwise
+ * \param layerStyle the layerStyle containing the opacity variable
+ * \param feature the feature to be used in case the QVariant is an expression
+ * \param mapZoom the map zoom level to be used in case the QVariant is an expression
+ * \param vpZoom the viewport zoom level to be used in case the QVariant is an expression
+ * \return a float for the opacity to be used to render the line
  */
 static float getLineOpacity(
     const LineLayerStyle &layerStyle,
@@ -41,7 +58,15 @@ static float getLineOpacity(
     return lineOpacity.value<float>();
 }
 
-/* Finds the line width of this feature at given zoom level.
+/*!
+ * \brief getLineWidth
+ * Get the QVariant of the line width from the layerStyle and resolve and return it if its an expression,
+ * or return it as an int otherwise
+ * \param layerStyle the layerStyle containing the line width variable
+ * \param feature the feature to be used in case the QVariant is an expression
+ * \param mapZoom the map zoom level to be used in case the QVariant is an expression
+ * \param vpZoom the viewport zoom level to be used in case the QVariant is an expression
+ * \return an int for the line width value to be used to render the line
  */
 static int getLineWidth(
     const LineLayerStyle &layerStyle,
@@ -64,6 +89,11 @@ static int getLineWidth(
 /* Paints a single Line feature within a tile.
  *
  * Assumes the painters origin has moved to the tiles origin.
+ */
+/*!
+ * \brief Bach::paintSingleTileFeature_Line
+ * This function reders a single line feature.
+ * \param details the struct containig all the elemets needed to paint the feature includeing the layerStyle and the feature itself.
  */
 void Bach::paintSingleTileFeature_Line(Bach::PaintingDetailsLine details)
 {

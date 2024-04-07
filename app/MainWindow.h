@@ -4,33 +4,23 @@
 #include <QMainWindow>
 #include <QKeyEvent>
 
-#include <functional>
-
 #include "MapWidget.h"
-#include "VectorTiles.h"
-#include "TileCoord.h"
 
 namespace Bach {
-    /* Main window class for our application.
+    /*! \class Main window Widget class for our application.
      *
-     * Constructor sets up the smaller Widgets when necessary.
+     * Constructor sets up the smaller Widgets also.
      */
     class MainWindow : public QMainWindow {
         Q_OBJECT
 
     public:
-        /* We're calling many of the parent type methods from inside
-         * override methods in this class.
-         *
-         * This lets us easily change parent type without much rewriting.
-         */
-        using ParentType = QMainWindow;
-
         MainWindow(MapWidget*);
 
         void resizeEvent(QResizeEvent*) override;
         void showEvent(QShowEvent*) override;
 
+    private:
         /* Updates the positions of the floating control widgets (zoom, panning...)
          *
          * Should be called every time the widget changes size.
@@ -39,11 +29,12 @@ namespace Bach {
          */
         void updateControlsPositions();
 
-    private:
+        // References to the various widgets whose position we need to keep
+        // updated.
         MapWidget* mapWidget = nullptr;
         QWidget* zoomControls = nullptr;
         QWidget* panControls = nullptr;
-        std::function<VectorTile(TileCoord)> loadTileFn = nullptr;
+        QWidget* renderControls = nullptr;
     };
 }
 #endif // MAINWINDOW_H

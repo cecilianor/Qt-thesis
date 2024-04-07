@@ -4,14 +4,17 @@
 #include <QWidget>
 #include <QScopedPointer>
 
-
 #include <functional>
 #include <set>
 
 #include "TileCoord.h"
 #include "RequestTilesResult.h"
 
-/* Widget class responsible for displaying the actual map.
+/*!
+ * \class
+ * Widget responsible for displaying the actual map that is implemented
+ * in this thesis.
+ *
  * Should be used as a smaller widget within a larger Widget hierarchy.
  *
  * This MapWidget has a built-in viewport configuration (zoom level and center coordinates).
@@ -73,20 +76,8 @@ public:
 
 private:
     // Zoom level of viewport
-    // Range [0, 16]
-    // This should never go below 0 in final release, but
-    // is useful for testing.
+    // Commonly used range is [-2, 22] but values outside works also.
     double viewportZoomLevel = 0;
-
-    // Default should be 0 for final release.
-    // This offsets the map zoom compared to viewport zoom.
-    double mapZoomLevelOffset = 0;
-
-    // Mostly useful for debugging.
-    // Allows you to lock the zoom level of the tiles
-    // that are displayed.
-    bool overrideMapZoom = false;
-    int overrideMapZoomLevel = 0;
 
     // Center of viewport X
     // Range [0, 1]
@@ -97,15 +88,33 @@ private:
 
     // Pass in true if you want to zoom.
     // Applies a single zoom step to the viewport.
+    // Used by other public methods.
     void genericZoom(bool magnify);
-
 
     // Controls whether debug lines should be shown.
     bool showDebug = true;
+
+    // If set to true, we should be rendering vector graphics.
+    // If set to false, we should be rendering raster graphics.
     bool renderVectorTile = true;
+
+    // If true, we should render fill-elements.
+    bool renderFill = true;
+
+    // If true, we should render line-elements.
+    bool renderLines = true;
+
+    // If true, we should render line-elements.
+    bool renderText = true;
 public:
     bool isShowingDebug() const { return showDebug; }
     bool isRenderingVector() const { return renderVectorTile; }
+    bool isRenderingFill() const { return renderFill; }
+    void setShouldDrawFill(bool);
+    bool isRenderingLines() const { return renderLines; }
+    void setShouldDrawLines(bool);
+    bool isRenderingText() const { return renderText; }
+    void setShouldDrawText(bool);
 public slots:
     void toggleIsShowingDebug();
     void toggleIsRenderingVectorTile();

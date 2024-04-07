@@ -1,7 +1,16 @@
-#include "Rendering.h"
 #include "Evaluator.h"
+#include "Rendering.h"
 
-/* Finds the text color of this feature at given zoom level.
+
+/*!
+ * \brief getTextColor
+ * Get the QVariant of the color from the layerStyle and resolve and return it if its an expression,
+ * or return it as a QColor otherwise
+ * \param layerStyle the layerStyle containing the color variable
+ * \param feature the feature to be used in case the QVariant is an expression
+ * \param mapZoom the map zoom level to be used in case the QVariant is an expression
+ * \param vpZoom the viewport zoom level to be used in case the QVariant is an expression
+ * \return the QColor to be used to render the text
  */
 static QColor getTextColor(
     const SymbolLayerStyle &layerStyle,
@@ -22,7 +31,15 @@ static QColor getTextColor(
 }
 
 
-/* Finds the text size of this feature at given zoom level.
+/*!
+ * \brief getTextSize
+ * Get the QVariant of the size from the layerStyle and resolve and return it if its an expression,
+ * or return it as an int otherwise
+ * \param layerStyle the layerStyle containing the size variable
+ * \param feature the feature to be used in case the QVariant is an expression
+ * \param mapZoom the map zoom level to be used in case the QVariant is an expression
+ * \param vpZoom the viewport zoom level to be used in case the QVariant is an expression
+ * \return and int for the size to be used to render the text
  */
 static int getTextSize(
     const SymbolLayerStyle &layerStyle,
@@ -43,7 +60,15 @@ static int getTextSize(
 }
 
 
-/* Finds the text opacity of this feature at given zoom level.
+/*!
+ * \brief getTextOpacity
+ * Get the QVariant of the opacity from the layerStyle and resolve and return it if its an expression,
+ * or return it as a QColor otherwise
+ * \param layerStyle the layerStyle containing the opacity variable
+ * \param feature the feature to be used in case the QVariant is an expression
+ * \param mapZoom the map zoom level to be used in case the QVariant is an expression
+ * \param vpZoom the viewport zoom level to be used in case the QVariant is an expression
+ * \return a float for the opacity to be used to render the text
  */
 static float getTextOpacity(
     const SymbolLayerStyle &layerStyle,
@@ -65,7 +90,14 @@ static float getTextOpacity(
 
 
 
-/* Gets the text to be rendered.
+/*!
+ * \brief getTextContent
+ * Get the String of the text to be redered.
+ * \param layerStyle the layerStyle containing the color variable
+ * \param feature the feature to be used in case the QVariant is an expression
+ * \param mapZoom the map zoom level to be used in case the QVariant is an expression
+ * \param vpZoom the viewport zoom level to be used in case the QVariant is an expression
+ * \return a QString with the content of the text to be rendered
  */
 static QString getTextContent(
     const SymbolLayerStyle &layerStyle,
@@ -96,7 +128,13 @@ static QString getTextContent(
 
 
 
-/* Checks if the bouding rect for textRect collids with any rects in rectList
+/*!
+ * \brief isOverlapping
+ * Checks if the passed QRect intersects any QRects in the passed list. This is used to eliminate text
+ * overlap in the map.
+ * \param textRect the bounding rect of the current text.
+ * \param rectList A vector containing all the bounding rects of all the texts previously rendered.
+ * \return True if the text overlaps, or false otherwise.
  */
 static bool isOverlapping(const QRect &textRect, const QVector<QRect> &rectList){
     for(const auto& rect : rectList){
@@ -107,6 +145,16 @@ static bool isOverlapping(const QRect &textRect, const QVector<QRect> &rectList)
 
 
 /* Splits text to multiple strings depending on the text length and the maximum allowed rect width
+ */
+/*!
+ * \brief getCorrectedText
+ * This functions will split the text into a list of string depending on if the text fits into the
+ * passed rectangle width or not. The number of strings that the text is diveded to is dependent on
+ * how much space the text will take with the provided font conpared to the allowed width of the rectangle.
+ * \param text The text to be checked and split.
+ * \param font the font to be used in the calculation.
+ * \param rectWidth the maximum width allowed for the text rectangle.
+ * \return a QList containing 1 QString if the text fits in the rectable of n > 1 QStrings if it does not.
  */
 static QList<QString> getCorrectedText(const QString &text, const QFont & font, const int rectWidth){
     QFontMetrics fontMetrics(font);
@@ -130,7 +178,21 @@ static QList<QString> getCorrectedText(const QString &text, const QFont & font, 
 }
 
 
-/* Render a text that does not wrap (one-liners)
+
+/*!
+ * \brief paintSimpleText
+ * This function renders text that fits in one line and does not require wrapping.
+ * \param text the text to be rendered
+ * \param coordinate the coordinates where the text should be rendered. The text is rendered so that the point is right in the middle of the bounding rect of the text.
+ * \param outlineSize the width of the text outline.
+ * \param outlineColor the color of the text outline
+ * \param textFont the text font
+ * \param rects the QList of previously rendered texts to be used to check for overlapping.
+ * \param painter The painter object to paint into.
+ * \param feature the text feature
+ * \param layerStyle the layerStyle to style the text
+ * \param mapZoom
+ * \param vpZoom
  */
 static void paintSimpleText(
     const QString &text,
@@ -180,6 +242,21 @@ static void paintSimpleText(
 
 
 /* Render a text that should be drawn on multiple lines.
+ */
+/*!
+ * \brief paintCompositeText
+ * This function renders text that requires myltiple lines
+ * \param texts the List containing the strings of text to be rendered, each on a separate line.
+ * \param coordinates the coordinates where the text should be rendered. The text is rendered so that the point is right in the middle of the union of all the bounding rects of the text strings.
+ * \param outlineSize the width of the text outline.
+ * \param outlineColor the color of the text outline
+ * \param textFont the text font
+ * \param rects the QList of previously rendered texts to be used to check for overlapping.
+ * \param painter The painter object to paint into.
+ * \param feature the text feature
+ * \param layerStyle the layerStyle to style the text
+ * \param mapZoom
+ * \param vpZoom
  */
 static void paintCompositeText(
     const QList<QString> &texts,
@@ -245,9 +322,18 @@ static void paintCompositeText(
     }
 }
 
-/* Paints a single Point feature within a tile.
+/*!
+ * \brief Bach::paintSingleTileFeature_Point
+ * This function is called in the tile rendering loop. It is responsible for processing the feture and layerstyle, and passing the text to be rendered
+ * along with the styling information to one of the two rendering functions above depending if the text is a one liner or if it requires multiple lines.
+ * \param details the struct containig all the elemets needed to paint the feature includeing the layerStyle and the feature itself.
+ * \param tileSize the size of the current tile in pixels, used to scale the the transform.
  *
- * Assumes the painters origin has moved to the tiles origin.
+ * \param forceNoChangeFontType If set to true, the text font
+ * rendered will be the one currently set by the QPainter object.
+ * If set to false, it will try to use the font suggested by the stylesheet.
+ *
+ * \param rects the list of rectangles used to check for text overlapping.
  */
 void Bach::paintSingleTileFeature_Point(
     PaintingDetailsPoint details,
@@ -276,10 +362,9 @@ void Bach::paintSingleTileFeature_Point(
     }
 
     int textSize = getTextSize(layerStyle, feature, details.mapZoom, details.vpZoom);
+    textFont.setPixelSize(textSize);
 
     painter.setBrush(Qt::NoBrush);
-
-    textFont.setPixelSize(textSize);
 
     painter.setOpacity(getTextOpacity(layerStyle, feature, details.mapZoom, details.vpZoom));
 

@@ -1,11 +1,11 @@
 #include "MainWindow.h"
 
 #include <QShowEvent>
-#include <QCoreApplication>
 
 #include "MapPanControlWidget.h"
 #include "MapZoomControlWidget.h"
 #include "MapCoordControlWidget.h"
+#include "MapRenderSettingsWidget.h"
 
 using Bach::MainWindow;
 
@@ -17,11 +17,16 @@ MainWindow::MainWindow(MapWidget* mapWidgetIn) : mapWidget{ mapWidgetIn }
     // Establish the UI controls.
     zoomControls = new MapZoomControlWidget(mapWidget);
     panControls = new MapPanControlWidget(mapWidget);
+    renderControls = new MapRenderSettingsWidget(mapWidget);
 
     // Setup the menu that lets us enter manual coordinates and hook it up to the
     // map-widget.
-    auto coordControls = new MapCoordControlWidget(mapWidget);
-    QObject::connect(coordControls, &MapCoordControlWidget::submitNewCoords, mapWidget, &MapWidget::setViewport);
+    MapCoordControlWidget *coordControls = new MapCoordControlWidget(mapWidget);
+    QObject::connect(
+        coordControls,
+        &MapCoordControlWidget::submitNewCoords,
+        mapWidget,
+        &MapWidget::setViewport);
 
     mapWidget->focusWidget();
 
@@ -29,12 +34,12 @@ MainWindow::MainWindow(MapWidget* mapWidgetIn) : mapWidget{ mapWidgetIn }
 }
 
 void MainWindow::resizeEvent(QResizeEvent *event) {
-    ParentType::resizeEvent(event);
+    QMainWindow::resizeEvent(event);
     updateControlsPositions();
 }
 
 void MainWindow::showEvent(QShowEvent *event) {
-    ParentType::showEvent(event);
+    QMainWindow::showEvent(event);
     if (event->type() == QEvent::Show) {
         updateControlsPositions();
     }
@@ -53,5 +58,11 @@ void MainWindow::updateControlsPositions() {
         zoomControls->move(
             width() - zoomControls->width(),
             height() - zoomControls->height());
+    }
+
+    if (renderControls != nullptr) {
+        renderControls->move(
+            width() - renderControls->width(),
+            0);
     }
 }

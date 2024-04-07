@@ -80,6 +80,8 @@ set(PROJECT_SOURCES
     app/MapPanControlWidget.cpp
     app/MapCoordControlWidget.h
     app/MapCoordControlWidget.cpp
+    app/MapRenderSettingsWidget.h
+    app/MapRenderSettingsWidget.cpp
     app/MainWindow.h
     app/MainWindow.cpp)
 

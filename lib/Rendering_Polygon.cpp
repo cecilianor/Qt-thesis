@@ -1,9 +1,15 @@
-#include "Rendering.h"
 #include "Evaluator.h"
+#include "Rendering.h"
 
-/* Finds the fill color of given feature at the given zoom level.
- *
- * This function also takes opacity into account.
+/*!
+ * \brief getFillColor
+ * Get the QVariant of the color from the layerStyle and resolve and return it if its an expression,
+ * or return it as a QColor otherwise. This function also gets the opacity of the polygon.
+ * \param layerStyle the layerStyle containing the color variable
+ * \param feature the feature to be used in case the QVariant is an expression
+ * \param mapZoom the map zoom level to be used in case the QVariant is an expression
+ * \param vpZoom the viewport zoom level to be used in case the QVariant is an expression
+ * \return the QColor to be used to render the polygon
  */
 static QColor getFillColor(
     const FillLayerStyle &layerStyle,
@@ -41,10 +47,11 @@ static QColor getFillColor(
     return color;
 }
 
-/* Render a single feature of a tile, where the feature is of type polygon.
- *
- * Assumes the painter's position has been moved to the origin of the tile.
- *
+
+/*!
+ * \brief Bach::paintSingleTileFeature_Polygon
+ * This function reders a single polygon feature.
+ * \param details the struct containig all the elemets needed to paint the feature includeing the layerStyle and the feature itself.
  */
 void Bach::paintSingleTileFeature_Polygon(Bach::PaintingDetailsPolygon details)
 {

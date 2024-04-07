@@ -1,7 +1,16 @@
+#include <functional>
+
 #include "Evaluator.h"
 #include "Rendering.h"
 
-#include <functional>
+Bach::PaintVectorTileSettings Bach::PaintVectorTileSettings::getDefault()
+{
+    Bach::PaintVectorTileSettings out;
+    out.drawFill = true;
+    out.drawLines = true;
+    out.drawText = true;
+    return out;
+}
 
 /*!
  * \internal
@@ -91,13 +100,26 @@ static bool includeFeature(
         vpZoom).toBool();
 }
 
+/*!
+ * \brief paintVectorLayer_Fill
+ * Call the polygon rendering function on all the layer's features that pass the layerStyle filter
+ *
+ * \param painter
+ * The painter object to paint into.
+ * It assumes the painter object has had its origin moved to the tiles origin, and is unscaled.
+ * \param layerStyle the layerStyle to be used to filter/style this layer's features.
+ * \param layer the TileLayer containing the features to be rendered.
+ * \param mapZoom The map zoom level being rendered.
+ * \param vpZoom The zoom level of the viewport.
+ * \param geometryTransform the transform to be used to map the features into the correct position.
+ */
 static void paintVectorLayer_Fill(
     QPainter &painter,
     const FillLayerStyle &layerStyle,
     const TileLayer& layer,
     double vpZoom,
     int mapZoom,
-    int tileWidthPixels)
+    QTransform geometryTransform)
 {
     // Iterate over all the features, and filter out anything that is not fill.
     for (const AbstractLayerFeature *abstractFeature : layer.m_features) {
@@ -109,9 +131,6 @@ static void paintVectorLayer_Fill(
         if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
             continue;
 
-        QTransform geometryTransform;
-        geometryTransform.scale(tileWidthPixels, tileWidthPixels);
-
         // Render the feature in question.
         painter.save();
         Bach::paintSingleTileFeature_Polygon({&painter, &layerStyle, &feature, mapZoom, vpZoom, geometryTransform});
@@ -119,13 +138,26 @@ static void paintVectorLayer_Fill(
     }
 }
 
+/*!
+ * \brief paintVectorLayer_Line
+  * Call the line rendering function on all the layer's features that pass the layerStyle filter
+ *
+ * \param painter
+ * The painter object to paint into.
+ * It assumes the painter object has had its origin moved to the tiles origin, and is unscaled.
+ * \param layerStyle the layerStyle to be used to filter/style this layer's features.
+ * \param layer the TileLayer containing the features to be rendered.
+ * \param mapZoom The map zoom level being rendered.
+ * \param vpZoom The zoom level of the viewport.
+ * \param geometryTransform the transform to be used to map the features into the correct position.
+ */
 static void paintVectorLayer_Line(
     QPainter &painter,
     const LineLayerStyle &layerStyle,
     const TileLayer& layer,
     double vpZoom,
     int mapZoom,
-    int tileWidthPixels)
+    QTransform geometryTransform)
 {
     // Iterate over all the features, and filter out anything that is not line.
     for (const AbstractLayerFeature *abstractFeature : layer.m_features) {
@@ -137,15 +169,79 @@ static void paintVectorLayer_Line(
         if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
             continue;
 
-        QTransform geometryTransform;
-        geometryTransform.scale(tileWidthPixels, tileWidthPixels);
-
         // Render the feature in question.
         painter.save();
         Bach::paintSingleTileFeature_Line({&painter, &layerStyle, &feature, mapZoom, vpZoom, geometryTransform});
         painter.restore();
     }
 }
+
+/*!
+ * \brief paintVectorLayer_Point
+ * Call the text rendering function on all the layer's features that pass the layerStyle filter.
+ * The rendering function is called after that the features have been ordered according to the rank property.
+ * \param painter
+ * The painter object to paint into.
+ * It assumes the painter object has had its origin moved to the tiles origin, and is unscaled.
+ * \param layerStyle the layerStyle to be used to filter/style this layer's features.
+ * \param layer the TileLayer containing the features to be rendered.
+ * \param mapZoom The map zoom level being rendered.
+ * \param vpZoom The zoom level of the viewport.
+ * \param geometryTransform the transform to be used to map the features into the correct position.
+ *
+ * \param forceNoChangeFontType If set to true, the text font
+ * rendered will be the one currently set by the QPainter object.
+ * If set to false, it will try to use the font suggested by the stylesheet.
+ *
+ * \param labelRects
+ */
+static void paintVectorLayer_Point(
+    QPainter &painter,
+    const SymbolLayerStyle &layerStyle,
+    const TileLayer& layer,
+    double vpZoom,
+    int mapZoom,
+    int tileWidthPixels,
+    QTransform geometryTransform,
+    bool forceNoChangeFontType,
+    QVector<QRect> &labelRects)
+{
+    QVector<QPair<int, PointFeature>> labels; //Used to order text rendering operation based on "rank" property.
+    // Iterate over all the features, and filter out anything that is not point  (rendering of line features for curved text in the symbol layer is not yet implemented).
+    for (auto const& abstractFeature : layer.m_features) {
+        if (abstractFeature->type() != AbstractLayerFeature::featureType::point) //For normal text (continents /countries / cities / places / ...)
+            continue;
+        const PointFeature &feature = *static_cast<const PointFeature*>(abstractFeature);
+
+        // Tests whether the feature should be rendered at all based on possible expression.
+        if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
+            continue;
+
+        //Add the feature along with its "rank" (if present, defaults to 100) to the labels map.
+        if(feature.featureMetaData.contains("rank")){
+            labels.append(QPair<int, PointFeature>(feature.featureMetaData["rank"].toInt(), feature));
+        }else{
+            labels.append(QPair<int, PointFeature>(100, feature));
+        }
+    }
+
+    //Sort the labels map in increasing order based on the laber's "rank"
+    std::sort(labels.begin(), labels.end(), [](const QPair<int, PointFeature>& a, const QPair<int, PointFeature>& b) {
+        return a.first < b.first;
+    });
+
+    //Loop over the ordered label map and render text ignoring labels that would cause an overlap.
+    for(const auto &pair : labels){
+        painter.save();
+        Bach::paintSingleTileFeature_Point(
+            {&painter, &layerStyle, &pair.second, mapZoom, vpZoom, geometryTransform},
+            tileWidthPixels,
+            forceNoChangeFontType,
+            labelRects);
+        painter.restore();
+    }
+}
+
 
 /*!
  * \internal
@@ -175,13 +271,11 @@ static void paintVectorTile(
     double vpZoom,
     const StyleSheet &styleSheet,
     int tileWidthPixels,
-    bool forceNoChangeFontType)
+    const Bach::PaintVectorTileSettings &settings)
 {
     QTransform geometryTransform;
     geometryTransform.scale(tileWidthPixels, tileWidthPixels);
-
-    QVector<QPair<int, PointFeature>> labels; //Used to order text rendering operation based on "rank" property.
-    QVector<QRect> laberRects; //Used to prevent text overlapping.
+    QVector<QRect> labelRects; //Used to prevent text overlapping.
 
     // We start by iterating over each layer style, it determines the order
     // at which we draw the elements of the map.
@@ -199,57 +293,39 @@ static void paintVectorTile(
 
         // We do different types of rendering based on whether the layer is a polygon, line, or symbol(text).
         if (abstractLayerStyle->type() == AbstractLayerStyle::LayerType::fill) {
+            if (!settings.drawFill)
+                continue;
             paintVectorLayer_Fill(
                 painter,
                 *static_cast<const FillLayerStyle*>(abstractLayerStyle),
                 layer,
                 vpZoom,
                 mapZoom,
-                tileWidthPixels);
+                geometryTransform);
 
         } else if (abstractLayerStyle->type() == AbstractLayerStyle::LayerType::line) {
+            if (!settings.drawLines)
+                continue;
             paintVectorLayer_Line(
                 painter,
                 *static_cast<const LineLayerStyle*>(abstractLayerStyle),
                 layer,
                 vpZoom,
                 mapZoom,
-                tileWidthPixels);
+                geometryTransform);
         } else if(abstractLayerStyle->type() == AbstractLayerStyle::LayerType::symbol){
-            const auto &layerStyle = *static_cast<const SymbolLayerStyle*>(abstractLayerStyle);
-
-             // Iterate over all the features, and filter out anything that is not point  (rendering of line features for curved text in the symbol layer is not yet implemented).
-             for (auto const& abstractFeature : layer.m_features) {
-                 if (abstractFeature->type() != AbstractLayerFeature::featureType::point) //For normal text (continents /countries / cities / places / ...)
-                     continue;
-                 const auto &feature = *static_cast<const PointFeature*>(abstractFeature);
-
-                 // Tests whether the feature should be rendered at all based on possible expression.
-                 if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
-                     continue;
-
-                 //Add the feature along with its "rank" (if present, defaults to 100) to the labels map.
-                 if(feature.featureMetaData.contains("rank")){
-                     labels.append(QPair<int, PointFeature>(feature.featureMetaData["rank"].toInt(), feature));
-                 }else{
-                     labels.append(QPair<int, PointFeature>(100, feature));
-                 }
-            }
-             //Sort the labels map in increasing order based on the laber's "rank"
-             std::sort(labels.begin(), labels.end(), [](const QPair<int, PointFeature>& a, const QPair<int, PointFeature>& b) {
-                 return a.first < b.first;
-             });
-            //Loop over the ordered label map and render text ignoring labels that would cause an overlap.
-            for(const auto &pair : labels){
-                 painter.save();
-                Bach::paintSingleTileFeature_Point(
-                    {&painter, &layerStyle, &pair.second, mapZoom, vpZoom, geometryTransform},
-                    tileWidthPixels,
-                    forceNoChangeFontType,
-                    laberRects);
-
-                 painter.restore();
-             }
+            if (!settings.drawText)
+                continue;
+            paintVectorLayer_Point(
+                painter,
+                *static_cast<const SymbolLayerStyle*>(abstractLayerStyle),
+                layer,
+                vpZoom,
+                mapZoom,
+                tileWidthPixels,
+                geometryTransform,
+                settings.forceNoChangeFontType,
+                labelRects);
         }
     }
 }
@@ -392,7 +468,6 @@ TilePosCalculator createTilePosCalculator(
  * \param vpZoom Zoom level of the viewport.
  * \param mapZoom Zoom level of the map.
  * \param paintSingleTileFn The function to call to draw a single tile.
- *
  */
 static void paintTilesGeneric(
     QPainter &painter,
@@ -481,10 +556,11 @@ void Bach::paintVectorTiles(
     QPainter &painter,
     double vpX,
     double vpY,
-    double viewportZoomLevel,
-    int mapZoomLevel,
+    double viewportZoom,
+    int mapZoom,
     const QMap<TileCoord, const VectorTile*> &tileContainer,
     const StyleSheet &styleSheet,
+    const PaintVectorTileSettings &settings,
     bool drawDebug)
 {
     auto paintSingleTileFn = [&](TileCoord tileCoord, TileScreenPlacement tilePlacement) {
@@ -497,19 +573,19 @@ void Bach::paintVectorTiles(
         paintVectorTile(
             tileData,
             painter,
-            mapZoomLevel,
-            viewportZoomLevel,
+            mapZoom,
+            viewportZoom,
             styleSheet,
             tilePlacement.pixelWidth,
-            true);
+            settings);
     };
 
     paintTilesGeneric(
         painter,
         vpX,
         vpY,
-        viewportZoomLevel,
-        mapZoomLevel,
+        viewportZoom,
+        mapZoom,
         paintSingleTileFn,
         styleSheet,
         drawDebug);

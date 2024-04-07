@@ -3,9 +3,9 @@
 
 #include <QObject>
 
+#include <Layerstyle.h>
 #include <TileCoord.h>
 #include <VectorTiles.h>
-#include <Layerstyle.h>
 
 namespace Bach {
     /*!
