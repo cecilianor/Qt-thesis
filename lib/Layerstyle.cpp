@@ -1,6 +1,5 @@
 #include <QRegularExpression>
 #include <QtMath>
-
 #include "Layerstyle.h"
 
 /*!
