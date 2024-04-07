@@ -2,7 +2,7 @@
 
 #include <QCheckBox>
 #include <QPushButton>
-#include <QVBoxLayout>ns
+#include <QVBoxLayout>
 
 #include "Rendering.h"
 
