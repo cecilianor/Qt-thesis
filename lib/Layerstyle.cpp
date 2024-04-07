@@ -284,22 +284,21 @@ QVariant FillLayerStyle::getFillOpacityAtZoom(int zoomLevel) const
     }
 }
 
-
-/*Returns the outline color for the sepcific zoom. The QVaraiant will contain a QColor if
-     * the value is not an expression or a QJsonArray otherwise.
+/*!
+ * \brief FillLayerStyle::getFillOutLineColorAtZoom returns the outline color
+ * for the given zoom level.
+ *
+ * The returned QVariant will contain a QColor if the value is not an
+ * expression, or a QJsonArray otherwise.
      *
-     * Parameters:
-     *     zoomLevel the zoom level for which to calculate the color.
-     *
-     * Returns a QVariant containing either a Qcolor or a QJsonArray with the information.
+ * \param zoomLevel is the zoom level for which to calculate the color.
+ * \return a QVariant containing either a Qcolor or a QJsonArray with color data.
      */
 QVariant FillLayerStyle::getFillOutLineColorAtZoom(int zoomLevel) const
 {
-    if(m_antialias == false) return QVariant(); //The outline requires the antialising to be true.
-    if(m_fillOutlineColor.isNull()){ // No default value is specified for outline color.
+        //The outline requires the antialising to be true.
         return QVariant();
-    }
-    if(m_fillOutlineColor.typeId() != QMetaType::Type::QColor && m_fillOutlineColor.typeId() != QMetaType::Type::QJsonArray){
+        // No default value is specified for outline color.
         QList<QPair<int, QColor>> stops = m_fillOutlineColor.value<QList<QPair<int, QColor>>>();
         if(stops.size() == 0) return QVariant();
         return QVariant(getStopOutput(stops, zoomLevel));
