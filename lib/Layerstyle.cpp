@@ -42,45 +42,56 @@ static QColor getColorFromString(QString colorString)
     return QColor::fromString(colorString);
 }
 
-
-
-
-
-
-/*
- * ----------------------------------------------------------------------------
- */
-/*Parses the data from a QJsonObject containing styling properties of a layer of type background.
-     *
-     * Parameters:
-     *     json expects a refrence to the json object containing the data.
-     *
-     * Returns a pointer of type BackgroundStyle to the newly created layer with the parsed properties.
+/*!
+ * \brief BackgroundStyle::fromJson parses QJsonObject to obtain background
+ * layer style properties.
+ *
+ * NOTE: Copilot was used to guide updating a range-based for loop correctly.
+ * here. The learnt lesson was then applied to other similar looping functions
+ * further down in the code.
+ *
+ * The subsequent loops were updated manually by Cecilia Norevik Bratlie,
+ * not by Copilot or any other AI tool.
+ *
+ * \param jsonObj is a reference to a QJsonObject containing the data to parse.
+ * \return a pointer of type BackgroundStyle to the newly created layer with
+ * the parsed properties.
      */
 BackgroundStyle *BackgroundStyle::fromJson(const QJsonObject &jsonObj)
 {
     BackgroundStyle* returnLayer = new BackgroundStyle();
-    //parsing layout properties
+    // Parsing layout properties
     QJsonObject layout = jsonObj.value("layout").toObject();
-    //visibility property is parsed in AbstractLayerStyle::fromJson
+    // Visibility property is parsed in AbstractLayerStyle::fromJson
 
-    //parsing paint properties
+    // Parsing paint properties.
     QJsonObject paint = jsonObj.value("paint").toObject();
     if(paint.contains("background-color"))
     {
         QJsonValue backgroundColor = paint.value("background-color");
-        if(backgroundColor.isObject()) { //Case where the property is an object that has "Stops"
+            //Case where the property is an object that has "Stops".
             QList<QPair<int, QColor>> stops;
-            for(const auto &stop : backgroundColor.toObject().value("stops").toArray())
+            // A previous version of the range-based loop below looked like this:
+            //
+            //  for(const QJsonValueRef &stop : backgroundColor.toObject().value("stops").toArray())
+            //
+            // This produced a warning:
+            // c++11 range-loop might detach Qt container (QJsonArray) [clazy-range-loop-detach]
+            //
+            // The fix for that was addressed after Googling possible solutions. See:
+            //  https://forum.qt.io/topic/146125/c-11-range-loop-might-detach-qt-container-qset-clazy-range-loop-detach/2
+            //
+            // Copilot was then asked to update the code based on the discussion in that thread and using
+            // the appropriate static cast instead of the alternate `qAsConst`.
             {
                 int zoomStop = stop.toArray().first().toInt();
                 QColor colorStop = getColorFromString(stop.toArray().last().toString());
                 stops.append(QPair<int, QColor>(zoomStop, colorStop));
             }
             returnLayer->m_backgroundColor.setValue(stops);
-        }else if(backgroundColor.isArray()){ //Case where the property is an expression
+            // Case where the property is an expression.
             returnLayer->m_backgroundColor.setValue(backgroundColor.toArray());
-        }else{ //Case where the property is a color value
+            // Case where the property is a color value
             returnLayer->m_backgroundColor.setValue(getColorFromString(backgroundColor.toString()));
         }
 
@@ -88,7 +99,7 @@ BackgroundStyle *BackgroundStyle::fromJson(const QJsonObject &jsonObj)
 
     if(paint.contains("background-opacity")){
         QJsonValue backgroundOpacity= paint.value("background-opacity");
-        if(backgroundOpacity.isObject()) { //Case where the property is an object that has "Stops"
+            // Case where the property is an object that has "Stops"
             QList<QPair<int, float>> stops;
             for(const auto &stop : backgroundOpacity.toObject().value("stops").toArray())
             {
@@ -97,9 +108,9 @@ BackgroundStyle *BackgroundStyle::fromJson(const QJsonObject &jsonObj)
                 stops.append(QPair<int, float>(zoomStop, opacityStop));
             }
             returnLayer->m_backgroundOpacity.setValue(stops);
-        }else if(backgroundOpacity.isArray()){ //Case where the property is an expression
+            // Case where the property is an expression
             returnLayer->m_backgroundOpacity.setValue(backgroundOpacity.toArray());
-        }else{ //Case where the property is a numeric value
+            // Case where the property is a numeric value
             returnLayer->m_backgroundOpacity.setValue(backgroundOpacity.toDouble());
         }
     }
