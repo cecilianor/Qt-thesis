@@ -1,6 +1,7 @@
 #include <QGuiApplication>
 #include <QDir>
 #include <QFile>
+#include <QFontDatabase>
 
 #include "Utilities.h"
 
@@ -17,6 +18,17 @@
 
 int main(int argc, char *argv[]) {
     QGuiApplication app(argc, argv);
+
+    QFontDatabase::removeAllApplicationFonts();
+    int fontId = QFontDatabase::addApplicationFont(
+        Bach::OutputTester::buildBaselinePath() +
+        QDir::separator() +
+        "Roboto-Regular.ttf");
+    QStringList fontFamilies = QFontDatabase::applicationFontFamilies(fontId);
+    if (!fontFamilies.isEmpty()) {
+        QFont appFont(fontFamilies.first());
+        QGuiApplication::setFont(appFont);
+    }
 
     QDir expectedOutputFolder = Bach::OutputTester::buildBaselineExpectedOutputPath();
     if (expectedOutputFolder.exists()) {

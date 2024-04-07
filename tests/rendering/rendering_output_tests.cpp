@@ -1,9 +1,10 @@
-#include <QObject>
+#include <QFontDatabase>
 #include <QTest>
 #include <QProcess>
 
 #include "OutputTester.h"
 #include "Utilities.h"
+
 
 class RenderingTest : public QObject
 {
@@ -207,6 +208,18 @@ void writeIntoFailureReport(
 }
 
 void RenderingTest::compare_generated_images_to_baseline() {
+    QFontDatabase::removeAllApplicationFonts();
+    int fontId = QFontDatabase::addApplicationFont(
+        Bach::OutputTester::buildBaselinePath() +
+        QDir::separator() +
+        "Roboto-Regular.ttf");
+    QStringList fontFamilies = QFontDatabase::applicationFontFamilies(fontId);
+    if (!fontFamilies.isEmpty()) {
+        QFont appFont(fontFamilies.first());
+        QGuiApplication::setFont(appFont);
+    }
+
+
     QDir dir { "renderoutput_failures" };
     if (dir.exists()) {
         bool removeSuccess = dir.removeRecursively();
