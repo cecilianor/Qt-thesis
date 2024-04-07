@@ -226,7 +226,8 @@ static void paintVectorTile(
 
     // We start by iterating over each layer style, it determines the order
     // at which we draw the elements of the map.
-    for (const AbstractLayerStyle *abstractLayerStyle : styleSheet.m_layerStyles) {
+    for (const std::unique_ptr<AbstractLayerStyle> &abstractLayerStylePtr : styleSheet.m_layerStyles) {
+        const AbstractLayerStyle *abstractLayerStyle = abstractLayerStylePtr.get();
         if (isLayerHidden(*abstractLayerStyle, mapZoom))
             continue;
 
@@ -284,7 +285,8 @@ static void drawBackgroundColor(
 
     // We start by iterating over each layer style, it determines the order
     // at which we draw the elements of the map.
-    for (const AbstractLayerStyle *abstractLayerStyle : styleSheet.m_layerStyles) {
+    for (const std::unique_ptr<AbstractLayerStyle> &abstractLayerStylePtr : styleSheet.m_layerStyles) {
+        AbstractLayerStyle *abstractLayerStyle = abstractLayerStylePtr.get();
         // Background is a special case and has no associated layer.
         // We just draw it and move onto the next layer style.
         if (abstractLayerStyle->type() == AbstractLayerStyle::LayerType::background) {

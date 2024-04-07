@@ -267,7 +267,6 @@ bool VectorTile::DeserializeMessage(QByteArray data)
         std::unique_ptr<TileLayer> newLayerPtr = std::make_unique<TileLayer>(layer.version(), layer.name(), layer.extent());
         TileLayer *newLayer = newLayerPtr.get();
         m_layers.insert({layer.name(), std::move(newLayerPtr)});
-
         AbstractLayerFeature* newFeature = nullptr;
         QList<QString> layerKeys = layer.keys().toList();
         auto lyerValues = layer.values().toList();

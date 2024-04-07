@@ -54,9 +54,10 @@ static QColor getColorFromString(QString colorString)
      *
      * Returns a pointer of type BackgroundStyle to the newly created layer with the parsed properties.
      */
-BackgroundStyle *BackgroundStyle::fromJson(const QJsonObject &json)
+std::unique_ptr<BackgroundStyle> BackgroundStyle::fromJson(const QJsonObject &json)
 {
-    BackgroundStyle* returnLayer = new BackgroundStyle();
+    std::unique_ptr<BackgroundStyle> returnLayerPtr = std::make_unique<BackgroundStyle>();
+    BackgroundStyle* returnLayer = returnLayerPtr.get();
     //parsing layout properties
     QJsonObject layout = json.value("layout").toObject();
     //visibility property is parsed in AbstractLayerStyle::fromJson
@@ -101,7 +102,7 @@ BackgroundStyle *BackgroundStyle::fromJson(const QJsonObject &json)
         }
     }
 
-    return returnLayer;
+    return returnLayerPtr;
 }
 
 /*Returns the color for the sepcific zoom. The QVaraiant will contain a QColor if
@@ -156,9 +157,10 @@ QVariant BackgroundStyle::getOpacityAtZoom(int zoomLevel) const
      *
      * Returns a pointer of type FillLayerStyle to the newly created layer with the parsed properties.
      */
-FillLayerStyle *FillLayerStyle::fromJson(const QJsonObject &json)
+std::unique_ptr<FillLayerStyle> FillLayerStyle::fromJson(const QJsonObject &json)
 {
-    FillLayerStyle* returnLayer = new FillLayerStyle();
+    std::unique_ptr<FillLayerStyle> returnLayerPtr = std::make_unique<FillLayerStyle>();
+    FillLayerStyle* returnLayer = returnLayerPtr.get();
 
     //parsing layout properties
     QJsonObject layout = json.value("layout").toObject();
@@ -218,7 +220,7 @@ FillLayerStyle *FillLayerStyle::fromJson(const QJsonObject &json)
         }
     }
 
-    return returnLayer;
+    return returnLayerPtr;
 }
 
 
@@ -301,10 +303,10 @@ QVariant FillLayerStyle::getFillOutLineColorAtZoom(int zoomLevel) const
      *
      * Returns a pointer of type LineLayerStyle to the newly created layer with the parsed properties.
      */
-LineLayerStyle *LineLayerStyle::fromJson(const QJsonObject &json)
+std::unique_ptr<LineLayerStyle> LineLayerStyle::fromJson(const QJsonObject &json)
 {
-
-    LineLayerStyle* returnLayer = new LineLayerStyle();
+    std::unique_ptr<LineLayerStyle> returnLayerPtr = std::make_unique<LineLayerStyle>();
+    LineLayerStyle* returnLayer = returnLayerPtr.get();
 
     //parsing layout properties
     //visibility property is parsed in AbstractLayerStyle* AbstractLayerStyle::fromJson(const QJsonObject &json)
@@ -371,7 +373,7 @@ LineLayerStyle *LineLayerStyle::fromJson(const QJsonObject &json)
     }
 
 
-    return returnLayer;
+    return returnLayerPtr;
 }
 
 /*Returns the color for the sepcific zoom. The QVaraiant will contain a QColor if
@@ -471,9 +473,10 @@ Qt::PenCapStyle LineLayerStyle::getCapStyle() const
      *
      * Returns a pointer of type SymbolLayerStyle to the newly created layer with the parsed properties.
      */
-SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
+std::unique_ptr<SymbolLayerStyle> SymbolLayerStyle::fromJson(const QJsonObject &json)
 {
-    SymbolLayerStyle* returnLayer = new SymbolLayerStyle();
+    std::unique_ptr<SymbolLayerStyle> returnLayerPtr = std::make_unique<SymbolLayerStyle>();
+    SymbolLayerStyle *returnLayer = returnLayerPtr.get();
 
     //parsing layout properties
     QJsonObject layout = json.value("layout").toObject();
@@ -565,7 +568,7 @@ SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
         returnLayer->m_textHaloWidth = 0;
     }
 
-    return returnLayer;
+    return returnLayerPtr;
 }
 
 
@@ -642,10 +645,11 @@ QVariant SymbolLayerStyle::getTextOpacityAtZoom(int zoomLevel) const
 
 
 //For any layer with type value other than "background", "fill", "line", or "symbol".
-NotImplementedStyle* NotImplementedStyle::fromJson(const QJsonObject &json)
+std::unique_ptr<NotImplementedStyle> NotImplementedStyle::fromJson(const QJsonObject &json)
 {
+    std::unique_ptr<NotImplementedStyle> returnLayerPtr = std::make_unique<NotImplementedStyle>();
     NotImplementedStyle* returnLayer = new NotImplementedStyle();
-    return returnLayer;
+    return returnLayerPtr;
 }
 
 
@@ -662,22 +666,22 @@ NotImplementedStyle* NotImplementedStyle::fromJson(const QJsonObject &json)
      *
      * Returns a pointer of type NotImplementedStyle to the newly created layer with the parsed properties.
      */
-AbstractLayerStyle* AbstractLayerStyle::fromJson(const QJsonObject &json)
+std::unique_ptr<AbstractLayerStyle> AbstractLayerStyle::fromJson(const QJsonObject &json)
 {
     QString layerType = json.value("type").toString();
-    AbstractLayerStyle *newLayer = nullptr;
+    std::unique_ptr<AbstractLayerStyle> returnLayerPtr;
     if(layerType == "background"){
-        newLayer = BackgroundStyle::fromJson(json);
+        returnLayerPtr = BackgroundStyle::fromJson(json);
     }else if( layerType == "fill"){
-        newLayer = FillLayerStyle::fromJson(json);
+        returnLayerPtr = FillLayerStyle::fromJson(json);
     }else if(layerType == "line"){
-        newLayer =  LineLayerStyle::fromJson(json);
+        returnLayerPtr =  LineLayerStyle::fromJson(json);
     }else if(layerType == "symbol"){
-        newLayer = SymbolLayerStyle::fromJson(json);
+        returnLayerPtr = SymbolLayerStyle::fromJson(json);
     }else{
-        newLayer = NotImplementedStyle::fromJson(json);
+        returnLayerPtr = NotImplementedStyle::fromJson(json);
     }
-
+    AbstractLayerStyle *newLayer = returnLayerPtr.get();
     newLayer->m_id = json.value("id").toString();
     newLayer->m_source = json.value("source").toString();
     newLayer->m_sourceLayer = json.value("source-layer").toString();
@@ -693,7 +697,7 @@ AbstractLayerStyle* AbstractLayerStyle::fromJson(const QJsonObject &json)
     if(json.contains("filter")){
         newLayer->m_filter = json.value("filter").toArray();
     }
-    return newLayer;
+    return returnLayerPtr;
 }
 
 
@@ -723,7 +727,7 @@ void StyleSheet::parseSheet(const QJsonDocument &styleSheet)
 
     QJsonArray layers = styleSheetObject.value("layers").toArray();
     for(const auto &layer : layers){
-        m_layerStyles.append(AbstractLayerStyle::fromJson(layer.toObject()));
+        m_layerStyles.push_back(AbstractLayerStyle::fromJson(layer.toObject()));
     }
 }
 
