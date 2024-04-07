@@ -258,8 +258,6 @@ static void paintVectorTile(
 {
     QTransform geometryTransform;
     geometryTransform.scale(tileWidthPixels, tileWidthPixels);
-
-    QVector<QPair<int, PointFeature>> labels; //Used to order text rendering operation based on "rank" property.
     QVector<QRect> labelRects; //Used to prevent text overlapping.
 
     // We start by iterating over each layer style, it determines the order
