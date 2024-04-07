@@ -723,10 +723,11 @@ AbstractLayerStyle* AbstractLayerStyle::fromJson(const QJsonObject &jsonObj)
 }
 
 
-/*
- * ----------------------------------------------------------------------------
- */
+/* Stylesheet parsing functions are documented and implemented below. */
 
+/*!
+ * \brief StyleSheet::~StyleSheet is the StyleSheet class destructor.
+ */
 StyleSheet::~StyleSheet()
 {
     //for(auto layer : m_layerStyles) {
