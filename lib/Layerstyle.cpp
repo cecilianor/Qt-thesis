@@ -406,17 +406,19 @@ QVariant LineLayerStyle::getLineColorAtZoom(int zoomLevel) const
     }
 }
 
-/*Returns the opacity for the sepcific zoom. The QVaraiant will contain a float if
-     * the value is not an expression or a QJsonArray otherwise.
+/*!
+ * \brief LineLayerStyle::getLineOpacityAtZoom returns the opacity for
+ * a given zoom level.
      *
-     * Parameters:
-     *     zoomLevel the zoom level for which to calculate the opacity.
+ * The QVariant will contain a float if the value is not an expression,
+ * or a QJsonArray otherwise.
      *
-     * Returns a QVariant containing either a float or a QJsonArray with the information.
+ * \param zoomLevel is the zoom level for which to calculate the opacity.
+ * \return the opacity for the given zoom level.
      */
 QVariant LineLayerStyle::getLineOpacityAtZoom(int zoomLevel) const
 {
-    if(m_lineOpacity.isNull()){ // The default opacity in case no opacity is provided by the style sheet.
+        // The default opacity in case no opacity is provided by the style sheet.
         return QVariant(1);
     }else if(m_lineOpacity.typeId() != QMetaType::Type::Double && m_lineOpacity.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, float>> stops = m_lineOpacity.value<QList<QPair<int, float>>>();
