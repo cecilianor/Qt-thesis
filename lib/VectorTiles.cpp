@@ -4,9 +4,14 @@
 
 /*
  *
- * all the functions follow the mepbox vector tile specification:  https://github.com/mapbox/vector-tile-spec/tree/master/2.1
+ * all the functions follow the mapbox vector tile specification:  https://github.com/mapbox/vector-tile-spec/tree/master/2.1
  *
  *
+ */
+
+/*!
+ * \brief PolygonFeature::type
+ * \return the type of the feature
  */
 
 AbstractLayerFeature::featureType PolygonFeature::type() const
@@ -14,11 +19,21 @@ AbstractLayerFeature::featureType PolygonFeature::type() const
     return AbstractLayerFeature::featureType::polygon;
 }
 
+/*!
+ * \brief PolygonFeature::polygon
+ * getter for the feature's geometry
+ * \return the QPainterPath that contains the decoded geometry as a const refrence
+ */
 QPainterPath const& PolygonFeature::polygon() const
 {
     return m_polygon;
 }
 
+/*!
+ * \brief PolygonFeature::polygon
+ * getter for the feature's geometry
+ * \return a refrence to the QPainterPath that contains the decoded geometry
+ */
 QPainterPath& PolygonFeature::polygon() {
     return m_polygon;
 }
@@ -26,39 +41,78 @@ QPainterPath& PolygonFeature::polygon() {
 /*
  * ----------------------------------------------------------------------------
  */
+
+/*!
+ * \brief LineFeature::type
+ * \return the type of the feature
+ */
 AbstractLayerFeature::featureType LineFeature::type() const
 {
     return AbstractLayerFeature::featureType::line;
 }
 
+/*!
+ * \brief LineFeature::line
+ * getter for the feature's geometry
+ * \return the QPainterPath that contains the decoded geometry as a const refrence
+ */
 QPainterPath const& LineFeature::line() const
 {
     return m_line;
 }
 
+/*!
+ * \brief LineFeature::line
+ * getter for the feature's geometry
+ * \return a refrence to the QPainterPath that contains the decoded geometry
+ */
 QPainterPath& LineFeature::line()
 {
     return m_line;
 }
+
 /*
  * ----------------------------------------------------------------------------
+ */
+
+/*!
+ * \brief PointFeature::type
+ * \return the type of the feature
  */
 AbstractLayerFeature::featureType PointFeature::type() const
 {
     return AbstractLayerFeature::featureType::point;
 }
 
+/*!
+ * \brief PointFeature::addPoint
+ * getter for the feature's geometry
+ * \return a refrence to the QPainterPath that contains the decoded geometry
+ */
 void PointFeature::addPoint(QPoint point)
 {
     m_points.append(point);
 }
 
+/*!
+ * \brief PointFeature::points
+ * getter for the feature's geometry
+ * \return the QPainterPath that contains the decoded geometry as a const refrence
+ */
 QList<QPoint> PointFeature::points() const
 {
     return m_points;
 }
 /*
  * ----------------------------------------------------------------------------
+ */
+
+/*!
+ * \brief TileLayer::TileLayer
+ * class constructor.
+ * \param version major version number of the tile
+ * \param name name of the tile, used as the ID
+ * \param extent the dimentions for the coordinate system used in the tile geometry
  */
 TileLayer::TileLayer(int version, QString name, int extent)
     : m_version(version),
@@ -69,16 +123,31 @@ TileLayer::TileLayer(int version, QString name, int extent)
 TileLayer::~TileLayer() {
 }
 
+/*!
+ * \brief TileLayer::version
+ * Getter for the tile version
+ * \return the tile version
+ */
 int TileLayer::version() const
 {
     return m_version;
 }
 
+/*!
+ * \brief TileLayer::name
+ * Getter for the tile name
+ * \return the tile name
+ */
 QString TileLayer::name() const
 {
     return m_name;
 }
 
+/*!
+ * \brief TileLayer::extent
+ * Getter for the tile extent
+ * \return the tileExtent
+ */
 int TileLayer::extent() const
 {
     return m_extent;
@@ -88,13 +157,12 @@ int TileLayer::extent() const
  * ----------------------------------------------------------------------------
  */
 
-/* Decode the geometry of a layer's polygon feature from the desrialized protocol buffer.
-     *
-     * Parameters:
-     *      feature expects a refrence to the layer's feature from the deserialized protocol buffer
-     *
-     * Returns a pointer of type PolygonFeature conatininf the decoded geometry as a QPainterPath.
-     */
+/*!
+ * \brief polygonFeatureFromProto
+ * Decode the geometry of a layer's polygon feature from the desrialized protocol buffer.
+ * \param feature a refrence to the layer's feature from the deserialized protocol buffer
+ * \return a pointer of type PolygonFeature conatininf the decoded geometry as a QPainterPath.
+ */
 PolygonFeature* polygonFeatureFromProto(const vector_tile::Tile::Feature &feature)
 {
     PolygonFeature *newFeature = new PolygonFeature();
@@ -135,13 +203,13 @@ PolygonFeature* polygonFeatureFromProto(const vector_tile::Tile::Feature &featur
     return newFeature;
 }
 
-/* Decode the geometry of a layer's line feature from the desrialized protocol buffer.
-     *
-     * Parameters:
-     *      feature expects a refrence to the layer's feature from the deserialized protocol buffer
-     *
-     * Returns a pointer of type LineFeature conatininf the decoded geometry as a QPainterPath.
-     */
+
+/*!
+ * \brief lineFeatureFromProto
+ *  Decode the geometry of a layer's line feature from the desrialized protocol buffer.
+ * \param feature a refrence to the layer's feature from the deserialized protocol buffer
+ * \return a pointer of type LineFeature conatininf the decoded geometry as a QPainterPath.
+ */
 LineFeature* lineFeatureFromProto(const vector_tile::Tile::Feature &feature)
 {
     LineFeature *newFeature = new LineFeature();
@@ -173,13 +241,12 @@ LineFeature* lineFeatureFromProto(const vector_tile::Tile::Feature &feature)
     return newFeature;
 }
 
-/* Decode the geometry of a layer's point feature from the desrialized protocol buffer.
-     *
-     * Parameters:
-     *      feature expects a refrence to the layer's feature from the deserialized protocol buffer
-     *
-     * Returns a pointer of type PointFeature conatininf the decoded geometry as a QList<QPoint>.
-     */
+/*!
+ * \brief pointFeatureFromProto
+ * Decode the geometry of a layer's point feature from the desrialized protocol buffer.
+ * \param feature a refrence to the layer's feature from the deserialized protocol buffer.
+ * \return a pointer of type PointFeature conatininf the decoded geometry as a QList<QPoint>.
+ */
 PointFeature* pointFeatureFromProto(const vector_tile::Tile::Feature &feature)
 {
     PointFeature *newFeature = new PointFeature();
@@ -208,8 +275,20 @@ PointFeature* pointFeatureFromProto(const vector_tile::Tile::Feature &feature)
 /*Extracts the feature's metadata from the layers keys and values lists
  *
 */
+/*!
+ * \brief populateFeatureMetaData
+ * Extracts the feature's metadata from the layers keys and values lists
+ * \param feature a pointer to the feature whose metadata is to be extracted.
+ * \param keys a list of the keys in the encoded feature metadata
+ * \param values a list of values that's used to decode the feature's keys list
+ */
 void populateFeatureMetaData(AbstractLayerFeature* feature, QList<QString> &keys, QList<vector_tile::Tile_QtProtobufNested::Value> &values)
 {
+    //The feature's keys list is the features metadata encoded using the tile's values list.
+    //The kayes list length is always expected to be even.
+    //the nth element in the keys list corresponds to the (n/2)th element in the metadata map after decoding,
+    // and the n+1 th element in the keys list correspond to the value for the (n/2) element in the metadata map after decoding.
+    //The keys elements' values map to the tile values list's indecies.
     if(!feature || feature->tags.length() < 2) return;
     for(int i = 0; i <= feature->tags.length() - 2; i += 2){
         int keyIndex = feature->tags.at(i);
@@ -244,14 +323,14 @@ VectorTile::VectorTile() {
 VectorTile::~VectorTile() {
 }
 
-/* Deserialize and extracts all the layers in the tile protocol buffer,
-     * then iterates therough each layer's features and
-     * calls the apropriate function to decode the feature's geometry.
-     *
-     * Parameters:
-     *      data expects a QByteArray containing the raw protocol buffer.
-     *
-     */
+/*!
+ * \brief VectorTile::DeserializeMessage
+ * Deserialize and extracts all the layers in the tile protocol buffer,
+ * then iterates through each layer's features and
+ * calls the apropriate function to decode the feature's geometry and metadata.
+ * \param data a QByteArray containing the raw protocol buffer.
+ * \return true if the tile was succesfully decoded, or false otherwise
+ */
 bool VectorTile::DeserializeMessage(QByteArray data)
 {
     QProtobufSerializer serializer;
