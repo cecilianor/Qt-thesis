@@ -1,6 +1,7 @@
-#include "Layerstyle.h"
 #include <QRegularExpression>
 #include <QtMath>
+
+#include "Layerstyle.h"
 
 /* Create a QColor obecject from an hsl color string.
      *The string is expected to be in one of the following formats:

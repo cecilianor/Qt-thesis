@@ -1,7 +1,7 @@
+#include <functional>
+
 #include "Evaluator.h"
 #include "Rendering.h"
-
-#include <functional>
 
 /*!
  * \internal

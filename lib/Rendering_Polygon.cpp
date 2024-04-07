@@ -1,5 +1,5 @@
-#include "Rendering.h"
 #include "Evaluator.h"
+#include "Rendering.h"
 
 /*!
  * \brief getFillColor

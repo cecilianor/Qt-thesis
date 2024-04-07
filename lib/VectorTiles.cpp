@@ -1,6 +1,7 @@
+#include <QProtobufSerializer>
+
 #include "VectorTiles.h"
 #include "vector_tile.qpb.h"
-#include <QProtobufSerializer>
 
 /*
  *

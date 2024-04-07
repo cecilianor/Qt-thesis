@@ -3,10 +3,10 @@
 
 #include <QByteArray>
 #include <QFile>
-#include <QRect>
-#include <QMap>
 #include <QList>
+#include <QMap>
 #include <QPainterPath>
+#include <QRect>
 
 #include <optional>
 

@@ -1,19 +1,19 @@
 #ifndef TILELOADER_H
 #define TILELOADER_H
 
-#include <QObject>
-#include <QUrl>
-#include <QJsonObject>
 #include <QJsonArray>
+#include <QJsonObject>
 #include <QMutex>
 #include <QMutexLocker>
 #include <QNetworkAccessManager>
+#include <QObject>
 #include <QThreadPool>
+#include <QUrl>
 
-#include <set>
 #include <functional>
-#include <memory>
 #include <map>
+#include <memory>
+#include <set>
 
 #include "RequestTilesResult.h"
 #include "TileCoord.h"

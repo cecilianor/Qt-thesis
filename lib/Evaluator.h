@@ -1,11 +1,14 @@
 #ifndef EVALUATOR_H
 #define EVALUATOR_H
-#include <QString>
-#include <QVariant>
-#include "VectorTiles.h"
+
+#include <QChar>
 #include <QJsonArray>
 #include <QMap>
-#include <QChar>
+#include <QString>
+#include <QVariant>
+
+#include "VectorTiles.h"
+
 class Evaluator
 {
 public:

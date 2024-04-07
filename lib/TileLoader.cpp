@@ -1,16 +1,16 @@
 #include <QBuffer>
-#include <QJsonObject>
+#include <QCoreApplication>
+#include <QDir>
+#include <QFile>
 #include <QJsonArray>
 #include <QJsonDocument>
-#include <QFile>
+#include <QJsonObject>
 #include <QNetworkReply>
-#include <QDir>
-#include <QCoreApplication>
 #include <QScopeGuard>
 #include <QStandardPaths>
 
-#include "TileLoader.h"
 #include "TileCoord.h"
+#include "TileLoader.h"
 #include "Utilities.h"
 
 // This might not be ideal place to define this struct.

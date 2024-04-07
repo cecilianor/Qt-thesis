@@ -1,7 +1,7 @@
+#include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonValue>
-#include <QFile>
 #include <QObject>
 #include <QTest>
 

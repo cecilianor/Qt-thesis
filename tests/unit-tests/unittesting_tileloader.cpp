@@ -1,6 +1,6 @@
-#include <QtEnvironmentVariables>
 #include <QJsonDocument>
 #include <QObject>
+#include <QtEnvironmentVariables>
 #include <QTest>
 #include <QTimer>
 

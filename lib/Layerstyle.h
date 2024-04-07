@@ -1,15 +1,15 @@
 #ifndef LAYERSTYLE_H
 #define LAYERSTYLE_H
 
-#include <QtTypes>
-#include <QString>
 #include <QColor>
-#include <QImage>
 #include <QFont>
+#include <QImage>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QJsonArray>
 #include <QPen>
+#include <QString>
+#include <QtTypes>
 
 #include <optional>
 
