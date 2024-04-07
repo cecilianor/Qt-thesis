@@ -118,17 +118,19 @@ BackgroundStyle *BackgroundStyle::fromJson(const QJsonObject &jsonObj)
     return returnLayer;
 }
 
-/*Returns the color for the sepcific zoom. The QVaraiant will contain a QColor if
-     * the value is not an expression or a QJsonArray otherwise.
+/*!
+ * \brief BackgroundStyle::getColorAtZoom returns the color for
+ * a given zoom level.
      *
-     * Parameters:
-     *     zoomLevel the zoom level for which to calculate the color.
+ * The QVariant will contain a QColor if the value is not an expression
+ * or a QJsonArray otherwise.
      *
-     * Returns a QVariant containing either a QColor or a QJsonArray with the information.
+ * \param zoomLevel is the zoom level for which to calculate the color.
+ * \return a QVariant containing a QColor or QJsonArray with color information.
      */
 QVariant BackgroundStyle::getColorAtZoom(int zoomLevel) const
 {
-    if(m_backgroundColor.isNull()){ // The default color in case no color is provided by the style sheet.
+        // The default color in case no color is provided by the style sheet.
         return QColor(Qt::GlobalColor::black);
     }else if(m_backgroundColor.typeId() != QMetaType::Type::QColor && m_backgroundColor.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, QColor>> stops = m_backgroundColor.value<QList<QPair<int, QColor>>>();
