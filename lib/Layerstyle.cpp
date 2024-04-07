@@ -141,17 +141,19 @@ QVariant BackgroundStyle::getColorAtZoom(int zoomLevel) const
     }
 }
 
-/*Returns the opacity for the sepcific zoom. The QVaraiant will contain a float if
-     * the value is not an expression or a QJsonArray otherwise.
+/*!
+ * \brief BackgroundStyle::getOpacityAtZoom returns the opacity for
+ * a given zoom level.
      *
-     * Parameters:
-     *     zoomLevel the zoom level for which to calculate the opacity.
+ * The returned value will contain a float if the value is not an expression,
+ * or a QJsonArray otherwise.
      *
-     * Returns a QVariant containing either a float or a QJsonArray with the opacity information.
+ * \param zoomLevel is the zoom level for which to calculate the opacity.
+ * \return a QVariant containing a float or QJsonArray with opacity information.
      */
 QVariant BackgroundStyle::getOpacityAtZoom(int zoomLevel) const
 {
-    if(m_backgroundOpacity.isNull()){ // The default opacity in case no opacity is provided by the style sheet.
+        // The default opacity in case no opacity is provided by the style sheet.
         return QVariant(1);
     }else if(m_backgroundOpacity.typeId() != QMetaType::Type::Double && m_backgroundOpacity.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, float>> stops = m_backgroundOpacity.value<QList<QPair<int, float>>>();
