@@ -488,28 +488,24 @@ Qt::PenCapStyle LineLayerStyle::getCapStyle() const
     }
 }
 
-/*
- * ----------------------------------------------------------------------------
- */
-
-/*Parses the data from a QJsonObject containing styling properties of a layer of type symbol.
+/*!
+ * \brief SymbolLayerStyle::fromJson parses style properties of a
+ * layer of type 'symbol'.
      *
-     * Parameters:
-     *     json expects a refrence to the json object containing the data.
-     *
-     * Returns a pointer of type SymbolLayerStyle to the newly created layer with the parsed properties.
+ * \param jsonObj is the JSON object containing layer style data.
+ * \return a pointer of type SymbolLayerStyle to the newly created layer
      */
 SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
 {
     SymbolLayerStyle* returnLayer = new SymbolLayerStyle();
 
-    //parsing layout properties
+    // Parsing layout properties.
     QJsonObject layout = json.value("layout").toObject();
-    //visibility property is parsed in AbstractLayerStyle* AbstractLayerStyle::fromJson(const QJsonObject &json)
+    // Visibility property is parsed in AbstractLayerStyle* AbstractLayerStyle::fromJson(const QJsonObject &json)
 
     if(layout.contains("text-size")){
         QJsonValue textSize = layout.value("text-size");
-        if(textSize.isObject()){ //Case where the property is an object that has "Stops"
+            // Case where the property is an object that has "Stops".
             QList<QPair<int, int>> stops;
             for(const auto &stop : textSize.toObject().value("stops").toArray()){
                 int zoomStop = stop.toArray().first().toInt();
@@ -517,23 +513,22 @@ SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
                 stops.append(QPair<int, int>(zoomStop, sizeStop));
             }
             returnLayer->m_textSize.setValue(stops);
-        }else if(textSize.isArray()){ //Case where the property is an expression
+            // Case where the property is an expression.
             returnLayer->m_textSize.setValue(textSize.toArray());
-        }else{ //Case where the property is a numeric value
+            // Case where the property is a numeric value.
             returnLayer->m_textSize.setValue(textSize.toInt());
         }
     }
 
     if(layout.contains("text-font")){
         returnLayer->m_textFont = layout.value("text-font").toVariant().toStringList();
-    }else{ // Default value for the font if no value was provided
+        // Default value for the font if no value was provided.
         returnLayer->m_textFont = {"Open Sans Regular","Arial Unicode MS Regular"};
     }
 
-    if(layout.contains("text-field")){
-        if(layout.value("text-field").isArray()){ //Case where the property is an expression
+            // Case where the property is an expression.
             returnLayer->m_textField = QVariant(layout.value("text-field").toArray());
-        }else{ //Case where the property is a string value
+            // Case where the property is a string value.
             returnLayer->m_textField = QVariant(layout.value("text-field").toString());
         }
 
@@ -544,11 +539,11 @@ SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
     }else{
         returnLayer->m_textMaxWidth = 10;
     }
-    //parsing paint properties
+    // Parsing paint properties.
     QJsonObject paint = jsonObj.value("paint").toObject();
     if(paint.contains("text-color")){
         QJsonValue textColor = paint.value("text-color");
-        if(textColor.isObject()){ //Case where the property is an object that has "Stops"
+            // Case where the property is an object that has "Stops".
             QList<QPair<int, QColor>> stops;
             for(const auto &stop : textColor.toObject().value("stops").toArray()){
                 int zoomStop = stop.toArray().first().toInt();
@@ -556,16 +551,16 @@ SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
                 stops.append(QPair<int, QColor>(zoomStop, colorStop));
             }
             returnLayer->m_textColor.setValue(stops);
-        }else if(textColor.isArray()){ //Case where the property is an expression
+            // Case where the property is an expression.
             returnLayer->m_textColor.setValue(textColor.toArray());
-        }else{ //Case where the property is a color value
+            // Case where the property is a color value.
             returnLayer->m_textColor.setValue(getColorFromString(textColor.toString()));
         }
     }
 
     if(paint.contains("text-opacity")){
         QJsonValue textOpacity = paint.value("text-opacity");
-        if(textOpacity.isObject()){ //Case where the property is an object that has "Stops"
+            // Case where the property is an object that has "Stops".
             QList<QPair<int, float>> stops;
             for(const auto &stop : textOpacity.toObject().value("stops").toArray()){
                 int zoomStop = stop.toArray().first().toInt();
@@ -573,9 +568,9 @@ SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
                 stops.append(QPair<int, float>(zoomStop, opacityStop));
             }
             returnLayer->m_textOpacity.setValue(stops);
-        }else if(textOpacity.isArray()){ //Case where the property is an expression
+            // Case where the property is an expression.
             returnLayer->m_textOpacity.setValue(textOpacity.toArray());
-        }else{ //Case where the property is a numeric value
+            // Case where the property is a numeric value.
             returnLayer->m_textOpacity.setValue(textOpacity.toDouble());
         }
     }
