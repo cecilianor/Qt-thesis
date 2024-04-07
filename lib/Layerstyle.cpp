@@ -672,19 +672,21 @@ NotImplementedStyle* NotImplementedStyle::fromJson(const QJsonObject &jsonObj)
     return returnLayer;
 }
 
-
-
-/*
- * ----------------------------------------------------------------------------
- */
-
-
-/*Parses basic properties of layerstyles that are not background, fill, line, or symbol.
-     *
-     * Parameters:
-     *     json expects a refrence to the json object containing the data.
-     *
-     * Returns a pointer of type NotImplementedStyle to the newly created layer with the parsed properties.
+/*!
+ * \brief AbstractLayerStyle::fromJson parses different layer style types.
+ *
+ * The layerType data type is converted to strings.
+ *
+ * Supported layer types:
+ * - "background"
+ * - "fill"
+ * - "line"
+ * - "symbol"
+ *
+ * - Otherwise: NotImplementedStyle will be used.
+ *
+ * \param jsonObj is the JsonObject to parse
+ * \return The Abstract Layer style with all parsed data.
      */
 AbstractLayerStyle* AbstractLayerStyle::fromJson(const QJsonObject &jsonObj)
 {
