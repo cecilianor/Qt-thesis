@@ -126,7 +126,7 @@ class SymbolLayerStyle : public AbstractLayerStyle
 public:
     SymbolLayerStyle(){};
     ~SymbolLayerStyle(){};
-    static SymbolLayerStyle* fromJson(const QJsonObject &json);
+    static SymbolLayerStyle* fromJson(const QJsonObject &jsonObj);
     AbstractLayerStyle::LayerType type() const override {return AbstractLayerStyle::LayerType::symbol;};
     QVariant getTextSizeAtZoom(int zoomLevel) const;
     QVariant getTextColorAtZoom(int zoomLevel) const;

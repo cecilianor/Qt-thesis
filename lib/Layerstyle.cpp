@@ -57,15 +57,15 @@ static QColor getColorFromString(QString colorString)
      *
      * Returns a pointer of type BackgroundStyle to the newly created layer with the parsed properties.
      */
-BackgroundStyle *BackgroundStyle::fromJson(const QJsonObject &json)
+BackgroundStyle *BackgroundStyle::fromJson(const QJsonObject &jsonObj)
 {
     BackgroundStyle* returnLayer = new BackgroundStyle();
     //parsing layout properties
-    QJsonObject layout = json.value("layout").toObject();
+    QJsonObject layout = jsonObj.value("layout").toObject();
     //visibility property is parsed in AbstractLayerStyle::fromJson
 
     //parsing paint properties
-    QJsonObject paint = json.value("paint").toObject();
+    QJsonObject paint = jsonObj.value("paint").toObject();
     if(paint.contains("background-color"))
     {
         QJsonValue backgroundColor = paint.value("background-color");
@@ -159,16 +159,15 @@ QVariant BackgroundStyle::getOpacityAtZoom(int zoomLevel) const
      *
      * Returns a pointer of type FillLayerStyle to the newly created layer with the parsed properties.
      */
-FillLayerStyle *FillLayerStyle::fromJson(const QJsonObject &json)
+FillLayerStyle *FillLayerStyle::fromJson(const QJsonObject &jsonObj)
 {
     FillLayerStyle* returnLayer = new FillLayerStyle();
 
     //parsing layout properties
-    QJsonObject layout = json.value("layout").toObject();
+    QJsonObject layout = jsonObj.value("layout").toObject();
     //visibility property is parsed in AbstractLayerStyle* AbstractLayerStyle::fromJson(const QJsonObject &json)
 
-    //parsing paint properties
-    QJsonObject paint = json.value("paint").toObject();
+    QJsonObject paint = jsonObj.value("paint").toObject();
     //Get the antialiasing property from the style sheet or set it to true as a default.
     returnLayer->m_antialias = paint.contains("fill-antialias") ? paint.value("fill-antialias").toBool() : true;
     if(paint.contains("fill-color")){
@@ -304,18 +303,14 @@ QVariant FillLayerStyle::getFillOutLineColorAtZoom(int zoomLevel) const
      *
      * Returns a pointer of type LineLayerStyle to the newly created layer with the parsed properties.
      */
-LineLayerStyle *LineLayerStyle::fromJson(const QJsonObject &json)
+LineLayerStyle *LineLayerStyle::fromJson(const QJsonObject &jsonObj)
 {
 
     LineLayerStyle* returnLayer = new LineLayerStyle();
 
-    //parsing layout properties
-    //visibility property is parsed in AbstractLayerStyle* AbstractLayerStyle::fromJson(const QJsonObject &json)
-    QJsonObject layout = json.value("layout").toObject();
-    returnLayer->m_lineCap = layout.contains("line-cap") ? layout.value("line-cap").toString() : QString("butt");
-    returnLayer->m_lineJoin = layout.contains("line-join") ? layout.value("line-join").toString() : QString("miter");
+    QJsonObject layout = jsonObj.value("layout").toObject();
     //parsing paint properties
-    QJsonObject paint = json.value("paint").toObject();
+    QJsonObject paint = jsonObj.value("paint").toObject();
     if(paint.contains("line-dasharray")){
         for(const auto &length: paint.value("line-dasharray").toArray()){
             returnLayer->m_lineDashArray.append(length.toInt());
@@ -520,7 +515,7 @@ SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
         returnLayer->m_textMaxWidth = 10;
     }
     //parsing paint properties
-    QJsonObject paint = json.value("paint").toObject();
+    QJsonObject paint = jsonObj.value("paint").toObject();
     if(paint.contains("text-color")){
         QJsonValue textColor = paint.value("text-color");
         if(textColor.isObject()){ //Case where the property is an object that has "Stops"
@@ -639,13 +634,7 @@ QVariant SymbolLayerStyle::getTextOpacityAtZoom(int zoomLevel) const
     }
 }
 
-/*
- * ----------------------------------------------------------------------------
- */
-
-
-//For any layer with type value other than "background", "fill", "line", or "symbol".
-NotImplementedStyle* NotImplementedStyle::fromJson(const QJsonObject &json)
+NotImplementedStyle* NotImplementedStyle::fromJson(const QJsonObject &jsonObj)
 {
     NotImplementedStyle* returnLayer = new NotImplementedStyle();
     return returnLayer;
@@ -665,36 +654,36 @@ NotImplementedStyle* NotImplementedStyle::fromJson(const QJsonObject &json)
      *
      * Returns a pointer of type NotImplementedStyle to the newly created layer with the parsed properties.
      */
-AbstractLayerStyle* AbstractLayerStyle::fromJson(const QJsonObject &json)
+AbstractLayerStyle* AbstractLayerStyle::fromJson(const QJsonObject &jsonObj)
 {
-    QString layerType = json.value("type").toString();
+    QString layerType = jsonObj.value("type").toString();
     AbstractLayerStyle *newLayer = nullptr;
     if(layerType == "background"){
-        newLayer = BackgroundStyle::fromJson(json);
+        newLayer = BackgroundStyle::fromJson(jsonObj);
     }else if( layerType == "fill"){
-        newLayer = FillLayerStyle::fromJson(json);
+        newLayer = FillLayerStyle::fromJson(jsonObj);
     }else if(layerType == "line"){
-        newLayer =  LineLayerStyle::fromJson(json);
+        newLayer =  LineLayerStyle::fromJson(jsonObj);
     }else if(layerType == "symbol"){
-        newLayer = SymbolLayerStyle::fromJson(json);
+        newLayer = SymbolLayerStyle::fromJson(jsonObj);
     }else{
         newLayer = NotImplementedStyle::fromJson(json);
     }
 
-    newLayer->m_id = json.value("id").toString();
-    newLayer->m_source = json.value("source").toString();
-    newLayer->m_sourceLayer = json.value("source-layer").toString();
-    newLayer->m_minZoom = json.value("minzoom").toInt(0);
-    newLayer->m_maxZoom = json.value("maxzoom").toInt(24);
-    QJsonValue layout = json.value("layout");
+    newLayer->m_id = jsonObj.value("id").toString();
+    newLayer->m_source = jsonObj.value("source").toString();
+    newLayer->m_sourceLayer = jsonObj.value("source-layer").toString();
+    newLayer->m_minZoom = jsonObj.value("minzoom").toInt(0);
+    newLayer->m_maxZoom = jsonObj.value("maxzoom").toInt(24);
+    QJsonValue layout = jsonObj.value("layout");
     if(layout != QJsonValue::Undefined){
         newLayer->m_visibility = (layout.toObject().contains("visibility")) ? layout.toObject().value("visibility").toString() : "none";
     } else {
         newLayer->m_visibility = QString("none");
     }
 
-    if(json.contains("filter")){
-        newLayer->m_filter = json.value("filter").toArray();
+    if (jsonObj.contains("filter")){
+        newLayer->m_filter = jsonObj.value("filter").toArray();
     }
     return newLayer;
 }
