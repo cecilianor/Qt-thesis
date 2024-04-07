@@ -735,11 +735,12 @@ StyleSheet::~StyleSheet()
     //}
 }
 
-/*Parses the entire style sheet and populates the layers array of the StyleSheet object.
+/*!
+ * \brief StyleSheet::parseSheet parses a style sheet and populates the
+ * layers array of a styleSheetObject.
      *
-     * Parameters:
-     *     styleSheet expects a refrence to the json document containing the style sheet.
-     *
+ * \param styleSheet is a style sheet to parse, passed as a reference to
+ * a QJsonDocument.
      */
 void StyleSheet::parseSheet(const QJsonDocument &styleSheet)
 {
