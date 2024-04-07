@@ -243,18 +243,18 @@ FillLayerStyle *FillLayerStyle::fromJson(const QJsonObject &jsonObj)
     return returnLayer;
 }
 
-
-/*Returns the color for the sepcific zoom. The QVaraiant will contain a QColor if
-     * the value is not an expression or a QJsonArray otherwise.
+/*!
+ * \brief FillLayerStyle::getFillColorAtZoom returns the color for a given zoom.
      *
-     * Parameters:
-     *     zoomLevel the zoom level for which to calculate the color.
+ * The QVariant will contain a QColor if the value is not an expression,
+ *  or a QJsonArray otherwise.
      *
-     * Returns a QVariant containing either a QColor or a QJsonArray with the information.
+ * \param zoomLevel is the zoom level for which to calculate the color.
+ * \return a QVariant containing either a QColor or a QJsonArray with the data.
      */
 QVariant FillLayerStyle::getFillColorAtZoom(int zoomLevel) const
 {
-    if(m_fillColor.isNull()){ // The default color in case no color is provided by the style sheet.
+        // The default color in case no color is provided by the style sheet.
         return QColor(Qt::GlobalColor::black);
     }else if(m_fillColor.typeId() != QMetaType::Type::QColor && m_fillColor.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, QColor>> stops = m_fillColor.value<QList<QPair<int, QColor>>>();
