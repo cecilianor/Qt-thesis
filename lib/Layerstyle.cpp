@@ -614,17 +614,15 @@ QVariant SymbolLayerStyle::getTextSizeAtZoom(int zoomLevel) const
     }
 }
 
-/*Returns the color for the sepcific zoom. The QVaraiant will contain a QColor if
-     * the value is not an expression or a QJsonArray otherwise.
-     *
-     * Parameters:
-     *     zoomLevel the zoom level for which to calculate the color.
-     *
-     * Returns a QVariant containing either a QColor or a QJsonArray with the information.
+/*!
+ * \brief SymbolLayerStyle::getTextColorAtZoom returns the color for a given zoom level.
+ *
+ * \param zoomLevel is the zoom level for which to calculate the color.
+ * \return a QVariant with either QColor or a QJsonArray with data.
      */
 QVariant SymbolLayerStyle::getTextColorAtZoom(int zoomLevel) const
 {
-    if(m_textColor.isNull()){ // The default color in case no color is provided by the style sheet.
+        // The default color in case no color is provided by the style sheet.
         return QVariant(QColor(Qt::GlobalColor::black));
     }else if(m_textColor.typeId() != QMetaType::Type::QColor && m_textColor.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, QColor>> stops = m_textColor.value<QList<QPair<int, QColor>>>();
