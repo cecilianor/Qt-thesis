@@ -192,7 +192,8 @@ FillLayerStyle *FillLayerStyle::fromJson(const QJsonObject &jsonObj)
         QJsonValue fillColor = paint.value("fill-color");
             //Case where the property is an object that has "Stops".
             QList<QPair<int, QColor>> stops;
-            for(const auto &stop : fillColor.toObject().value("stops").toArray()){
+            for (const auto &stop
+                 : static_cast<const QJsonArray&>(fillColor.toObject().value("stops").toArray())){
                 int zoomStop = stop.toArray().first().toInt();
                 QColor colorStop = getColorFromString(stop.toArray().last().toString());
                 stops.append(QPair<int, QColor>(zoomStop, colorStop));
@@ -209,7 +210,8 @@ FillLayerStyle *FillLayerStyle::fromJson(const QJsonObject &jsonObj)
         QJsonValue fillOpacity = paint.value("fill-opacity");
             // Case where the property is an object that has "Stops".
             QList<QPair<int, float>> stops;
-            for(const auto &stop : fillOpacity.toObject().value("stops").toArray()){
+            for (const auto &stop
+                 : static_cast<const QJsonArray&>(fillOpacity.toObject().value("stops").toArray())){
                 int zoomSopt = stop.toArray().first().toInt();
                 float opacityStop = stop.toArray().last().toDouble();
                 stops.append(QPair<int, float>(zoomSopt, opacityStop));
@@ -226,6 +228,8 @@ FillLayerStyle *FillLayerStyle::fromJson(const QJsonObject &jsonObj)
         QJsonValue fillOutlineColor = paint.value("fill-outline-color");
             // Case where the property is an object that has "Stops".
             QList<QPair<int, QColor>> stops;
+            for (const auto &stop
+                 : static_cast<const QJsonArray&>(fillOutlineColor.toObject().value("stops").toArray())){
                 /* BEWARE!*/
                 // This could potentially be a bug. Talk to Eimen to see what to do here.
                 /* BEWARE*/
@@ -323,8 +327,7 @@ LineLayerStyle *LineLayerStyle::fromJson(const QJsonObject &jsonObj)
     QJsonObject layout = jsonObj.value("layout").toObject();
     // Parsing paint properties.
     QJsonObject paint = jsonObj.value("paint").toObject();
-    if(paint.contains("line-dasharray")){
-        for(const auto &length: paint.value("line-dasharray").toArray()){
+             : static_cast<const QJsonArray&>(paint.value("line-dasharray").toArray())){
             returnLayer->m_lineDashArray.append(length.toInt());
         }
     }
@@ -333,7 +336,7 @@ LineLayerStyle *LineLayerStyle::fromJson(const QJsonObject &jsonObj)
         QJsonValue lineColor = paint.value("line-color");
             //Case where the property is an object that has "Stops".
             QList<QPair<int, QColor>> stops;
-            for(const auto &stop : lineColor.toObject().value("stops").toArray()){
+                 : static_cast<const QJsonArray&>(lineColor.toObject().value("stops").toArray())){
                 int zoomStop = stop.toArray().first().toInt();
                 QColor colorStop = getColorFromString(stop.toArray().last().toString());
                 stops.append(QPair<int , QColor>(zoomStop, colorStop));
@@ -350,7 +353,7 @@ LineLayerStyle *LineLayerStyle::fromJson(const QJsonObject &jsonObj)
         QJsonValue lineOpacity = paint.value("line-opacity");
             // Case where the property is an object that has "Stops".
             QList<QPair<int, float>> stops;
-            for(const auto &stop : lineOpacity.toObject().value("stops").toArray()){
+                 : static_cast<const QJsonArray&>(lineOpacity.toObject().value("stops").toArray())){
                 int zoomStop = stop.toArray().first().toInt();
                 float opacityStop = stop.toArray().last().toDouble();
                 stops.append(QPair<int , float>(zoomStop, opacityStop));
@@ -367,7 +370,7 @@ LineLayerStyle *LineLayerStyle::fromJson(const QJsonObject &jsonObj)
         QJsonValue lineWidth = paint.value("line-width");
             // Case where the property is an object that has "Stops".
             QList<QPair<int, int>> stops;
-            for(const auto &stop : lineWidth.toObject().value("stops").toArray()){
+                 static_cast<const QJsonArray&>(lineWidth.toObject().value("stops").toArray())){
                 int zoomStop = stop.toArray().first().toInt();
                 int widthStop = stop.toArray().last().toInt();
                 stops.append(QPair<int, int>(zoomStop, widthStop));
@@ -507,7 +510,7 @@ SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
         QJsonValue textSize = layout.value("text-size");
             // Case where the property is an object that has "Stops".
             QList<QPair<int, int>> stops;
-            for(const auto &stop : textSize.toObject().value("stops").toArray()){
+                 : static_cast<const QJsonArray&>(textSize.toObject().value("stops").toArray())){
                 int zoomStop = stop.toArray().first().toInt();
                 int sizeStop = stop.toArray().last().toInt();
                 stops.append(QPair<int, int>(zoomStop, sizeStop));
@@ -545,7 +548,7 @@ SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
         QJsonValue textColor = paint.value("text-color");
             // Case where the property is an object that has "Stops".
             QList<QPair<int, QColor>> stops;
-            for(const auto &stop : textColor.toObject().value("stops").toArray()){
+                 : static_cast<const QJsonArray&>(textColor.toObject().value("stops").toArray())){
                 int zoomStop = stop.toArray().first().toInt();
                 QColor colorStop = getColorFromString(stop.toArray().last().toString());
                 stops.append(QPair<int, QColor>(zoomStop, colorStop));
@@ -562,7 +565,7 @@ SymbolLayerStyle *SymbolLayerStyle::fromJson(const QJsonObject &json)
         QJsonValue textOpacity = paint.value("text-opacity");
             // Case where the property is an object that has "Stops".
             QList<QPair<int, float>> stops;
-            for(const auto &stop : textOpacity.toObject().value("stops").toArray()){
+                 : static_cast<const QJsonArray&>(textOpacity.toObject().value("stops").toArray())){
                 int zoomStop = stop.toArray().first().toInt();
                 float opacityStop = stop.toArray().last().toDouble();
                 stops.append(QPair<int, float>(zoomStop, opacityStop));
