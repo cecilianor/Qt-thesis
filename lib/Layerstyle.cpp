@@ -265,18 +265,15 @@ QVariant FillLayerStyle::getFillColorAtZoom(int zoomLevel) const
     }
 }
 
-
-/*Returns the opacity for the sepcific zoom. The QVaraiant will contain a float if
-     * the value is not an expression or a QJsonArray otherwise.
-     *
-     * Parameters:
-     *     zoomLevel the zoom level for which to calculate the opacity.
-     *
-     * Returns a QVariant containing either a float or a QJsonArray with the information.
+/*!
+ * \brief FillLayerStyle::getFillOpacityAtZoom returns the opacity for the passed zoom.
+ *
+ * \param zoomLevel is the zoom level for which to calculate the opacity.
+ * \return a QVariant containing either a float or a QJsonArray with the layer opacity information.
      */
 QVariant FillLayerStyle::getFillOpacityAtZoom(int zoomLevel) const
 {
-    if(m_fillOpacity.isNull()){// The default opacity in case no opacity is provided by the style sheet.
+        // The default opacity in case no opacity is provided by the style sheet.
         return QVariant(1);
     }else if(m_fillOpacity.typeId() != QMetaType::Type::QColor && m_fillOpacity.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, float>> stops = m_fillOpacity.value<QList<QPair<int, float>>>();
