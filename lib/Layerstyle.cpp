@@ -18,7 +18,7 @@ static QColor getColorFromString(QString colorString)
     colorString.remove(" ");
     //All parameters for QColor::fromHslF need to be between 0 and 1.
     if (colorString.startsWith("hsl(")) {
-        QRegularExpression re(".*\\((\\d+),(\\d+)%,(\\d+)%\\)");
+        static QRegularExpression re(".*\\((\\d+),(\\d+)%,(\\d+)%\\)");
         QRegularExpressionMatch match = re.match(colorString);
         if (match.capturedTexts().length() >= 4) {
             return QColor::fromHslF(match.capturedTexts().at(1).toInt()/359.,
@@ -27,7 +27,7 @@ static QColor getColorFromString(QString colorString)
         }
     }
     if (colorString.startsWith("hsla(")) {
-        QRegularExpression re(".*\\((\\d+),(\\d+)%,(\\d+)%,(\\d?\\.?\\d*)\\)");
+        static QRegularExpression re(".*\\((\\d+),(\\d+)%,(\\d+)%,(\\d?\\.?\\d*)\\)");
         QRegularExpressionMatch match = re.match(colorString);
         if (match.capturedTexts().length() >= 5) {
             return QColor::fromHslF(match.capturedTexts().at(1).toInt()/359.,
