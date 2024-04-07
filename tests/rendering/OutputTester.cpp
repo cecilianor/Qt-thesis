@@ -46,11 +46,10 @@ std::optional<QFont> Bach::OutputTester::loadFont()
     int fontId = QFontDatabase::addApplicationFont(
         Bach::OutputTester::buildBaselinePath() +
         QDir::separator() +
-        "RobotoMono-Regular.ttf");
+        "Roboto-Regular.ttf");
     QStringList fontFamilies = QFontDatabase::applicationFontFamilies(fontId);
     if (!fontFamilies.isEmpty()) {
         QFont font = fontFamilies.first();
-        bool test = font.exactMatch();
         QGuiApplication::setFont(font);
         return font;
     } else {
