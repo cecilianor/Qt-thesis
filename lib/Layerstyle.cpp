@@ -470,6 +470,13 @@ Qt::PenJoinStyle LineLayerStyle::getJoinStyle() const
     }
 }
 
+/*!
+ * \brief LineLayerStyle::getCapStyle gets the cap style of a pen.
+ *
+ * The style is determined by a QString containing "butt" or "round",
+ * otherwise it'll be set to Qt::PenCapStyle::SquareCap.
+ * \return the pen cap style.
+ */
 Qt::PenCapStyle LineLayerStyle::getCapStyle() const
 {
     if(m_lineCap == "butt"){
