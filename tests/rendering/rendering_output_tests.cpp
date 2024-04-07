@@ -1,6 +1,7 @@
 #include <QFontDatabase>
 #include <QTest>
 #include <QProcess>
+#include <QGuiApplication>
 
 #include "OutputTester.h"
 #include "Utilities.h"
@@ -10,12 +11,41 @@ class RenderingTest : public QObject
 {
     Q_OBJECT
 
+public:
+    const QFont &font() { return _font; }
+    QFont _font;
+
 private slots:
+    void initTestCases();
     void compare_generated_images_to_baseline();
 };
 
 QTEST_MAIN(RenderingTest)
 #include "rendering_output_tests.moc"
+
+void RenderingTest::initTestCases()
+{
+    // Check if a QGuiApplication already exists
+    if (QGuiApplication::instance() == nullptr) {
+        int argc = 0; // QGuiApplication expects an int&, so we make a temporary one.
+        QGuiApplication(argc, nullptr); // Create a new instance if it does not exist
+        if (QGuiApplication::instance() == nullptr) {
+            qCritical() << "Error creating QGuiApplication.";
+        }
+    }
+
+    std::optional<QFont> fontOpt = Bach::OutputTester::loadFont();
+    if (!fontOpt.has_value()) {
+        QFAIL("Failed to load predetermined font file. Shutting down.");
+    }
+    this->_font = fontOpt.value();
+
+    QDir dir { "renderoutput_failures" };
+    if (dir.exists()) {
+        bool removeSuccess = dir.removeRecursively();
+        QVERIFY(removeSuccess);
+    }
+}
 
 namespace Bach::TestUtils {
     class TempDir {
@@ -208,59 +238,45 @@ void writeIntoFailureReport(
 }
 
 void RenderingTest::compare_generated_images_to_baseline() {
-    QFontDatabase::removeAllApplicationFonts();
-    int fontId = QFontDatabase::addApplicationFont(
-        Bach::OutputTester::buildBaselinePath() +
-        QDir::separator() +
-        "Roboto-Regular.ttf");
-    QStringList fontFamilies = QFontDatabase::applicationFontFamilies(fontId);
-    if (!fontFamilies.isEmpty()) {
-        QFont appFont(fontFamilies.first());
-        QGuiApplication::setFont(appFont);
-    }
-
-
-    QDir dir { "renderoutput_failures" };
-    if (dir.exists()) {
-        bool removeSuccess = dir.removeRecursively();
-        QVERIFY(removeSuccess);
-    }
 
     Bach::TestUtils::TempDir tempDir;
 
     bool testSuccess = true;
 
-    bool iterateCasesSuccess = Bach::OutputTester::test([&](int testId, const QImage &generatedImg) {
-        QString baselinePath = Bach::OutputTester::buildBaselineExpectedOutputPath(testId);
+    bool iterateCasesSuccess = Bach::OutputTester::test(
+        this->font(),
+        [&](int testId, const QImage &generatedImg)
+        {
+            QString baselinePath = Bach::OutputTester::buildBaselineExpectedOutputPath(testId);
 
-        QString generatedPath = QString(tempDir.path() + QDir::separator() + "%1.png")
-            .arg(testId);
-        bool writeSuccess = Bach::writeImageToNewFileHelper(generatedPath, generatedImg);
-        if (!writeSuccess) {
-            qCritical() << "Unable to write generated image to temporary file." ;
-        }
+            QString generatedPath = QString(tempDir.path() + QDir::separator() + "%1.png")
+                .arg(testId);
+            bool writeSuccess = Bach::writeImageToNewFileHelper(generatedPath, generatedImg);
+            if (!writeSuccess) {
+                qCritical() << "Unable to write generated image to temporary file." ;
+            }
 
-        QString diffPath = tempDir.path() + QDir::separator() + "different.png";
+            QString diffPath = tempDir.path() + QDir::separator() + "different.png";
 
-        RunImageComparison_Result imgCompareResult = runImageComparison(
-            baselinePath,
-            generatedPath,
-            diffPath);
-
-        if (!imgCompareResult.success) {
-            testSuccess = false;
-            qCritical() <<
-                QString("Error during comparison on test-case #%1: ").arg(testId) +
-                imgCompareResult.errorString;
-
-            // Start writing the files to the failure report.
-            writeIntoFailureReport(
-                testId,
+            RunImageComparison_Result imgCompareResult = runImageComparison(
                 baselinePath,
-                generatedImg,
+                generatedPath,
                 diffPath);
-        }
-    });
+
+            if (!imgCompareResult.success) {
+                testSuccess = false;
+                qCritical() <<
+                    QString("Error during comparison on test-case #%1: ").arg(testId) +
+                    imgCompareResult.errorString;
+
+                // Start writing the files to the failure report.
+                writeIntoFailureReport(
+                    testId,
+                    baselinePath,
+                    generatedImg,
+                    diffPath);
+            }
+        });
 
     if (!iterateCasesSuccess) {
         testSuccess = false;

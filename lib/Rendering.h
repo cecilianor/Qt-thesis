@@ -60,10 +60,10 @@ namespace Bach {
 
     void paintSingleTileFeature_Line(PaintingDetailsLine details);
 
-
     void paintSingleTileFeature_Point(
         PaintingDetailsPoint details,
         const int tileSize,
+        bool forceNoChangeFontType,
         QVector<QRect> &rects);
 
 

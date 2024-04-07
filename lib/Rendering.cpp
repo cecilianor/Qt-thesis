@@ -174,7 +174,8 @@ static void paintVectorTile(
     int mapZoom,
     double vpZoom,
     const StyleSheet &styleSheet,
-    int tileWidthPixels)
+    int tileWidthPixels,
+    bool forceNoChangeFontType)
 {
     QTransform geometryTransform;
     geometryTransform.scale(tileWidthPixels, tileWidthPixels);
@@ -244,6 +245,7 @@ static void paintVectorTile(
                 Bach::paintSingleTileFeature_Point(
                     {&painter, &layerStyle, &pair.second, mapZoom, vpZoom, geometryTransform},
                     tileWidthPixels,
+                    forceNoChangeFontType,
                     laberRects);
 
                  painter.restore();
@@ -498,7 +500,8 @@ void Bach::paintVectorTiles(
             mapZoomLevel,
             viewportZoomLevel,
             styleSheet,
-            tilePlacement.pixelWidth);
+            tilePlacement.pixelWidth,
+            true);
     };
 
     paintTilesGeneric(

@@ -2,6 +2,8 @@
 
 #include <QDir>
 #include <QFile>
+#include <QFontDatabase>
+#include <QGuiApplication>
 #include <QJsonDocument>
 
 #include "Layerstyle.h"
@@ -38,6 +40,24 @@ QString Bach::OutputTester::getStyleSheetPath() {
     return buildBaselinePath() + QDir::separator() + "/styleSheet.json";
 }
 
+std::optional<QFont> Bach::OutputTester::loadFont()
+{
+    QFontDatabase::removeAllApplicationFonts();
+    int fontId = QFontDatabase::addApplicationFont(
+        Bach::OutputTester::buildBaselinePath() +
+        QDir::separator() +
+        "RobotoMono-Regular.ttf");
+    QStringList fontFamilies = QFontDatabase::applicationFontFamilies(fontId);
+    if (!fontFamilies.isEmpty()) {
+        QFont font = fontFamilies.first();
+        bool test = font.exactMatch();
+        QGuiApplication::setFont(font);
+        return font;
+    } else {
+        return std::nullopt;
+    }
+}
+
 using TileMapT = std::map<TileCoord, std::unique_ptr<VectorTile>>;
 static std::optional<TileMapT> loadTiles(QVector<TileCoord> tileCoords) {
     TileMapT tileStorage;
@@ -66,7 +86,9 @@ static std::optional<TileMapT> loadTiles(QVector<TileCoord> tileCoords) {
     return tileStorage;
 }
 
-bool Bach::OutputTester::test(const std::function<void(int, const QImage&)> &fn)
+bool Bach::OutputTester::test(
+    const QFont &font,
+    const std::function<void(int, const QImage&)> &fn)
 {
     QFile styleSheetFile { Bach::OutputTester::getStyleSheetPath() };
     styleSheetFile.open(QFile::ReadOnly);
@@ -111,7 +133,8 @@ bool Bach::OutputTester::test(const std::function<void(int, const QImage&)> &fn)
         }
 
         QImage generatedImg { testItem.imageWidth, testItem.imageHeight, QImage::Format_ARGB32};
-        QPainter painter { &generatedImg };
+        QPainter painter{ &generatedImg };
+        painter.setFont(font);
         Bach::paintVectorTiles(
             painter,
             testItem.vpX,
@@ -121,6 +144,7 @@ bool Bach::OutputTester::test(const std::function<void(int, const QImage&)> &fn)
             tempTiles,
             styleSheet,
             false);
+
         painter.end();
 
         fn(i, generatedImg);

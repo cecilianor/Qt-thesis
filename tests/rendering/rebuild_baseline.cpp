@@ -16,20 +16,7 @@
     std::exit(EXIT_FAILURE);
 }
 
-int main(int argc, char *argv[]) {
-    QGuiApplication app(argc, argv);
-
-    QFontDatabase::removeAllApplicationFonts();
-    int fontId = QFontDatabase::addApplicationFont(
-        Bach::OutputTester::buildBaselinePath() +
-        QDir::separator() +
-        "Roboto-Regular.ttf");
-    QStringList fontFamilies = QFontDatabase::applicationFontFamilies(fontId);
-    if (!fontFamilies.isEmpty()) {
-        QFont appFont(fontFamilies.first());
-        QGuiApplication::setFont(appFont);
-    }
-
+void removeOutputDirectoryIfPresent() {
     QDir expectedOutputFolder = Bach::OutputTester::buildBaselineExpectedOutputPath();
     if (expectedOutputFolder.exists()) {
         bool removeSuccess = expectedOutputFolder.removeRecursively();
@@ -37,8 +24,22 @@ int main(int argc, char *argv[]) {
             shutdown("baseline folder already exists but was unable to delete it. Shutting down.");
         }
     }
+}
 
-    bool success = Bach::OutputTester::test([](int testId, const QImage &generatedImg) {
+int main(int argc, char *argv[]) {
+    QGuiApplication app(argc, argv);
+
+    removeOutputDirectoryIfPresent();
+
+    std::optional<QFont> fontOpt = Bach::OutputTester::loadFont();
+    if (!fontOpt.has_value()) {
+        shutdown("Unable to load font file. Shutting down.");
+    }
+    const QFont &font = fontOpt.value();
+
+    bool success = Bach::OutputTester::test(
+        font,
+        [](int testId, const QImage &generatedImg) {
 
         QString expectedOutputPath = Bach::OutputTester::buildBaselineExpectedOutputPath(testId);
 

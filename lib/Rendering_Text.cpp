@@ -252,6 +252,7 @@ static void paintCompositeText(
 void Bach::paintSingleTileFeature_Point(
     PaintingDetailsPoint details,
     const int tileSize,
+    bool forceNoChangeFontType,
     QVector<QRect> &rects)
 {
     QPainter &painter = *details.painter;
@@ -263,13 +264,28 @@ void Bach::paintSingleTileFeature_Point(
     if(textToDraw == "") return;
 
     //Get the rendering parameters from the layerstyle and set the relevant painter field.
-    painter.setBrush(Qt::NoBrush);
+
+    // If the flag 'forceNoChangeFontType' it means we should use the
+    // font object already set by the painter.
+    // So we count on the font already set by the painter object.
+    QFont textFont;
+    if (forceNoChangeFontType) {
+        textFont = painter.font();
+    } else {
+        textFont = QFont(layerStyle.m_textFont);
+    }
+
     int textSize = getTextSize(layerStyle, feature, details.mapZoom, details.vpZoom);
-    QFont textFont = QFont(layerStyle.m_textFont);
+
+    painter.setBrush(Qt::NoBrush);
+
     textFont.setPixelSize(textSize);
+
     painter.setOpacity(getTextOpacity(layerStyle, feature, details.mapZoom, details.vpZoom));
+
     const int outlineSize = layerStyle.m_textHaloWidth.toInt();
     QColor outlineColor = layerStyle.m_textHaloColor.value<QColor>();
+
     //Text is always antialised (otherwise it does not look good)
     painter.setRenderHints(QPainter::Antialiasing, true);
 

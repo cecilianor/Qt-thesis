@@ -1,8 +1,9 @@
 #ifndef RENDERING_OUTPUT_TESTER_H
 #define RENDERING_OUTPUT_TESTER_H
 
-#include <QVector>
+#include <QFont>
 #include <QImage>
+#include <QVector>
 
 #include "TileCoord.h"
 
@@ -17,7 +18,10 @@ namespace Bach::OutputTester {
 
     QVector<TileCoord> genTileCoordList(int zoom, int minX, int maxX, int minY, int maxY);
 
-    bool test(const std::function<void(int, const QImage &image)> &fn);
+    std::optional<QFont> loadFont();
+    bool test(
+        const QFont &font,
+        const std::function<void(int, const QImage &image)> &fn);
 
     QString buildBaselinePath();
     QString buildBaselineExpectedOutputPath();
