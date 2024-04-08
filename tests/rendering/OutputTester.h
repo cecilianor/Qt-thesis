@@ -6,7 +6,7 @@
 #include <QVector>
 
 #include "TileCoord.h"
-#include "LayerStyle.h"
+#include "Layerstyle.h"
 
 #include <functional>
 
