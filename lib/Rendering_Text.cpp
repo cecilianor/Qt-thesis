@@ -378,8 +378,16 @@ void Bach::paintSingleTileFeature_Point(
     //This means that text is split up for text wrapping depending on if it exceeds the maximum allowed width.
     QList<QString> correctedText = getCorrectedText(textToDraw, textFont, layerStyle.m_textMaxWidth.toInt());
 
-    //Get the coordinates for the text rendering
-    const QPoint &coordinates = feature.points().at(0);
+    // Get the coordinates for the text rendering
+    // We don't actually know why
+    // but when there are 3 points inside the text feature,
+    // only index 1 contains the one we expect.
+    QPoint coordinates;
+    if (feature.points().length() == 3) {
+        coordinates = feature.points().at(1);
+    } else {
+        coordinates = feature.points().at(0);
+    }
     QTransform transform = {};
     transform.scale(1 / 4096.0, 1 / 4096.0);
     transform.scale(tileSize, tileSize);

@@ -67,12 +67,12 @@ static void paintSingleTileDebug(
  *
  * \return True if the layer should NOT be rendered.
  */
-static bool isLayerHidden(const AbstractLayerStyle &layerStyle, int mapZoom)
+static bool isLayerShown(const AbstractLayerStyle &layerStyle, int mapZoom)
 {
     return
-        layerStyle.m_visibility == "none" ||
-        layerStyle.m_maxZoom < mapZoom ||
-        layerStyle.m_minZoom >= mapZoom;
+        layerStyle.m_visibility == "visible" &&
+        mapZoom <= layerStyle.m_maxZoom &&
+        mapZoom >= layerStyle.m_minZoom;
 }
 
 /*!
@@ -280,7 +280,7 @@ static void paintVectorTile(
     // We start by iterating over each layer style, it determines the order
     // at which we draw the elements of the map.
     for (const AbstractLayerStyle *abstractLayerStyle : styleSheet.m_layerStyles) {
-        if (isLayerHidden(*abstractLayerStyle, mapZoom))
+        if (!isLayerShown(*abstractLayerStyle, mapZoom))
             continue;
 
         // Check if this layer style has an associated layer in the tile.
