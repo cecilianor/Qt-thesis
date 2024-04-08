@@ -38,36 +38,36 @@ void testLayer(const TileLayer &layer, QString expectedName, int expectedExtent,
     QVERIFY2(layer.version() == expectedVersion, errorMessage.toUtf8());
 }
 
-void testTileLayers(const VectorTile tile){
+void testTileLayers(const VectorTile &tile){
     int expectedNumberOfLayers = 6;
     QString errorMessage = QString("The number of layers in the tile does not match, expected %1 but got %2")
-                                .arg(expectedNumberOfLayers)
-                               .arg(tile.m_layers.size());
+        .arg(expectedNumberOfLayers)
+        .arg(tile.m_layers.size());
     QVERIFY2(tile.m_layers.size() == expectedNumberOfLayers, errorMessage.toUtf8());
 
     errorMessage = QString("the tile is missing layer: boundary");
-    QVERIFY2(tile.m_layers.contains("boundary") == true, errorMessage.toUtf8());
-    testLayer(*tile.m_layers["boundary"], "boundary", 4096, 717, 2);
+    QVERIFY2(tile.m_layers.find("boundary") != tile.m_layers.end(), errorMessage.toUtf8());
+    testLayer(*tile.m_layers.find("boundary")->second, "boundary", 4096, 717, 2);
 
     errorMessage = QString("the tile is missing layer: globallandcover");
-    QVERIFY2(tile.m_layers.contains("globallandcover") == true, errorMessage.toUtf8());
-    testLayer(*tile.m_layers["globallandcover"], "globallandcover", 4096, 6, 2);
+    QVERIFY2(tile.m_layers.find("globallandcover") != tile.m_layers.end(), errorMessage.toUtf8());
+    testLayer(*tile.m_layers.find("globallandcover")->second, "globallandcover", 4096, 6, 2);
 
     errorMessage = QString("the tile is missing layer: landcover");
-    QVERIFY2(tile.m_layers.contains("landcover") == true, errorMessage.toUtf8());
-    testLayer(*tile.m_layers["landcover"], "landcover", 4096, 11, 2);
+    QVERIFY2(tile.m_layers.find("landcover") != tile.m_layers.end(), errorMessage.toUtf8());
+    testLayer(*tile.m_layers.find("landcover")->second, "landcover", 4096, 11, 2);
 
     errorMessage = QString("the tile is missing layer: place");
-    QVERIFY2(tile.m_layers.contains("place") == true, errorMessage.toUtf8());
-    testLayer(*tile.m_layers["place"], "place", 4096, 43, 2);
+    QVERIFY2(tile.m_layers.find("place") != tile.m_layers.end(), errorMessage.toUtf8());
+    testLayer(*tile.m_layers.find("place")->second, "place", 4096, 43, 2);
 
     errorMessage = QString("the tile is missing layer: water");
-    QVERIFY2(tile.m_layers.contains("water") == true, errorMessage.toUtf8());
-    testLayer(*tile.m_layers["water"], "water", 4096, 2, 2);
+    QVERIFY2(tile.m_layers.find("water") != tile.m_layers.end(), errorMessage.toUtf8());
+    testLayer(*tile.m_layers.find("water")->second, "water", 4096, 2, 2);
 
     errorMessage = QString("the tile is missing layer: water_name");
-    QVERIFY2(tile.m_layers.contains("water_name") == true, errorMessage.toUtf8());
-    testLayer(*tile.m_layers["water_name"], "water_name", 4096, 7, 2);
+    QVERIFY2(tile.m_layers.find("water_name") != tile.m_layers.end(), errorMessage.toUtf8());
+    testLayer(*tile.m_layers.find("water_name")->second, "water_name", 4096, 7, 2);
 }
 
 void UnitTesting::tileFromByteArray_returns_basic_values()
