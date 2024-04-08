@@ -39,8 +39,6 @@ namespace Bach::OutputTester {
         int imageWidth = baseImageSize;
         int imageHeight = baseImageSize;
 
-
-
         double imageAspect() const { return (double)imageWidth / (double)imageHeight; }
     };
 
@@ -51,7 +49,7 @@ namespace Bach::OutputTester {
             0, // vpY
             0, // vpZoom
             1, // mapZoom
-            true,
+            true, // drawText
             {}, // coords
             false, // autoCalcVisibleTiles
         },

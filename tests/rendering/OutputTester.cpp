@@ -36,7 +36,8 @@ QString Bach::OutputTester::buildBaselineExpectedOutputPath(int testId)
     return buildBaselineExpectedOutputPath() + QDir::separator() + QString::number(testId) + QString(".png");
 }
 
-QString Bach::OutputTester::getStyleSheetPath() {
+QString Bach::OutputTester::getStyleSheetPath()
+{
     return buildBaselinePath() + QDir::separator() + "/styleSheet.json";
 }
 
