@@ -6,6 +6,7 @@
 #include <QVector>
 
 #include "TileCoord.h"
+#include "LayerStyle.h"
 
 #include <functional>
 
@@ -17,30 +18,81 @@ namespace Bach::OutputTester {
     const int baseImageSize = 1024;
 
     struct TestItem {
-        double vpX;
-        double vpY;
-        double vpZoom;
-        int mapZoom;
-        bool drawFill;
-        bool drawLines;
-        bool drawText;
-        QVector<TileCoord> coords;
+        static QString nameJsonKey() { return "name"; }
+        QString name;
+
+        static QString coordsJsonKey() { return "coords"; }
+        double vpX = {};
+        double vpY = {};
+
+        static QString vpZoomJsonKey() { return "vp-zoom"; }
+        double vpZoom = {};
+
+        static QString mapZoomJsonKey() { return "map-zoom"; }
+        int mapZoom = {};
+
+        static QString drawFillJsonKey() { return "draw-fill"; }
+        bool drawFill = {};
+
+        static QString drawLinesJsonKey() { return "draw-lines"; }
+        bool drawLines = {};
+
+        static QString tileListJsonKey() { return "tiles"; }
+        QVector<TileCoord> coords = {};
         bool autoCalcVisibleTiles = false;
+
         int imageWidth = baseImageSize;
         int imageHeight = baseImageSize;
 
         double imageAspect() const { return (double)imageWidth / (double)imageHeight; }
     };
 
-    QVector<TileCoord> genTileCoordList(int zoom, int minX, int maxX, int minY, int maxY);
+    struct SimpleError {
+        QString msg;
+    };
+
+    template<typename T>
+    struct SimpleResult {
+        bool success = {};
+        T value;
+        QString errorMsg;
+
+        SimpleResult(const SimpleError& err) :
+            success{ false },
+            errorMsg{ err.msg } {}
+        SimpleResult(const T& val) :
+            success{ true },
+            value{ val } {}
+        SimpleResult(T&& val) :
+            success{ true },
+            value{ std::move(val) } {}
+    };
+
+    template<>
+    struct SimpleResult<void> {
+        bool success;
+        QString errorMsg;
+
+        SimpleResult() :
+            success { true } {}
+        SimpleResult(const SimpleError& err) :
+            success{ false },
+            errorMsg{ err.msg } {}
+    };
 
     std::optional<QFont> loadFont();
+    SimpleResult<StyleSheet> loadStylesheet();
+    SimpleResult<QVector<TestItem>> loadTestItems();
+    SimpleResult<QImage> render(
+        const TestItem &item,
+        const StyleSheet &stylesheet,
+        const QFont &font);
 
     using ProcessTestCaseFnT = std::function<void(
         int testId,
         const TestItem &testItem,
         const QImage &image)>;
-    bool iterateOverTestCases(
+    SimpleResult<void> iterateOverTestCases(
         const QFont &font,
         const ProcessTestCaseFnT &processFn);
 
@@ -48,116 +100,6 @@ namespace Bach::OutputTester {
     QString buildBaselineExpectedOutputPath();
     QString buildBaselineExpectedOutputPath(int testId);
     QString getStyleSheetPath();
-
-    // We have issues with consistency between Linux and Windows
-    // when rendering text.
-    // Temporary solution is to render everything but text with low diff threshold.
-    // We render text alone with higher diff threshold.
-    inline const QVector<TestItem> testItems = {
-        // First one is an example that should draw only background.
-        TestItem {
-            0, // vpX
-            0, // vpY
-            0, // vpZoom
-            1, // mapZoom
-            true, // drawFill
-            true, // drawLines
-            false, // drawText
-            {}, // coords
-            false, // autoCalcVisibleTiles
-        },
-        TestItem {
-            0.5,
-            0.5,
-            0,
-            0,
-            true,
-            true,
-            false,
-            {},
-            true,
-        },
-        TestItem {
-            0.5,
-            0.5,
-            0,
-            1,
-            true,
-            true,
-            false,
-            {},
-            true,
-        },
-        TestItem {
-            0.5,
-            0.5,
-            0,
-            1,
-            true,
-            true,
-            false,
-            {
-                { 1, 0, 0 }
-            }
-        },
-        TestItem {
-            0.5,
-            0.5,
-            1,
-            1,
-            true,
-            true,
-            false,
-            {},
-            true
-        },
-        TestItem {
-            0.25,
-            0.25,
-            0.5,
-            1,
-            true,
-            true,
-            false,
-            {},
-            true,
-        },
-        TestItem {
-            0.25,
-            0.25,
-            0.5,
-            1,
-            true,
-            true,
-            false,
-            {},
-            true,
-            (int)(baseImageSize / 0.5),
-        },
-        TestItem {
-            0.25,
-            0.25,
-            0,
-            1,
-            true,
-            true,
-            false,
-            {},
-            true,
-        },
-        // Render only text
-        TestItem {
-            0.5,
-            0.5,
-            0,
-            1,
-            false,
-            false,
-            true,
-            {},
-            true,
-        },
-    };
 }
 
 #endif // RENDERING_OUTPUT_TESTER_H

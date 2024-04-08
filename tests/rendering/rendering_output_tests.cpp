@@ -6,46 +6,10 @@
 #include "OutputTester.h"
 #include "Utilities.h"
 
-
-class RenderingTest : public QObject
-{
-    Q_OBJECT
-
-public:
-    const QFont &font() { return _font; }
-    QFont _font;
-
-private slots:
-    void initTestCases();
-    void compare_generated_images_to_baseline();
-};
-
-QTEST_MAIN(RenderingTest)
-#include "rendering_output_tests.moc"
-
-void RenderingTest::initTestCases()
-{
-    // Check if a QGuiApplication already exists
-    if (QGuiApplication::instance() == nullptr) {
-        int argc = 0; // QGuiApplication expects an int&, so we make a temporary one.
-        QGuiApplication(argc, nullptr); // Create a new instance if it does not exist
-        if (QGuiApplication::instance() == nullptr) {
-            qCritical() << "Error creating QGuiApplication.";
-        }
-    }
-
-    std::optional<QFont> fontOpt = Bach::OutputTester::loadFont();
-    if (!fontOpt.has_value()) {
-        QFAIL("Failed to load predetermined font file. Shutting down.");
-    }
-    this->_font = fontOpt.value();
-
-    QDir dir { "renderoutput_failures" };
-    if (dir.exists()) {
-        bool removeSuccess = dir.removeRecursively();
-        QVERIFY(removeSuccess);
-    }
-}
+namespace OutputTester = Bach::OutputTester;
+using TestItem = OutputTester::TestItem;
+using OutputTester::SimpleResult;
+using Bach::OutputTester::SimpleError;
 
 namespace Bach::TestUtils {
     class TempDir {
@@ -78,7 +42,91 @@ namespace Bach::TestUtils {
     private:
         QString _dir;
     };
+}
+
+class RenderingTest : public QObject
+{
+    Q_OBJECT
+
+public:
+    Bach::TestUtils::TempDir _tempDir;
+    QString tempDir() const { return _tempDir.path(); }
+
+    const QFont &font() { return _font; }
+    QFont _font;
+
+    StyleSheet _stylesheet;
+    const StyleSheet &stylesheet() { return _stylesheet; }
+
+    QVector<TestItem> _testItems;
+    const QVector<TestItem> &testItems() { return _testItems; }
+
+private slots:
+    void initTestCases();
+    void compare_to_baseline_data();
+    void compare_to_baseline();
 };
+
+QTEST_MAIN(RenderingTest)
+#include "rendering_output_tests.moc"
+
+void RenderingTest::initTestCases()
+{
+    // Check if a QGuiApplication already exists
+    if (QGuiApplication::instance() == nullptr) {
+        int argc = 0; // QGuiApplication expects an int&, so we make a temporary one.
+        QGuiApplication(argc, nullptr); // Create a new instance if it does not exist
+        if (QGuiApplication::instance() == nullptr) {
+            qCritical() << "Error creating QGuiApplication.";
+        }
+    }
+
+    // Load font
+    {
+        std::optional<QFont> fontOpt = OutputTester::loadFont();
+        if (!fontOpt.has_value()) {
+            QFAIL("Failed to load predetermined font file. Shutting down.");
+        }
+        this->_font = fontOpt.value();
+    }
+
+    // Load stylesheet
+    {
+        SimpleResult<StyleSheet> result = OutputTester::loadStylesheet();
+        QVERIFY2(result.success, result.errorMsg.toUtf8());
+        this->_stylesheet = std::move(result.value);
+    }
+
+    // Load test items
+    {
+        SimpleResult<QVector<TestItem>> result = OutputTester::loadTestItems();
+        QVERIFY2(result.success, result.errorMsg.toUtf8());
+        this->_testItems = result.value;
+    }
+
+    QDir dir { "renderoutput_failures" };
+    if (dir.exists()) {
+        bool removeSuccess = dir.removeRecursively();
+        QVERIFY(removeSuccess);
+    }
+}
+
+void RenderingTest::compare_to_baseline_data()
+{
+    QTest::addColumn<int>("testId");
+    QTest::addColumn<TestItem>("testItem");
+
+    for (int i = 0; i < testItems().size(); i++)
+    {
+        const TestItem &testItem = testItems()[i];
+        QString rowName = QString("#%1").arg(i);
+        if (testItem.name != "") {
+            rowName += ": " + testItem.name;
+        }
+
+        QTest::newRow(rowName.toUtf8()) << i << testItem;
+    }
+}
 
 struct RunImageComparison_Result {
     bool success;
@@ -248,61 +296,43 @@ void writeIntoFailureReport(
     }
 }
 
-void RenderingTest::compare_generated_images_to_baseline() {
+void RenderingTest::compare_to_baseline() {
 
-    Bach::TestUtils::TempDir tempDir;
+    QFETCH(int, testId);
+    QFETCH(TestItem, testItem);
 
-    bool testSuccess = true;
+    QString tempDir = this->tempDir();
 
-    bool iterateCasesSuccess = Bach::OutputTester::iterateOverTestCases(
-        this->font(),
-        [&](int testId,
-            const Bach::OutputTester::TestItem &testItem,
-            const QImage &generatedImg)
-        {
-            QString baselinePath = Bach::OutputTester::buildBaselineExpectedOutputPath(testId);
+    SimpleResult<QImage> renderResult = OutputTester::render(
+        testItem,
+        stylesheet(),
+        font());
+    QVERIFY2(renderResult.success, renderResult.errorMsg.toUtf8());
+    const QImage &generatedImg = renderResult.value;
 
-            QString generatedPath = QString(tempDir.path() + QDir::separator() + "%1.png")
-                .arg(testId);
-            bool writeSuccess = Bach::writeImageToNewFileHelper(generatedPath, generatedImg);
-            if (!writeSuccess) {
-                qCritical() << "Unable to write generated image to temporary file." ;
-            }
+    // Save to file
+    QString generatedPath = QString(tempDir + QDir::separator() + "%1.png").arg(testId);
+    bool writeSuccess = Bach::writeImageToNewFileHelper(
+        generatedPath,
+        generatedImg);
+    QVERIFY2(writeSuccess, "Unable to write generated image to temporary file.");
 
-            QString diffPath = tempDir.path() + QDir::separator() + "different.png";
+    QString baselinePath = Bach::OutputTester::buildBaselineExpectedOutputPath(testId);
+    QString diffPath = tempDir + QDir::separator() + "different.png";
+    int diffThreshold = 5;
 
-            int diffThreshold = 5;
-            if (testItem.drawText) {
-                diffThreshold = 10;
-            }
-
-            RunImageComparison_Result imgCompareResult = runImageComparison(
-                baselinePath,
-                generatedPath,
-                diffPath,
-                diffThreshold);
-
-            if (!imgCompareResult.success) {
-                testSuccess = false;
-                qCritical() <<
-                    QString("Error during comparison on test-case #%1: ").arg(testId) +
-                    imgCompareResult.errorString;
-
-                // Start writing the files to the failure report.
-                writeIntoFailureReport(
-                    testId,
-                    baselinePath,
-                    generatedImg,
-                    diffPath);
-            }
-        });
-
-    if (!iterateCasesSuccess) {
-        testSuccess = false;
+    RunImageComparison_Result imgCompareResult = runImageComparison(
+        baselinePath,
+        generatedPath,
+        diffPath,
+        diffThreshold);
+    if (!imgCompareResult.success) {
+        // Start writing the files to the failure report.
+        writeIntoFailureReport(
+            testId,
+            baselinePath,
+            generatedImg,
+            diffPath);
     }
-
-    if (!testSuccess) {
-        qCritical() << "Failure report can be found in folder 'renderoutput_failures'";
-    }
-    QVERIFY(testSuccess);
+    QVERIFY2(imgCompareResult.success, imgCompareResult.errorString.toUtf8());
 }

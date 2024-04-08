@@ -7,6 +7,10 @@
 
 #include "OutputTester.h"
 
+namespace OutputTester = Bach::OutputTester;
+using OutputTester::SimpleResult;
+using OutputTester::SimpleError;
+
 // Helper function to let us do early shutdown during startup.
 [[noreturn]] void shutdown(const QString &msg = "")
 {
@@ -17,7 +21,7 @@
 }
 
 void removeOutputDirectoryIfPresent() {
-    QDir expectedOutputFolder = Bach::OutputTester::buildBaselineExpectedOutputPath();
+    QDir expectedOutputFolder = OutputTester::buildBaselineExpectedOutputPath();
     if (expectedOutputFolder.exists()) {
         bool removeSuccess = expectedOutputFolder.removeRecursively();
         if (!removeSuccess) {
@@ -31,13 +35,13 @@ int main(int argc, char *argv[]) {
 
     removeOutputDirectoryIfPresent();
 
-    std::optional<QFont> fontOpt = Bach::OutputTester::loadFont();
+    std::optional<QFont> fontOpt = OutputTester::loadFont();
     if (!fontOpt.has_value()) {
         shutdown("Unable to load font file. Shutting down.");
     }
     const QFont &font = fontOpt.value();
 
-    bool success = Bach::OutputTester::iterateOverTestCases(
+    SimpleResult<void> success = OutputTester::iterateOverTestCases(
         font,
         [](
             int testId,
@@ -53,7 +57,7 @@ int main(int argc, char *argv[]) {
         }
     });
 
-    if (!success) {
-        shutdown("Failed to process all test cases. Unknown error.");
+    if (!success.success) {
+        shutdown(success.errorMsg);
     }
 }
