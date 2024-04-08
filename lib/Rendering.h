@@ -1,15 +1,18 @@
 #ifndef RENDERING_HPP
 #define RENDERING_HPP
 
-#include <QPainter>
 #include <QMap>
+#include <QPainter>
 #include <QPair>
 
+#include "Layerstyle.h"
 #include "TileCoord.h"
 #include "VectorTiles.h"
-#include "Layerstyle.h"
 
 namespace Bach {
+    /*!
+     * \brief maxZoomLevel is the maximum allowed zoom level of the map.
+     */
     constexpr int maxZoomLevel = 15;
 
     /* Controls the default value for how big tiles should appear on-screen.
@@ -20,57 +23,57 @@ namespace Bach {
      */
     const int defaultDesiredTileSizePixels = 512;
 
-    /* Converts longitude and latitude to world-normalized coordinates.
-     * Takes radians.
-     *
-     * The math formula employed is described by the figure in the report with the caption
-     * "Converting longitude and latitude to world-normalized coordinates"
-     */
+    struct PaintingDetailsPolygon{
+        QPainter *painter;
+        const FillLayerStyle *layerStyle = nullptr;
+        const PolygonFeature *feature = nullptr;
+        int mapZoom{};
+        double vpZoom{};
+        QTransform transformIn;
+    };
+
+    struct PaintingDetailsLine{
+        QPainter *painter;
+        const LineLayerStyle *layerStyle = nullptr;
+        const LineFeature *feature = nullptr;
+        int mapZoom{};
+        double vpZoom{};
+        QTransform transformIn;
+    };
+
+    struct PaintingDetailsPoint{
+        QPainter *painter;
+        const SymbolLayerStyle *layerStyle = nullptr;
+        const PointFeature *feature = nullptr;
+        int mapZoom{};
+        double vpZoom{};
+        QTransform transformIn;
+    };
+
+
     QPair<double, double> lonLatToWorldNormCoord(double lon, double lat);
-    /* Converts longitude and latitude to world-normalized coordinates.
-     * Takes degrees.
-     */
     QPair<double, double> lonLatToWorldNormCoordDegrees(double lon, double lat);
-
-    /* Calculates the width and height of the viewport in world-normalized coordinates.
-     * This means the size expressed as a fraction of the world map. For example,
-     * a viewportZoom set to 0 will return size as 1, while a zoom level of
-     * 1 will return 0.5. This takes the aspect ratio of the viewport into account,
-     * with the largest side being mapped to relation mentioned.
-     *
-     * The math formula used is described by the figure in the report with the caption
-     * "Calculating viewport size as a factor of the world map".
-     *
-     * Returns width and height as fractions, in the range [0, 1]
-     */
     QPair<double, double> calcViewportSizeNorm(double viewportZoom, double viewportAspect);
+    double normalizeValueToZeroOneRange(double value, double min, double max);
 
-    /* Calculates the closest map zoom level as such that a tile's on-screen size
-     * is closest to 'desiredTileSize'.
-     *
-     * Parameters:
-     *      vpWidth expects the width of the viewport in pixels.
-     *      vpHeight expects the height of the viewport in pixels.
-     *      vpZoom expects the zoom level of the viewport.
-     *      desiredTileWidth expects the desired size of tiles in pixels.
-     *
-     * Returns an integer for the zoom level to use for maps zoom-level. In the range [0, 16].
-     */
+    void paintSingleTileFeature_Polygon(PaintingDetailsPolygon details);
+
+    void paintSingleTileFeature_Line(PaintingDetailsLine details);
+
+
+    void paintSingleTileFeature_Point(
+        PaintingDetailsPoint details,
+        const int tileSize,
+        bool forceNoChangeFontType,
+        QVector<QRect> &rects);
+
+
     int calcMapZoomLevelForTileSizePixels(
         int vpWidth,
         int vpHeight,
         double vpZoom,
         int desiredTileSize = defaultDesiredTileSizePixels);
 
-    /* Calculates the set of visible tiles in a viewport.
-     *
-     * The method is described in the report in the figure with caption
-     * "Calculating set of tiles within viewport"
-     *
-     * vpAspect expects the aspect ratio of the viewport, expressed as a fraction width / height.
-     *
-     * Returns a list of tile-coordinates.
-     */
     QVector<TileCoord> calcVisibleTiles(
         double vpX,
         double vpY,
@@ -78,25 +81,57 @@ namespace Bach {
         double vpZoomLevel,
         int mapZoomLevel);
 
-    /*  Main rendering function for painting the map. This function will iterate
-     *  over multiple tiles and place them correctly on screen.
-     *
-     *  The output is rendered into the apainter-object.
-     *
-     *  The tiles rendered are based on the stylesheet and the tilecontainer passed in.
-     *
-     *  Parameters:
-     *      tileContainer: Contains all the tile-data available at this point in time.
-     *      styleSheet: Function will read the layer styling data in this object to determine how to render
-     *                  individual tiles.
+
+    /*!
+     * \class Collection of settings that modify how vector tiles are rendered.
      */
-    void paintTiles(
+    struct PaintVectorTileSettings {
+        /*!
+         *  \brief
+         *  Controls whether fill elements should be rendered.
+         */
+        bool drawFill = {};
+
+        /*!
+         *  \brief
+         *  Controls whether line elements should be rendered.
+         */
+        bool drawLines = {};
+
+        /*!
+         *  \brief
+         *  Controls whether text elements should be rendered.
+         */
+        bool drawText = {};
+
+        /*!
+         *  \brief
+         *  Forces text rendering to never change the font beyond
+         *  the one that is already set by the QPainter beforehand.
+         */
+        bool forceNoChangeFontType = {};
+
+        static PaintVectorTileSettings getDefault();
+    };
+
+    void paintVectorTiles(
+        QPainter &painter,
+        double vpX,
+        double vpY,
+        double viewportZoom,
+        int mapZoom,
+        const QMap<TileCoord, const VectorTile*> &tileContainer,
+        const StyleSheet &styleSheet,
+        const PaintVectorTileSettings &settings,
+        bool drawDebug);
+
+    void paintRasterTiles(
         QPainter &painter,
         double vpX,
         double vpY,
         double viewportZoomLevel,
         int mapZoomLevel,
-        const QMap<TileCoord, const VectorTile*> &tileContainer,
+        const QMap<TileCoord, const QImage*> &tileContainer,
         const StyleSheet &styleSheet,
         bool drawDebug);
 }

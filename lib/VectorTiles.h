@@ -3,12 +3,15 @@
 
 #include <QByteArray>
 #include <QFile>
-#include <QRect>
-#include <QMap>
 #include <QList>
+#include <QMap>
 #include <QPainterPath>
+#include <QRect>
 
-#include <optional>
+#include <map> // For std::map
+#include <optional> // For std::optional
+#include <memory> // For std::unique_ptr
+
 
 /*
  * This abstract class is the base for all the classes representing different layer features.
@@ -28,7 +31,7 @@ public:
 
     virtual featureType type() const = 0;
     QVector<unsigned int> tags;
-    QMap<QString, QVariant> fetureMetaData;
+    QMap<QString, QVariant> featureMetaData;
 private:
     int m_id;
 };
@@ -111,7 +114,6 @@ private:
     const int m_version;
     const QString m_name;
     const int m_extent;
-
 };
 
 /*
@@ -122,10 +124,17 @@ class VectorTile {
 
 public:
     VectorTile();
-    ~VectorTile();
+    // The move operation of internal memory
+    // is automatically handled by the std::unique_ptr
+    VectorTile(VectorTile&&) = default;
+    // Explicitly deleted copy-constructor so that we know we can never
+    // mistakenly copy this class around.
+    VectorTile(const VectorTile&) = delete;
+    // Internal memory cleanup is automatically handled by the std::unique_ptr
+    ~VectorTile() = default;
 
     bool DeserializeMessage(QByteArray data);
-    QMap<QString, TileLayer*> m_layers;
+    std::map<QString, std::unique_ptr<TileLayer>> m_layers;
 };
 
 namespace Bach {

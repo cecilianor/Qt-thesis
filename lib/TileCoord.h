@@ -26,11 +26,11 @@ struct TileCoord {
 
     QString toString() const;
 
-    // Define less-than operator and the equality operator
-    // in order to allow using this type as a key in QMap
+    // Define less-than operator, equality operator, and inequality
+    // operator in order to allow using this type as a key in QMap.
     bool operator<(const TileCoord &other) const;
     bool operator==(const TileCoord &other) const;
     bool operator!=(const TileCoord &other) const;
 };
 
-#endif
+#endif // TILECOORD_HPP

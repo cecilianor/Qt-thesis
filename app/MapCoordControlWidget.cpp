@@ -10,20 +10,14 @@
 
 using Bach::MapCoordControlWidget;
 
-QString getShowingDebugBtnLabel(MapWidget* mapWidget) {
-    auto name = QString("Showing debug ");
-    if (mapWidget->isShowingDebug()) {
-        name += "on";
-    } else {
-        name += "off";
-    }
-    return name;
-}
-
+/*!
+ * \brief MapCoordControlWidget::setupInputFields sets up
+ * \param outerLayout
+ */
 void MapCoordControlWidget::setupInputFields(QBoxLayout* outerLayout)
 {
     // Build the grid layout
-    auto layout = new QGridLayout;
+    QGridLayout *layout = new QGridLayout;
     outerLayout->addLayout(layout);
 
     // This scope inserts the longitude field and label.
@@ -85,36 +79,23 @@ void MapCoordControlWidget::setupInputFields(QBoxLayout* outerLayout)
 
     // Setup the submit button at the end.
     {
-        auto btn = new QPushButton("Go", this);
+        QPushButton *btn = new QPushButton("Go", this);
         QObject::connect(
             btn,
             &QPushButton::clicked,
             this,
-            &MapCoordControlWidget::submitButtonPressed);
+            &MapCoordControlWidget::goButtonPressed);
         outerLayout->addWidget(btn);
     }
 }
 
+/*!
+ * \brief MapCoordControlWidget::setupButtons generates all application buttons.
+ * \param outerLayout ???
+ * \param mapWidget is the QWidget to render to.
+ */
 void MapCoordControlWidget::setupButtons(QBoxLayout *outerLayout, MapWidget *mapWidget)
 {
-    // Setup the debug lines toggle switch
-    {
-        auto name = getShowingDebugBtnLabel(mapWidget);
-        auto btn = new QPushButton(name, this);
-        outerLayout->addWidget(btn);
-        QObject::connect(
-            btn,
-            &QPushButton::clicked,
-            this,
-            [=]() {
-                // Send signal to mapWidget?
-                mapWidget->toggleIsShowingDebug();
-                auto name = getShowingDebugBtnLabel(mapWidget);
-                btn->setText(name);
-            });
-    }
-
-
     // Create buttons to move the viewport to Nydalen.
     {
         auto btn = new QPushButton("Nydalen", this);
@@ -144,7 +125,10 @@ void MapCoordControlWidget::setupButtons(QBoxLayout *outerLayout, MapWidget *map
     }
 }
 
-MapCoordControlWidget::MapCoordControlWidget(MapWidget* mapWidget)
+/*!
+ * \param mapWidget is the QWidget to place this widget on top of
+ */
+MapCoordControlWidget::MapCoordControlWidget(MapWidget* mapWidget) : QWidget(mapWidget)
 {
     auto temp = new QWidget(mapWidget);
     // Set a dark and transparent background.
@@ -159,13 +143,19 @@ MapCoordControlWidget::MapCoordControlWidget(MapWidget* mapWidget)
     setupButtons(outerLayout, mapWidget);
 }
 
-void MapCoordControlWidget::submitButtonPressed()
+/*!
+ * \brief MapCoordControlWidget::submitButtonPressed grabs zoom, longitude, and latitude values from GUI.
+ */
+void MapCoordControlWidget::goButtonPressed()
 {
-    // Try to grab the new viewport values from our text fields.
-    // If any of them are invalid, we don't submit.
-
+    // Initial longitute, latitude, and zoom values.
     double longitude = 0;
-    auto longitudeText = longitudeField->text();
+    double latitude = 0;
+    double zoom = 0;
+
+    // Try to grab new viewport values from text fields.
+    // Check that all values are valid before submitting them.
+    QString longitudeText = longitudeField->text();
     if (longitudeText != "") {
         bool ok = false;
         longitude = longitudeText.toDouble(&ok);
@@ -174,8 +164,7 @@ void MapCoordControlWidget::submitButtonPressed()
         }
     }
 
-    double latitude = 0;
-    auto latitudeText = latitudeField->text();
+    QString latitudeText = latitudeField->text();
     if (latitudeText != "") {
         bool ok = false;
         latitude = latitudeText.toDouble(&ok);
@@ -184,8 +173,7 @@ void MapCoordControlWidget::submitButtonPressed()
         }
     }
 
-    double zoom = 0;
-    auto zoomText = zoomField->text();
+    QString zoomText = zoomField->text();
     if (zoomText != "") {
         bool ok = false;
         zoom = zoomText.toDouble(&ok);

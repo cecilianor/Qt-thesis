@@ -8,7 +8,10 @@
 #include "MapWidget.h"
 
 namespace Bach {
-    /* Contains the group of controls for manually entering coordinates.
+    /*!
+     * \brief The MapCoordControlWidget class is a collection
+     * of controls meant to modify the location and zoom of the
+     * MapWidgets viewport.
      */
     class MapCoordControlWidget : public QWidget {
         Q_OBJECT
@@ -17,21 +20,23 @@ namespace Bach {
         MapCoordControlWidget(MapWidget* parent);
 
     private:
+        // References to our input fields so
+        // we can grab their contents at runtime.
         QLineEdit* longitudeField = nullptr;
         QLineEdit* latitudeField = nullptr;
         QLineEdit* zoomField = nullptr;
+
         void setupInputFields(QBoxLayout* outerLayout);
         void setupButtons(QBoxLayout* outerLayout, MapWidget* mapWidget);
 
-    private slots:
-        void submitButtonPressed();
+    private:
+        void goButtonPressed();
 
     signals:
-        /* Signal gets called when the coordinates wants to submit
-         * a new valid viewport configuration.
+        /*!
+         * This signal is emitted whenever the user presses the "Go" button
          */
         void submitNewCoords(double x, double y, double zoom);
-        void loadNewTiles();
     };
 }
 

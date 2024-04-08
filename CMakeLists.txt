@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(maptest VERSION 0.1 LANGUAGES CXX)
+project(qt-map-thesis VERSION 0.1 LANGUAGES CXX)
 
 option(BUILD_TESTS "Whether to build tests or not" OFF)
 
@@ -21,7 +21,7 @@ qt_standard_project_setup()
 if (WIN32 AND NOT DEFINED WINDEPLOYQT_EXECUTABLE)
     message(WARNING "Qt tool windeployqt not found. Executables might not be able to run outside Qt Creator.")
 endif()
-function(win32_deploy target)
+function(deploy_runtime_dependencies_if_win32 target)
     if (DEFINED WINDEPLOYQT_EXECUTABLE)
         add_custom_command(TARGET ${target} POST_BUILD
             COMMAND "${WINDEPLOYQT_EXECUTABLE}"
@@ -36,8 +36,12 @@ endfunction()
 qt_add_library(maplib STATIC
     lib/VectorTiles.cpp
     lib/VectorTiles.h
-    lib/Rendering.cpp
     lib/Rendering.h
+    lib/Rendering.cpp
+    lib/Rendering_Line.cpp
+    lib/Rendering_Math.cpp
+    lib/Rendering_Polygon.cpp
+    lib/Rendering_Text.cpp
     lib/TileCoord.h
     lib/TileCoord.cpp
     lib/Layerstyle.h
@@ -76,15 +80,14 @@ set(PROJECT_SOURCES
     app/MapPanControlWidget.cpp
     app/MapCoordControlWidget.h
     app/MapCoordControlWidget.cpp
+    app/MapRenderSettingsWidget.h
+    app/MapRenderSettingsWidget.cpp
     app/MainWindow.h
     app/MainWindow.cpp)
 
 qt_add_executable(application
     MANUAL_FINALIZATION
-    ${PROJECT_SOURCES}
-
-
-    unitTestResources/testkey.txt)
+    ${PROJECT_SOURCES})
 
 # Link our app to our library target.
 target_link_libraries(application PUBLIC maplib)
@@ -108,15 +111,7 @@ install(TARGETS application
 
 qt_finalize_executable(application)
 # Apply the windows deployment process to our executable.
-win32_deploy(application)
-
-# Set up function that applies copy directory command to executable,
-# to copy the contents of our "testdata" folder into where the executable lives.
-add_custom_command(
-    TARGET application POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_SOURCE_DIR}/testdata $<TARGET_FILE_DIR:application>/testdata
-)
+deploy_runtime_dependencies_if_win32(application)
 
 # Create the example command line utility example.
 qt_add_executable(cmd_example cmd_example.cpp)
@@ -133,11 +128,13 @@ if (BUILD_TESTS)
     qt_add_resources(tileloader_test "unitTestResourcesTileLoader"
         PREFIX "/"
         FILES
-        unitTestResources/loadTileFromCache_fails_on_broken_file.mvt
-        unitTestResources/loadTileFromCache_parses_cached_file_successfully.mvt
-        unitTestResources/testkey.txt
+        unitTestResources/loadTileFromCache_fails_on_broken_file/file.mvt
+        unitTestResources/loadTileFromCache_fails_on_broken_file/file.png
+        unitTestResources/loadTileFromCache_parses_cached_file_successfully/file.mvt
+        unitTestResources/loadTileFromCache_parses_cached_file_successfully/file.png
     )
     target_link_libraries(tileloader_test PUBLIC maplib Qt6::Test)
+
 
     # Add the second executable: rendering unit test
     qt_add_executable(render_test tests/unit-tests/unittesting_rendering.cpp)
@@ -173,11 +170,11 @@ if (BUILD_TESTS)
     target_link_libraries(evaluator_test PUBLIC maplib Qt6::Test)
 
     # Make sure we deploy the correct runtime dependencies to the test.
-    #win32_deploy(tileloader_test)
-    #win32_deploy(render_test)
-    #win32_deploy(layerstyle_test)
-    #win32_deploy(vectortile_test)
-    #win32_deploy(evaluator_test)
+    deploy_runtime_dependencies_if_win32(tileloader_test)
+    deploy_runtime_dependencies_if_win32(render_test)
+    deploy_runtime_dependencies_if_win32(layerstyle_test)
+    deploy_runtime_dependencies_if_win32(vectortile_test)
+    deploy_runtime_dependencies_if_win32(evaluator_test)
 
     # Add executables to CTest.
     enable_testing()

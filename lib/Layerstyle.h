@@ -1,26 +1,26 @@
 #ifndef LAYERSTYLE_H
 #define LAYERSTYLE_H
 
-#include <QtTypes>
-#include <QString>
 #include <QColor>
-#include <QImage>
 #include <QFont>
+#include <QImage>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QJsonArray>
 #include <QPen>
-
+#include <QString>
+#include <QtTypes>
+#include <vector>
 #include <optional>
 
 /*
  *  all the layers styles follow the maptiler layer style specification : https://docs.maptiler.com/gl-style-specification/layers/
  */
 
-class AbstractLayereStyle
+class AbstractLayerStyle
 {
 public:
-    AbstractLayereStyle() {};
+    AbstractLayerStyle() {};
     enum class LayerType : quint8
     {
         background,
@@ -30,7 +30,7 @@ public:
         notImplemented,
     };
 
-    static AbstractLayereStyle* fromJson(const QJsonObject &json);
+    static std::unique_ptr<AbstractLayerStyle> fromJson(const QJsonObject &json);
     virtual LayerType type() const = 0;
     QString m_id;
     QString m_sourceLayer;
@@ -41,13 +41,13 @@ public:
     QJsonArray m_filter;
 };
 
-class BackgroundStyle : public AbstractLayereStyle
+class BackgroundStyle : public AbstractLayerStyle
 {
 public:
     BackgroundStyle(){};
     ~BackgroundStyle(){};
-    static BackgroundStyle* fromJson(const QJsonObject &json);
-    AbstractLayereStyle::LayerType type() const override {return AbstractLayereStyle::LayerType::background;};
+    static std::unique_ptr<BackgroundStyle> fromJson(const QJsonObject &json);
+    AbstractLayerStyle::LayerType type() const override {return AbstractLayerStyle::LayerType::background;};
     QVariant getColorAtZoom(int zoomLevel) const;
     QVariant getOpacityAtZoom(int zoomLevel) const;
     //void addBackgroundPatternImage(QImage img);//Not used for first iteration
@@ -58,13 +58,13 @@ private:
 
 };
 
-class FillLayerStyle : public AbstractLayereStyle
+class FillLayerStyle : public AbstractLayerStyle
 {
 public:
     FillLayerStyle(){};
     ~FillLayerStyle(){};
-    static FillLayerStyle* fromJson(const QJsonObject &json);
-    AbstractLayereStyle::LayerType type() const override {return AbstractLayereStyle::LayerType::fill;};
+    static std::unique_ptr<FillLayerStyle> fromJson(const QJsonObject &json);
+    AbstractLayerStyle::LayerType type() const override {return AbstractLayerStyle::LayerType::fill;};
     QVariant getFillColorAtZoom(int zoomLevel) const;
     QVariant getFillOpacityAtZoom(int zoomLevel) const;
     QVariant getFillOutLineColorAtZoom(int zoomLevel) const;
@@ -84,13 +84,13 @@ private:
     QVariant m_fillOutlineColor;
     //QList<QPair<int, QPair<int, int>>> m_fillTranslate;//Not used for first iteration
 };
-class LineLayerStyle : public AbstractLayereStyle
+class LineLayerStyle : public AbstractLayerStyle
 {
 public:
     LineLayerStyle(){};
     ~LineLayerStyle(){};
-    static LineLayerStyle* fromJson(const QJsonObject &json);
-    LayerType type() const override {return AbstractLayereStyle::LayerType::line;};
+    static std::unique_ptr<LineLayerStyle> fromJson(const QJsonObject &json);
+    LayerType type() const override {return AbstractLayerStyle::LayerType::line;};
     QVariant getLineColorAtZoom(int zoomLevel) const;
     QVariant getLineOpacityAtZoom(int zoomLevel) const;
     QVariant getLineWidthAtZoom(int zoomLevel) const;
@@ -121,13 +121,13 @@ private:
     QVariant m_lineWidth;
 };
 
-class SymbolLayerStyle : public AbstractLayereStyle
+class SymbolLayerStyle : public AbstractLayerStyle
 {
 public:
     SymbolLayerStyle(){};
     ~SymbolLayerStyle(){};
-    static SymbolLayerStyle* fromJson(const QJsonObject &json);
-    AbstractLayereStyle::LayerType type() const override {return AbstractLayereStyle::LayerType::symbol;};
+    static std::unique_ptr<SymbolLayerStyle> fromJson(const QJsonObject &json);
+    AbstractLayerStyle::LayerType type() const override {return AbstractLayerStyle::LayerType::symbol;};
     QVariant getTextSizeAtZoom(int zoomLevel) const;
     QVariant getTextColorAtZoom(int zoomLevel) const;
     QVariant getTextOpacityAtZoom(int zoomLevel) const;
@@ -153,7 +153,7 @@ public:
     //bool m_textIgnorePlacement = false;//Not used for first iteration
     //QString m_textJustify = QString("center");//Not used for first iteration
     //bool m_textKeenUpright = true;//Not used for first iteration
-    //float m_textMaxWidth = 10;//Not used for first iteration
+    QVariant m_textMaxWidth = 10;
     //QList<QPair<int, QPair<int, int>>> m_textOffset;//Not used for first iteration
     //bool m_textOptional = false;//Not used for first iteration
     //QString m_textPitchAlignment = QString("auto");//Not used for first iteration
@@ -166,6 +166,8 @@ public:
     //Paint properties  -------------------------------------------
     //QString m_iconTranslateAnchor = QString("map"); //Not used for first iteration
     //QString m_textTranslateAnchor = QString("map"); //Not used for first iteration
+    QVariant m_textHaloWidth;
+    QVariant m_textHaloColor;
 private:
     //Layout properties -------------------------------------------
      //QList<QPair<int, QPair<int, int>>> m_iconOffset;//Not used for first iteration
@@ -188,33 +190,35 @@ private:
      //QList<QPair<int, QPair<int, int>>> m_iconTranslate;//Not used for first iteration
      QVariant m_textColor;
      //QList<QPair<int, int>> m_textHaloBlur;//Not used for first iteration
-     //QList<QPair<int, int>> m_textHaloWidth;//Not used for first iteration
+
      QVariant m_textOpacity;
      //QList<QPair<int, QPair<int, int>>> m_textTranslate;//Not used for first iteration
 };
 
-class NotImplementedStyle : public AbstractLayereStyle
+class NotImplementedStyle : public AbstractLayerStyle
 {
 public:
     NotImplementedStyle(){};
     ~NotImplementedStyle(){};
-    static NotImplementedStyle* fromJson(const QJsonObject &json);
-    AbstractLayereStyle::LayerType type() const override {return AbstractLayereStyle::LayerType::notImplemented;};
+    static std::unique_ptr<NotImplementedStyle> fromJson(const QJsonObject &json);
+    AbstractLayerStyle::LayerType type() const override {return AbstractLayerStyle::LayerType::notImplemented;};
 };
 
 class StyleSheet
 {
 public:
     StyleSheet(){};
+    StyleSheet(StyleSheet&&) = default;
+    StyleSheet(const StyleSheet&) = delete; //Prevent accidental copying.
     ~StyleSheet();
+    StyleSheet& operator=(StyleSheet&&) = default;
     static std::optional<StyleSheet> fromJson(const QJsonDocument&);
 
     void parseSheet(const QJsonDocument &styleSheet);
     QString m_id;
     int m_version;
     QString m_name;
-    //QMap<QString, QString> m_sources;//should have a separate class for tile sources //Not used for first iteration
-    QVector<AbstractLayereStyle*> m_layerStyles;
+    std::vector<std::unique_ptr<AbstractLayerStyle>> m_layerStyles;
 
 };
 
