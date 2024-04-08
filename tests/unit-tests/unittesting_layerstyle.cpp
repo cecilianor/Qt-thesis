@@ -11,6 +11,7 @@ private:
     const QString path = ":/unitTestResources/styleTest.json";
     QFile styleFile;
     QJsonDocument styleSheetDoc;
+    StyleSheet styleSheet;
     AbstractLayerStyle *backgroundLayer;
     AbstractLayerStyle *fillLayer;
     AbstractLayerStyle *lineLayer;
@@ -48,6 +49,13 @@ void UnitTesting::initTestCase()
     // Check for parsing errors.
     if (parserError.error != QJsonParseError::NoError)
         QFAIL("JSON parsing error: " + parserError.errorString().toUtf8());
+
+    styleSheet.parseSheet(styleSheetDoc);
+    backgroundLayer = styleSheet.m_layerStyles.at(0).get();
+    fillLayer = styleSheet.m_layerStyles.at(1).get();
+    lineLayer = styleSheet.m_layerStyles.at(2).get();
+    symbolLayer = styleSheet.m_layerStyles.at(3).get();
+    unknownLayer = styleSheet.m_layerStyles.at(4).get();
 }
 
 
@@ -423,40 +431,33 @@ void UnitTesting::test_unknown_layer_parsing()
 void UnitTesting::parseSheet_returns_basic_values()
 {
     QString testError;
-    StyleSheet sheet;
-    sheet.parseSheet(styleSheetDoc);
-
     QString expectedId = "basic-v2";
     QString expectedName = "Basic";
     int expectedVersion = 8;
     int expectedNumberOfLayers = 5;
 
     testError = QString("The style Sheet object id does not match, expected %1 but got %2")
-                    .arg(expectedId, sheet.m_id);
-    QVERIFY2(sheet.m_id == expectedId, testError.toUtf8());
+                    .arg(expectedId, styleSheet.m_id);
+    QVERIFY2(styleSheet.m_id == expectedId, testError.toUtf8());
 
     testError = QString("The style Sheet object version does not match, expected %1 but got %2")
-                    .arg(expectedVersion, sheet.m_version);
-    QVERIFY2(sheet.m_version == expectedVersion, testError.toUtf8());
+                    .arg(expectedVersion, styleSheet.m_version);
+    QVERIFY2(styleSheet.m_version == expectedVersion, testError.toUtf8());
 
     testError = QString("The style Sheet object name does not match, expected %1 but got %2")
-                    .arg(expectedName, sheet.m_name);
-    QVERIFY2(sheet.m_name == expectedName, testError.toUtf8());
+                    .arg(expectedName, styleSheet.m_name);
+    QVERIFY2(styleSheet.m_name == expectedName, testError.toUtf8());
 
     testError = QString("The style Sheet object does not contain the correct amount of layers, expected %1 but got %2")
-                    .arg(expectedNumberOfLayers, sheet.m_layerStyles.length());
-    QVERIFY2(sheet.m_layerStyles.length() == expectedNumberOfLayers, testError.toUtf8());
+                    .arg(expectedNumberOfLayers, styleSheet.m_layerStyles.size());
+    QVERIFY2(styleSheet.m_layerStyles.size() == expectedNumberOfLayers, testError.toUtf8());
 
-    for(int i = 0; i < sheet.m_layerStyles.length(); i++){
+    for(int i = 0; i < styleSheet.m_layerStyles.size(); i++){
         testError = QString("The style layer pointer at index %1 is invalid").arg(i);
-        QVERIFY2(sheet.m_layerStyles.at(i) != nullptr, testError.toUtf8());
+        QVERIFY2(styleSheet.m_layerStyles.at(i) != nullptr, testError.toUtf8());
     }
 
-    backgroundLayer = sheet.m_layerStyles.at(0);
-    fillLayer = sheet.m_layerStyles.at(1);
-    lineLayer = sheet.m_layerStyles.at(2);
-    symbolLayer = sheet.m_layerStyles.at(3);
-    unknownLayer = sheet.m_layerStyles.at(4);
+
 }
 
 void UnitTesting::cleanupTestCase()

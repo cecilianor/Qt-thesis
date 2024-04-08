@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(maptest VERSION 0.1 LANGUAGES CXX)
+project(qt-map-thesis VERSION 0.1 LANGUAGES CXX)
 
 option(BUILD_TESTS "Whether to build tests or not" OFF)
 
@@ -112,14 +112,6 @@ install(TARGETS application
 qt_finalize_executable(application)
 # Apply the windows deployment process to our executable.
 deploy_runtime_dependencies_if_win32(application)
-
-# Set up function that applies copy directory command to executable,
-# to copy the contents of our "testdata" folder into where the executable lives.
-add_custom_command(
-    TARGET application POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_SOURCE_DIR}/testdata $<TARGET_FILE_DIR:application>/testdata
-)
 
 # Create the example command line utility example.
 qt_add_executable(cmd_example cmd_example.cpp)

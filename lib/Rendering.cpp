@@ -226,7 +226,7 @@ static void paintVectorLayer_Point(
     }
 
     //Sort the labels map in increasing order based on the laber's "rank"
-    std::sort(labels.begin(), labels.end(), [](const QPair<int, PointFeature>& a, const QPair<int, PointFeature>& b) {
+    std::stable_sort(labels.begin(), labels.end(), [](const QPair<int, PointFeature>& a, const QPair<int, PointFeature>& b) {
         return a.first < b.first;
     });
 
@@ -279,7 +279,8 @@ static void paintVectorTile(
 
     // We start by iterating over each layer style, it determines the order
     // at which we draw the elements of the map.
-    for (const AbstractLayerStyle *abstractLayerStyle : styleSheet.m_layerStyles) {
+    for (const std::unique_ptr<AbstractLayerStyle> &abstractLayerStylePtr : styleSheet.m_layerStyles) {
+        const AbstractLayerStyle *abstractLayerStyle = abstractLayerStylePtr.get();
         if (!isLayerShown(*abstractLayerStyle, mapZoom))
             continue;
 
@@ -289,7 +290,7 @@ static void paintVectorTile(
             continue;
         }
         // If we find it, we dereference it to access it's data.
-        const TileLayer& layer = **layerIt;
+        const TileLayer& layer = *layerIt->second;
 
         // We do different types of rendering based on whether the layer is a polygon, line, or symbol(text).
         if (abstractLayerStyle->type() == AbstractLayerStyle::LayerType::fill) {
@@ -340,7 +341,8 @@ static void drawBackgroundColor(
 
     // We start by iterating over each layer style, it determines the order
     // at which we draw the elements of the map.
-    for (const AbstractLayerStyle *abstractLayerStyle : styleSheet.m_layerStyles) {
+    for (const std::unique_ptr<AbstractLayerStyle> &abstractLayerStylePtr : styleSheet.m_layerStyles) {
+        AbstractLayerStyle *abstractLayerStyle = abstractLayerStylePtr.get();
         // Background is a special case and has no associated layer.
         // We just draw it and move onto the next layer style.
         if (abstractLayerStyle->type() == AbstractLayerStyle::LayerType::background) {
