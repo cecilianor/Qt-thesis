@@ -273,10 +273,6 @@ static void paintVectorTile(
     int tileWidthPixels,
     const Bach::PaintVectorTileSettings &settings)
 {
-    if(mapZoom == 0){
-
-        qDebug() << "level o should be renderd";
-    }
     QTransform geometryTransform;
     geometryTransform.scale(tileWidthPixels, tileWidthPixels);
     QVector<QRect> labelRects; //Used to prevent text overlapping.
