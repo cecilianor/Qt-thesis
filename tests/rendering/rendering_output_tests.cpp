@@ -280,7 +280,7 @@ void RenderingTest::compare_generated_images_to_baseline() {
                 baselinePath,
                 generatedPath,
                 diffPath,
-                5);
+                diffThreshold);
 
             if (!imgCompareResult.success) {
                 testSuccess = false;
