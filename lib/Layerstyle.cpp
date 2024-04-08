@@ -257,6 +257,7 @@ FillLayerStyle *FillLayerStyle::fromJson(const QJsonObject &jsonObj)
                 /* BEWARE*/
                 int zoomStop = stop.toArray().first().toInt();
                 QColor colorStop = getColorFromString(stop.toArray().last().toString());
+                stops.append(QPair<int, QColor>(zoomStop, colorStop));
             }
             returnLayer->m_fillOutlineColor.setValue(stops);
         } else if (fillOutlineColor.isArray()){
