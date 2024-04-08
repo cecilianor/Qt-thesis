@@ -256,7 +256,9 @@ void RenderingTest::compare_generated_images_to_baseline() {
 
     bool iterateCasesSuccess = Bach::OutputTester::iterateOverTestCases(
         this->font(),
-        [&](int testId, const QImage &generatedImg)
+        [&](int testId,
+            const Bach::OutputTester::TestItem &testItem,
+            const QImage &generatedImg)
         {
             QString baselinePath = Bach::OutputTester::buildBaselineExpectedOutputPath(testId);
 
@@ -268,6 +270,11 @@ void RenderingTest::compare_generated_images_to_baseline() {
             }
 
             QString diffPath = tempDir.path() + QDir::separator() + "different.png";
+
+            int diffThreshold = 5;
+            if (testItem.drawText) {
+                diffThreshold = 10;
+            }
 
             RunImageComparison_Result imgCompareResult = runImageComparison(
                 baselinePath,

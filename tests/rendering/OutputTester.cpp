@@ -88,7 +88,7 @@ static std::optional<TileMapT> loadTiles(QVector<TileCoord> tileCoords) {
 
 bool Bach::OutputTester::iterateOverTestCases(
     const QFont &font,
-    const std::function<void(int, const QImage&)> &processFn)
+    const Bach::OutputTester::ProcessTestCaseFnT &processFn)
 {
     QFile styleSheetFile { Bach::OutputTester::getStyleSheetPath() };
     styleSheetFile.open(QFile::ReadOnly);
@@ -137,8 +137,8 @@ bool Bach::OutputTester::iterateOverTestCases(
         painter.setFont(font);
 
         Bach::PaintVectorTileSettings paintSettings = {};
-        paintSettings.drawFill = true;
-        paintSettings.drawLines = true;
+        paintSettings.drawFill = testItem.drawFill;
+        paintSettings.drawLines = testItem.drawLines;
         paintSettings.drawText = testItem.drawText;
         paintSettings.forceNoChangeFontType = true;
         Bach::paintVectorTiles(
@@ -154,7 +154,7 @@ bool Bach::OutputTester::iterateOverTestCases(
 
         painter.end();
 
-        processFn(i, generatedImg);
+        processFn(i, testItem, generatedImg);
     }
 
     return true;

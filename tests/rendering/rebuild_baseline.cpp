@@ -39,7 +39,11 @@ int main(int argc, char *argv[]) {
 
     bool success = Bach::OutputTester::iterateOverTestCases(
         font,
-        [](int testId, const QImage &generatedImg) {
+        [](
+            int testId,
+            const Bach::OutputTester::TestItem &testItem,
+            const QImage &generatedImg)
+        {
 
         QString expectedOutputPath = Bach::OutputTester::buildBaselineExpectedOutputPath(testId);
 
