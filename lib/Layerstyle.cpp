@@ -58,7 +58,7 @@ static QColor getColorFromString(QString colorString)
  * \return a pointer of type BackgroundStyle to the newly created layer with
  * the parsed properties.
  */
-std::unique_ptr<BackgroundStyle> BackgroundStyle::fromJson(const QJsonObject &json)
+std::unique_ptr<BackgroundStyle> BackgroundStyle::fromJson(const QJsonObject &jsonObj)
 {
     std::unique_ptr<BackgroundStyle> returnLayerPtr = std::make_unique<BackgroundStyle>();
     BackgroundStyle* returnLayer = returnLayerPtr.get();
@@ -189,7 +189,7 @@ QVariant BackgroundStyle::getOpacityAtZoom(int zoomLevel) const
  * \return a pointer of type FillLayerStyle to the newly created
  * layer with the parsed properties
  */
-std::unique_ptr<FillLayerStyle> FillLayerStyle::fromJson(const QJsonObject &json)
+std::unique_ptr<FillLayerStyle> FillLayerStyle::fromJson(const QJsonObject &jsonObj)
 {
     std::unique_ptr<FillLayerStyle> returnLayerPtr = std::make_unique<FillLayerStyle>();
     FillLayerStyle* returnLayer = returnLayerPtr.get();
@@ -359,7 +359,7 @@ QVariant FillLayerStyle::getFillOutLineColorAtZoom(int zoomLevel) const
  * \param jsonObj is the JSON object containing layer style data.
  * \return a pointer of type LineLayerStyle to the newly created layer.
  */
-std::unique_ptr<LineLayerStyle> LineLayerStyle::fromJson(const QJsonObject &json)
+std::unique_ptr<LineLayerStyle> LineLayerStyle::fromJson(const QJsonObject &jsonObj)
 {
     std::unique_ptr<LineLayerStyle> returnLayerPtr = std::make_unique<LineLayerStyle>();
     LineLayerStyle* returnLayer = returnLayerPtr.get();
@@ -563,7 +563,7 @@ Qt::PenCapStyle LineLayerStyle::getCapStyle() const
  * \param jsonObj is the JSON object containing layer style data.
  * \return a pointer of type SymbolLayerStyle to the newly created layer
  */
-std::unique_ptr<SymbolLayerStyle> SymbolLayerStyle::fromJson(const QJsonObject &json)
+std::unique_ptr<SymbolLayerStyle> SymbolLayerStyle::fromJson(const QJsonObject &jsonObj)
 {
     std::unique_ptr<SymbolLayerStyle> returnLayerPtr = std::make_unique<SymbolLayerStyle>();
     SymbolLayerStyle *returnLayer = returnLayerPtr.get();
@@ -850,7 +850,7 @@ void StyleSheet::parseSheet(const QJsonDocument &styleSheet)
  *
  * \return  is either the parsed data or a nullopt of there was no data.
  */
-std::optional<StyleSheet> StyleSheet::fromJson(const QJsonDocument &styleSheet)
+std::optional<StyleSheet> StyleSheet::fromJson(const QJsonDocument &input)
 {
     StyleSheet out;
     out.parseSheet(input);

@@ -321,9 +321,6 @@ void populateFeatureMetaData(AbstractLayerFeature* feature, QList<QString> &keys
 VectorTile::VectorTile() {
 }
 
-VectorTile::~VectorTile() {
-}
-
 /*!
  * \brief VectorTile::DeserializeMessage
  * Deserialize and extracts all the layers in the tile protocol buffer,
