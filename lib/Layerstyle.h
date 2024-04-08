@@ -213,6 +213,8 @@ public:
     ~StyleSheet();
     StyleSheet& operator=(StyleSheet&&) = default;
     static std::optional<StyleSheet> fromJson(const QJsonDocument&);
+    static std::optional<StyleSheet> fromJsonBytes(const QByteArray&);
+    static std::optional<StyleSheet> fromJsonFile(const QString &path);
 
     void parseSheet(const QJsonDocument &styleSheet);
     QString m_id;

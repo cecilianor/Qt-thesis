@@ -135,6 +135,7 @@ public:
 
     bool DeserializeMessage(QByteArray data);
     static std::optional<VectorTile> fromByteArray(const QByteArray &bytes);
+    static std::optional<VectorTile> fromFile(const QString &path);
     std::map<QString, std::unique_ptr<TileLayer>> m_layers;
 };
 

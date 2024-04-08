@@ -12,6 +12,12 @@ using OutputTester::SimpleResult;
 using Bach::OutputTester::SimpleError;
 
 namespace Bach::TestUtils {
+    /*!
+     * \brief The TempDir class is
+     * a helper class that creates a temporary folder
+     * inside the system's 'temp' folder. The folder
+     * is automatically destroyed when this class is destroyed.
+     */
     class TempDir {
     public:
         TempDir()
@@ -49,17 +55,32 @@ class RenderingTest : public QObject
     Q_OBJECT
 
 public:
-    Bach::TestUtils::TempDir _tempDir;
+    /*!
+     * \brief tempDir
+     * \return Returns the path to the temporary directory
+     * of this test run.
+     */
     QString tempDir() const { return _tempDir.path(); }
+    Bach::TestUtils::TempDir _tempDir;
 
+    /*!
+     * \brief font
+     * \return Returns the predetermined QFont to
+     * use for rendering.
+     */
     const QFont &font() { return _font; }
     QFont _font;
 
-    StyleSheet _stylesheet;
     const StyleSheet &stylesheet() { return _stylesheet; }
+    StyleSheet _stylesheet;
 
-    QVector<TestItem> _testItems;
+    /*!
+     * \brief testItems
+     * \return Returns the list of predetermined test cases
+     * for this test run.
+     */
     const QVector<TestItem> &testItems() { return _testItems; }
+    QVector<TestItem> _testItems;
 
 private slots:
     void initTestCases();
@@ -72,21 +93,18 @@ QTEST_MAIN(RenderingTest)
 
 void RenderingTest::initTestCases()
 {
-    // Check if a QGuiApplication already exists
+    // Check if a QGuiApplication already exists,
+    // if not, create one.
+    // A QGuiApplication is required to do QPainter commands.
     if (QGuiApplication::instance() == nullptr) {
         int argc = 0; // QGuiApplication expects an int&, so we make a temporary one.
         QGuiApplication(argc, nullptr); // Create a new instance if it does not exist
-        if (QGuiApplication::instance() == nullptr) {
-            qCritical() << "Error creating QGuiApplication.";
-        }
     }
 
     // Load font
     {
         std::optional<QFont> fontOpt = OutputTester::loadFont();
-        if (!fontOpt.has_value()) {
-            QFAIL("Failed to load predetermined font file. Shutting down.");
-        }
+        QVERIFY2(fontOpt.has_value(), "Failed to load predetermined font file.");
         this->_font = fontOpt.value();
     }
 
@@ -104,10 +122,13 @@ void RenderingTest::initTestCases()
         this->_testItems = result.value;
     }
 
+    // Destroy the failure report directory if it already exists.
     QDir dir { "renderoutput_failures" };
     if (dir.exists()) {
         bool removeSuccess = dir.removeRecursively();
-        QVERIFY(removeSuccess);
+        QVERIFY2(
+            removeSuccess,
+            "Failure report directory already exists, but failed to destroy it.");
     }
 }
 
@@ -116,6 +137,7 @@ void RenderingTest::compare_to_baseline_data()
     QTest::addColumn<int>("testId");
     QTest::addColumn<TestItem>("testItem");
 
+    // Populate the data for the test.
     for (int i = 0; i < testItems().size(); i++)
     {
         const TestItem &testItem = testItems()[i];
@@ -128,12 +150,27 @@ void RenderingTest::compare_to_baseline_data()
     }
 }
 
-struct RunImageComparison_Result {
-    bool success;
-    QString errorString;
-};
-
-RunImageComparison_Result runImageMagickV7(
+/*!
+ * \internal
+ * \brief runImageMagickV7
+ * Runs the ImageMagick process on our test case.
+ *
+ * Uses the ImageMagick v7 command line interface specifically.
+ * Will not work if v6 is installed.
+ *
+ * \param baselinePath File-path to the baseline file.
+ * \param generatedPath File-path to the newly generated file.
+ * \param diffPath File-path for where to store the diffed file.
+ * \param diffThresholdPercentage The threshold to allow to pass differences.
+ * Measured in percentage compared to Absolute Error. Read more about it
+ * in ImageMagick documentation.
+ *
+ * \return If the operation was successful, returns a boolean of whether the
+ * test was acceptable.
+ *
+ * If the operation was unsuccessful, will return an error message.
+ */
+static SimpleResult<bool> runImageMagickV7(
     const QString &baselinePath,
     const QString &generatedPath,
     const QString &diffPath,
@@ -155,32 +192,37 @@ RunImageComparison_Result runImageMagickV7(
 
     bool finished = process.waitForFinished();
     if (!finished) {
-        return {
-            false,
-            "Unable to run ImageMagick to compare images..."
-        };
+        return SimpleError{ "Unable to run ImageMagick to compare images." };
     }
     if (process.exitStatus() != QProcess::NormalExit) {
-        return {
-            false,
-            "ImageMagick did not finish normally during comparison."
-        };
+        return SimpleError { "ImageMagick did not finish normally during comparison." };
     }
 
-    if (process.exitCode() != 0) {
-        return {
-            false,
-            "Reconstructed image is not equal to baseline."
-        };
-    }
-
-    return {
-        true,
-        ""
-    };
+    return process.exitCode() == 0;
 }
 
-RunImageComparison_Result runImageMagickV6(
+
+/*!
+ * \internal
+ * \brief runImageMagickV6
+ * Runs the ImageMagick process on our test case.
+ *
+ * Uses the ImageMagick v6 command line interface specifically.
+ * Will not work if v7 is installed.
+ *
+ * \param baselinePath File-path to the baseline file.
+ * \param generatedPath File-path to the newly generated file.
+ * \param diffPath File-path for where to store the diffed file.
+ * \param diffThresholdPercentage The threshold to allow to pass differences.
+ * Measured in percentage compared to Absolute Error. Read more about it
+ * in ImageMagick documentation.
+ *
+ * \return If the operation was successful, returns a boolean of whether the
+ * test was acceptable.
+ *
+ * If the operation was unsuccessful, will return an error message.
+ */
+static SimpleResult<bool> runImageMagickV6(
     const QString &baselinePath,
     const QString &generatedPath,
     const QString &diffPath,
@@ -201,32 +243,33 @@ RunImageComparison_Result runImageMagickV6(
 
     bool finished = process.waitForFinished();
     if (!finished) {
-        return {
-            false,
-            "Unable to run ImageMagick to compare images..."
-        };
+        return SimpleError{ "Unable to run ImageMagick to compare images." };
     }
     if (process.exitStatus() != QProcess::NormalExit) {
-        return {
-            false,
-            "ImageMagick did not finish normally during comparison."
-        };
+        return SimpleError { "ImageMagick did not finish normally during comparison." };
     }
 
-    if (process.exitCode() != 0) {
-        return {
-            false,
-            "Reconstructed image is not equal to baseline."
-        };
-    }
-
-    return {
-        true,
-        ""
-    };
+    return process.exitCode() == 0;
 }
 
-RunImageComparison_Result runImageComparison(
+/*!
+ * \internal
+ * \brief runImageComparison
+ * Performs the main image comparison acceptability test.
+ *
+ * \param baselinePath File-path to the baseline file.
+ * \param generatedPath File-path to the newly generated file.
+ * \param diffPath File-path for where to store the diffed file.
+ * \param diffThresholdPercentage The threshold to allow to pass differences.
+ * Measured in percentage compared to Absolute Error. Read more about it
+ * in ImageMagick documentation.
+ *
+ * \return If the operation was successful, returns a boolean of whether the
+ * test was acceptable.
+ *
+ * If the operation was unsuccessful, will return an error message.
+ */
+static SimpleResult<bool> runImageComparison(
     const QString &baselinePath,
     const QString &generatedPath,
     const QString &diffPath,
@@ -258,7 +301,19 @@ RunImageComparison_Result runImageComparison(
     }
 }
 
-void writeIntoFailureReport(
+/*!
+ * \brief writeIntoFailureReport
+ * Writes the test case files into the failure report folder.
+ *
+ * \param testId
+ * \param baselinePath
+ * \param generatedImg
+ * \param diffPath
+ *
+ * \return Returns success if no errors was encountered.
+ * Otherwise returns an error message.
+ */
+static SimpleResult<void> writeIntoFailureReport(
     int testId,
     const QString &baselinePath,
     const QImage &generatedImg,
@@ -268,7 +323,8 @@ void writeIntoFailureReport(
     // QFile won't create our directories for us.
     // We gotta make them ourselves.
     if (!dir.exists() && !dir.mkpath(dir.absolutePath())) {
-        qCritical() << "tried writing to file. Creating parent directory failed.\n";
+        return SimpleError{
+            "Tried writing file to failure report directory. Creating parent directory failed." };
     }
 
     QString failureReportDir = QString("renderoutput_failures");
@@ -279,21 +335,26 @@ void writeIntoFailureReport(
         QString("%1_expected.png").arg(testId);
     bool expectedCopySuccess = QFile::copy(baselinePath, expectedOutputPath);
     if (!expectedCopySuccess) {
-        qCritical() << "Failed to copy baseline file into failure report directory.";
+        return SimpleError{
+            "Failed to copy baseline file into failure report directory." };
     }
 
     bool generatedImgSaveSuccess = generatedImg.save(
         QString("renderoutput_failures/%1_generated.png").arg(testId));
     if (!generatedImgSaveSuccess) {
-        qCritical() << "Failed to copy generated image into failure report directory.";
+        return SimpleError{
+            "Failed to copy generated image into failure report directory." };
     }
 
     bool differCopySuccess = QFile::copy(
         diffPath,
         QString("renderoutput_failures/%1_diff.png").arg(testId));
     if (!differCopySuccess) {
-        qCritical() << "Failed to copy failed baseline file into failure report directory.";
+        return SimpleError{
+            "Failed to copy diff image into failure report directory." };
     }
+
+    return {};
 }
 
 void RenderingTest::compare_to_baseline() {
@@ -303,6 +364,7 @@ void RenderingTest::compare_to_baseline() {
 
     QString tempDir = this->tempDir();
 
+    // Render our image.
     SimpleResult<QImage> renderResult = OutputTester::render(
         testItem,
         stylesheet(),
@@ -321,12 +383,14 @@ void RenderingTest::compare_to_baseline() {
     QString diffPath = tempDir + QDir::separator() + "different.png";
     int diffThreshold = 5;
 
-    RunImageComparison_Result imgCompareResult = runImageComparison(
+    SimpleResult<bool> imgCompareResult = runImageComparison(
         baselinePath,
         generatedPath,
         diffPath,
         diffThreshold);
-    if (!imgCompareResult.success) {
+    // If the operation itself failed, or the image comparison was not acceptable,
+    // then we write the failed test case to file.
+    if (!imgCompareResult.success || !imgCompareResult.value) {
         // Start writing the files to the failure report.
         writeIntoFailureReport(
             testId,
@@ -334,5 +398,11 @@ void RenderingTest::compare_to_baseline() {
             generatedImg,
             diffPath);
     }
-    QVERIFY2(imgCompareResult.success, imgCompareResult.errorString.toUtf8());
+
+    QVERIFY2(
+        imgCompareResult.success,
+        imgCompareResult.errorMsg.toUtf8());
+    QVERIFY2(
+        imgCompareResult.value,
+        "Generated image is not equal to baseline.");
 }

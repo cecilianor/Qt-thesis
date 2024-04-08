@@ -26,7 +26,7 @@
 	},
 	{
 		"name": "Top worldmap, viewport offset, slight zoom",
-		"coords": [ -10, 60 ],
+		"coords": [ 10, 60 ],
 		"vp-zoom": 2,
 		"map-zoom": 1
 	},

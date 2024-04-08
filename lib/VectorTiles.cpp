@@ -384,6 +384,16 @@ std::optional<VectorTile> VectorTile::fromByteArray(const QByteArray &bytes)
     return Bach::tileFromByteArray(bytes);
 }
 
+std::optional<VectorTile> VectorTile::fromFile(const QString &path)
+{
+    QFile file{ path };
+    bool openSuccess = file.open(QFile::ReadOnly);
+    if (!openSuccess) {
+        return std::nullopt;
+    }
+    return fromByteArray(file.readAll());
+}
+
 std::optional<VectorTile> Bach::tileFromByteArray(const QByteArray &bytes)
 {
     QProtobufSerializer serializer;
