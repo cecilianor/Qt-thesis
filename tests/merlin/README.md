@@ -40,43 +40,17 @@ This section describes how to setup a valid JSON file of test-case configuration
 The top level object in a test-case configurations file needs to be an array. Each element in this array describes an individual test-case configuration. A test-case configuration may have the following values:
 
 type ViewportCoords = `[float, float]` where each element corresponds to longitude and latitude respectively.
+
 type TileCoord = `[int, int, int]` where each element corresponds to zoom, x and y respectively.
 
- - Optional
-Key: `name`
-Value: `string`
-An identifier that may be output during terminal. Mosty helpful for identifying individual
+- `name`. Value: `string`. Optional. An identifier that may be output during terminal. Mosty helpful for identifying individual
 test-cases during execution. Default to an empty string.
-
- - Optional
-Key: `coords`
-Value: `Array[2] of floats`
-The center-coordinates of the viewport in longitude and latitude, respectively. Values outside the world map are allowed. Defaults to `[0, 0]`.
-
- - Optional
-Key: `vp-zoom`
-Value: `float`
-The zoom level of the viewport. Defaults to `0`. 
-
-- Optional
-Key: `map-zoom`
-Value: `int`
-The zoom level of the map. Defaults to `0`.
-
-- Optional
-Key: `tiles`
-Value: `TileCoord[]`
-A list of TileCoords. This defines the subset of tiles that are allowed to be used during rendering. If this value is not defined, the program will automatically calculate which tiles would be visible in viewports configuration.
-
-- Optional
-Key: `draw-fill`
-Value: `bool`
-Controls whether any fill-elements should be rendered in this test-case. Defaults to `true`.
-
-- Optional
-Key: `draw-lines`
-Value: `bool`
-Controls whether any line-elements should be rendered in this test-case. Defaults to `true`.
+- `coords`. Value: `Array[2] of floats`. Optional. The center-coordinates of the viewport in longitude and latitude, respectively. Values outside the world map are allowed. Defaults to `[0, 0]`.
+- `vp-zoom`. Value: `float`. Optional. The zoom level of the viewport. Defaults to `0`.
+- `map-zoom`. Value: `int`. Optional. The zoom level of the map. Defaults to `0`.
+-  `tiles`. Value: `TileCoord[]`. A list of TileCoords. This defines the subset of tiles that are allowed to be used during rendering. If this value is not defined, the program will automatically calculate which tiles would be visible in viewports configuration.
+- `draw-fill`. Value: `bool`. Optional. Controls whether any fill-elements should be rendered in this test-case. Defaults to `true`.
+- `draw-lines`. Value: `bool`. Optional. Controls whether any line-elements should be rendered in this test-case. Defaults to `true`.
 
 ## `testcases.json` example
 ```json
