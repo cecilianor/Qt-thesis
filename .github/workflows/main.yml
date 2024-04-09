@@ -2,7 +2,7 @@ name: Linux CMake build & test
 
 on:
   push:
-    branches: [ main, dev, graphics-tests ]
+    branches: [ main, dev ]
   pull_request:
     branches: [ main, dev ]
 
