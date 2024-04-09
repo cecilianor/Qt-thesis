@@ -1,9 +1,8 @@
+#include <QFile>
 #include <QRegularExpression>
 #include <QtMath>
 
 #include "Layerstyle.h"
-
-#include <QFile>
 
 /*!
  * \brief getColorFromString creates a QColor object from an HSL color string.
