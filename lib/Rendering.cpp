@@ -209,19 +209,21 @@ static void paintVectorLayer_Point(
     QVector<QPair<int, PointFeature>> labels; //Used to order text rendering operation based on "rank" property.
     // Iterate over all the features, and filter out anything that is not point  (rendering of line features for curved text in the symbol layer is not yet implemented).
     for (auto const& abstractFeature : layer.m_features) {
-        if (abstractFeature->type() != AbstractLayerFeature::featureType::point) //For normal text (continents /countries / cities / places / ...)
-            continue;
-        const PointFeature &feature = *static_cast<const PointFeature*>(abstractFeature);
+        if(abstractFeature->type() == AbstractLayerFeature::featureType::line){
+            const LineFeature &feature = *static_cast<const LineFeature*>(abstractFeature);
+            Bach::paintSingleTileFeature_Point_Curved({&painter, &layerStyle, &feature, mapZoom, vpZoom, geometryTransform});
+        }else if (abstractFeature->type() == AbstractLayerFeature::featureType::point){ //For normal text (continents /countries / cities / places / ...)
+            const PointFeature &feature = *static_cast<const PointFeature*>(abstractFeature);
+            // Tests whether the feature should be rendered at all based on possible expression.
+            if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
+                continue;
 
-        // Tests whether the feature should be rendered at all based on possible expression.
-        if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
-            continue;
-
-        //Add the feature along with its "rank" (if present, defaults to 100) to the labels map.
-        if(feature.featureMetaData.contains("rank")){
-            labels.append(QPair<int, PointFeature>(feature.featureMetaData["rank"].toInt(), feature));
-        }else{
-            labels.append(QPair<int, PointFeature>(100, feature));
+            //Add the feature along with its "rank" (if present, defaults to 100) to the labels map.
+            if(feature.featureMetaData.contains("rank")){
+                labels.append(QPair<int, PointFeature>(feature.featureMetaData["rank"].toInt(), feature));
+            }else{
+                labels.append(QPair<int, PointFeature>(100, feature));
+            }
         }
     }
 

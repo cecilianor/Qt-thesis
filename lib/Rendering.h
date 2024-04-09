@@ -50,6 +50,15 @@ namespace Bach {
         QTransform transformIn;
     };
 
+    struct PaintingDetailsPointCurved{
+        QPainter *painter;
+        const SymbolLayerStyle *layerStyle = nullptr;
+        const LineFeature *feature = nullptr;
+        int mapZoom{};
+        double vpZoom{};
+        QTransform transformIn;
+    };
+
 
     QPair<double, double> lonLatToWorldNormCoord(double lon, double lat);
     QPair<double, double> lonLatToWorldNormCoordDegrees(double lon, double lat);
@@ -66,6 +75,8 @@ namespace Bach {
         const int tileSize,
         bool forceNoChangeFontType,
         QVector<QRect> &rects);
+
+    void paintSingleTileFeature_Point_Curved(PaintingDetailsPointCurved details);
 
 
     int calcMapZoomLevelForTileSizePixels(

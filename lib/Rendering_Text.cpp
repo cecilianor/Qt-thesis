@@ -14,7 +14,7 @@
  */
 static QColor getTextColor(
     const SymbolLayerStyle &layerStyle,
-    const PointFeature &feature,
+    const AbstractLayerFeature &feature,
     int mapZoom,
     double vpZoom)
 {
@@ -43,7 +43,7 @@ static QColor getTextColor(
  */
 static int getTextSize(
     const SymbolLayerStyle &layerStyle,
-    const PointFeature &feature,
+    const AbstractLayerFeature &feature,
     int mapZoom,
     double vpZoom)
 {
@@ -72,7 +72,7 @@ static int getTextSize(
  */
 static float getTextOpacity(
     const SymbolLayerStyle &layerStyle,
-    const PointFeature &feature,
+    const AbstractLayerFeature &feature,
     int mapZoom,
     double vpZoom)
 {
@@ -101,7 +101,7 @@ static float getTextOpacity(
  */
 static QString getTextContent(
     const SymbolLayerStyle &layerStyle,
-    const PointFeature &feature,
+    const AbstractLayerFeature &feature,
     int mapZoom,
     double vpZoom)
 {
@@ -416,4 +416,51 @@ void Bach::paintSingleTileFeature_Point(
             details.vpZoom);
     }
 }
+
+
+void Bach::paintSingleTileFeature_Point_Curved(PaintingDetailsPointCurved details)
+{
+    QPainter &painter = *details.painter;
+    const SymbolLayerStyle &layerStyle = *details.layerStyle;
+    const LineFeature &feature = *details.feature;
+    //Get the text to be rendered.
+    QString textToDraw = getTextContent(layerStyle, feature, details.mapZoom, details.vpZoom).toUpper();
+    //If there is no text then there is nothing to render, we return
+    if(textToDraw == "") return;
+
+    //Get the rendering parameters from the layerstyle and set the relevant painter field.
+    painter.setBrush(Qt::NoBrush);
+    int textSize = getTextSize(layerStyle, feature, details.mapZoom, details.vpZoom);
+    QFont textFont = QFont(layerStyle.m_textFont);
+    textFont.setPixelSize(textSize);
+    painter.setOpacity(getTextOpacity(layerStyle, feature, details.mapZoom, details.vpZoom));
+    //Text is always antialised (otherwise it does not look good)
+    painter.setRenderHints(QPainter::Antialiasing, true);
+
+    //Get the coordinates for the text rendering
+    QTransform transform = details.transformIn;
+    transform.scale(1 / 4096.0, 1 / 4096.0);
+    const QPainterPath &path = transform.map(feature.line());
+
+    //transform.scale(tileSize, tileSize);
+    //Remap the original coordinates so that they are positioned correctly.
+    QFontMetrics fMetrics(textFont);
+    //double letterSpacing = layerStyle.m_textLetterSpacing.toDouble() * textFont.pixelSize();
+    qreal length = 10;
+    qreal percentage = path.percentAtLength(length);
+    qreal angle;
+    QPointF charPosition;
+    for(int i = 0; i < textToDraw.size(); i++){
+        charPosition = path.pointAtPercent(percentage);
+        angle = path.angleAtPercent(percentage);
+        painter.save();
+        painter.translate(charPosition);
+        painter.rotate(-angle);
+        painter.drawText(QRectF(0, -100, 100, 200), textToDraw.at(i), Qt::AlignLeft | Qt::AlignVCenter);
+        painter.restore();
+        length = length + fMetrics.horizontalAdvance(textToDraw.at(i)) + 2;
+        percentage = path.percentAtLength(length);
+    }
+}
+
 
