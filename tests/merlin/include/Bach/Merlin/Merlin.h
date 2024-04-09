@@ -1,6 +1,5 @@
-#ifndef RENDERING_OUTPUT_TESTER_H
-#define RENDERING_OUTPUT_TESTER_H
-
+#ifndef BACH_MERLIN_H
+#define BACH_MERLIN_H
 
 #include <QFont>
 #include <QJsonObject>
@@ -14,7 +13,7 @@
 #error "C++ define 'BACH_RENDEROUTPUT_BASELINE_DIR' was not defined. This likely means a build error."
 #endif
 
-namespace Bach::OutputTester {
+namespace Bach::Merlin {
     /*!
      * \brief The SimpleError class,
      * a helper struct to generate an error SimpleResult without having
@@ -48,6 +47,7 @@ namespace Bach::OutputTester {
         SimpleResult(T&& val) :
             success{ true },
             value{ std::move(val) } {}
+        SimpleError error() const { return SimpleError { errorMsg }; }
     };
 
     /*!
@@ -65,6 +65,7 @@ namespace Bach::OutputTester {
         SimpleResult(const SimpleError& err) :
             success{ false },
             errorMsg{ err.msg } {}
+        SimpleError error() const { return SimpleError { errorMsg }; }
     };
 
 
@@ -177,9 +178,10 @@ namespace Bach::OutputTester {
         const QFont &font);
 
     QString buildBaselinePath();
+    QString buildBaselineInputPath();
     QString buildBaselineExpectedOutputPath();
     QString buildBaselineExpectedOutputPath(int testId);
     QString getStyleSheetPath();
 }
 
-#endif // RENDERING_OUTPUT_TESTER_H
+#endif // BACH_MERLIN_H

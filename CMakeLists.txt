@@ -184,62 +184,6 @@ if (BUILD_TESTS)
     add_test(NAME VectorTileTest COMMAND vectortile_test)
     add_test(NAME EvaluatorTest COMMAND evaluator_test)
 
-    set(RENDER_OUTPUT_TESTER_BASELINE_RELATIVE_PATH "unitTestResources/RenderOutputTesterBaseline")
-    file(
-        GLOB
-        RENDER_OUTPUT_TESTER_BASELINE_SOURCES
-        RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}
-        "${RENDER_OUTPUT_TESTER_BASELINE_RELATIVE_PATH}/*.mvt")
-    qt_add_executable(rebuild_rendering_output_baseline
-        tests/rendering/rebuild_baseline.cpp
-        tests/rendering/OutputTester.h
-        tests/rendering/OutputTester.cpp)
-    target_compile_definitions(
-        rebuild_rendering_output_baseline
-        PUBLIC
-        BACH_RENDEROUTPUT_BASELINE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/${RENDER_OUTPUT_TESTER_BASELINE_RELATIVE_PATH}")
-    target_link_libraries(rebuild_rendering_output_baseline PUBLIC maplib)
-    qt_add_resources(rebuild_rendering_output_baseline "rebuild_rendering_output_baseline_resources"
-        PREFIX "/"
-        FILES
-        "${RENDER_OUTPUT_TESTER_BASELINE_RELATIVE_PATH}/styleSheet.json"
-        ${RENDER_OUTPUT_TESTER_BASELINE_SOURCES})
+    add_subdirectory(tests/merlin)
 
-
-
-
-    # There's a problem when using ImageMagick on Ubuntu and Windows.
-    # At the time of writing, the commonly available ImagMagick version on Windows is
-    # v7. Ubuntu 22.04 only ships with v6. These two versions differ slightly on how the
-    # comparison command is used and this code attempts to detect the difference, and
-    # pass appropriate data to the C++ code.
-    find_program(image_magick NAMES magick)
-    if (NOT image_magick)
-        find_program(image_magick NAMES compare REQUIRED)
-        # We found the "compare" executable
-        set(USE_IMAGEMAGICK_V7 false)
-    else()
-        # Image magick program "magick" found
-        set(USE_IMAGEMAGICK_V7 true)
-    endif()
-    qt_add_executable(rendering_output_tests
-        tests/rendering/rendering_output_tests.cpp
-        tests/rendering/OutputTester.h
-        tests/rendering/OutputTester.cpp)
-    # Make sure our variable is set to either 'true' or 'false' since it
-    # has to be passed into our C++ code as boolean.
-    if (NOT USE_IMAGEMAGICK_V7 STREQUAL true AND NOT USE_IMAGEMAGICK_V7 STREQUAL false)
-        message(FATAL_ERROR "Variable 'USE_IMAGEMAGICK_V7' was not set correctly.")
-    endif()
-    target_compile_definitions(
-        rendering_output_tests
-        PUBLIC
-        BACH_RENDEROUTPUT_BASELINE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/${RENDER_OUTPUT_TESTER_BASELINE_RELATIVE_PATH}"
-        BACH_USE_IMAGEMAGICK_V7=${USE_IMAGEMAGICK_V7})
-    qt_add_resources(rendering_output_tests "rendering_output_tests_resources"
-        PREFIX "/"
-        FILES
-        "${RENDER_OUTPUT_TESTER_BASELINE_RELATIVE_PATH}/styleSheet.json")
-    target_link_libraries(rendering_output_tests PUBLIC maplib Qt6::Test)
-    add_test(NAME RenderOutputTest COMMAND rendering_output_tests)
 endif()

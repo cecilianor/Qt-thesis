@@ -1,4 +1,4 @@
-#include "OutputTester.h"
+#include "Bach/Merlin/Merlin.h"
 
 #include <QDir>
 #include <QFile>
@@ -9,19 +9,24 @@
 #include "Rendering.h"
 #include "VectorTiles.h"
 
-namespace OutputTester = Bach::OutputTester;
-using TestItem = OutputTester::TestItem;
-using OutputTester::SimpleResult;
-using OutputTester::SimpleError;
+namespace Merlin = Bach::Merlin;
+using TestItem = Merlin::TestItem;
+using Merlin::SimpleResult;
+using Merlin::SimpleError;
 
 /*!
  * \brief buildBaselinePath
  * \return The path to the baseline folder. The path can be expected
  * to be inside the repository folder.
  */
-QString OutputTester::buildBaselinePath()
+QString Merlin::buildBaselinePath()
 {
     return BACH_RENDEROUTPUT_BASELINE_DIR;
+}
+
+QString Merlin::buildBaselineInputPath()
+{
+    return buildBaselinePath() + QString("/input-files");
 }
 
 /*!
@@ -29,9 +34,9 @@ QString OutputTester::buildBaselinePath()
  * \return The path to the baseline folder where expected output will land.
  * The path can be expected to be inside the repository folder.
  */
-QString OutputTester::buildBaselineExpectedOutputPath()
+QString Merlin::buildBaselineExpectedOutputPath()
 {
-    return buildBaselinePath() + QDir::separator() + "expected_output";
+    return buildBaselinePath() + "/expected_output";
 }
 
 /*!
@@ -40,32 +45,32 @@ QString OutputTester::buildBaselineExpectedOutputPath()
  * \return The path to the baseline folder where the expected output file will land.
  * The path can be expected to be inside the repository folder.
  */
-QString OutputTester::buildBaselineExpectedOutputPath(int testId)
+QString Merlin::buildBaselineExpectedOutputPath(int testId)
 {
-    return buildBaselineExpectedOutputPath() + QDir::separator() + QString::number(testId) + QString(".png");
+    return buildBaselineExpectedOutputPath() + QString("/%1.png").arg(testId);
 }
 
 /*!
  * \brief getStyleSheetPath
  * \return Returns the path to the predetermined stylesheet
  */
-QString OutputTester::getStyleSheetPath()
+QString Merlin::getStyleSheetPath()
 {
-    return buildBaselinePath() + QDir::separator() + "/styleSheet.json";
+    return buildBaselineInputPath() + "/styleSheet.json";
 }
 
 /*!
- * \brief OutputTester::loadFont
+ * \brief Merlin::loadFont
  * Loads the predetermined font from file.
  * \return The QFont if success. Nullopt if something fails.
  */
-std::optional<QFont> OutputTester::loadFont()
+std::optional<QFont> Merlin::loadFont()
 {
     QFontDatabase::removeAllApplicationFonts();
-    int fontId = QFontDatabase::addApplicationFont(
-        OutputTester::buildBaselinePath() +
-        QDir::separator() +
-        "RobotoMono-Regular.ttf");
+    QString fontPath =
+        Merlin::buildBaselineInputPath() +
+        "/RobotoMono-Regular.ttf";
+    int fontId = QFontDatabase::addApplicationFont(fontPath);
     QStringList fontFamilies = QFontDatabase::applicationFontFamilies(fontId);
     if (!fontFamilies.isEmpty()) {
         QFont font = fontFamilies.first();
@@ -77,14 +82,14 @@ std::optional<QFont> OutputTester::loadFont()
 }
 
 /*!
- * \brief OutputTester::loadFont
+ * \brief Merlin::loadFont
  * Loads the predetermined stylesheet from file.
  * \return The StyleSheet if success. Nullopt if something fails.
  */
-SimpleResult<StyleSheet> OutputTester::loadStylesheet()
+SimpleResult<StyleSheet> Merlin::loadStylesheet()
 {
     std::optional<StyleSheet> styleSheetResult =
-        StyleSheet::fromJsonFile(OutputTester::getStyleSheetPath());
+        StyleSheet::fromJsonFile(Merlin::getStyleSheetPath());
 
     if (!styleSheetResult.has_value()) {
         return SimpleError{ "Failed to parse JSON into StyleSheet object." };
@@ -109,7 +114,7 @@ static SimpleResult<TileMapT> loadTiles(QVector<TileCoord> tileCoords) {
     // vector tile files.
     for (TileCoord tileCoord : tileCoords) {
 
-        QString path = OutputTester::buildBaselinePath() + QDir::separator() + QString("z%1x%2y%3.mvt")
+        QString path = Merlin::buildBaselineInputPath() + QString("/z%1x%2y%3.mvt")
             .arg(tileCoord.zoom)
             .arg(tileCoord.x)
             .arg(tileCoord.y);
@@ -135,7 +140,7 @@ static SimpleResult<TileMapT> loadTiles(QVector<TileCoord> tileCoords) {
 static SimpleResult<QString> stringFromJson(QJsonValueConstRef jsonVal)
 {
     SimpleError err = { "JSON value is not a string" };
-    if (jsonVal.type() != QJsonValue::Type::String) { return err; }
+    if (!jsonVal.isString()) { return err; }
     return jsonVal.toString();
 }
 
@@ -148,7 +153,7 @@ static SimpleResult<QString> stringFromJson(QJsonValueConstRef jsonVal)
 static SimpleResult<bool> boolFromJson(QJsonValueConstRef jsonVal)
 {
     SimpleError err = { "JSON value is not a boolean" };
-    if (jsonVal.type() != QJsonValue::Type::Bool) { return err; }
+    if (!jsonVal.isBool()) { return err; }
     return jsonVal.toBool();
 }
 
@@ -162,20 +167,18 @@ static SimpleResult<bool> boolFromJson(QJsonValueConstRef jsonVal)
  */
 static SimpleResult<int> posIntFromJson(QJsonValueConstRef jsonVal)
 {
-    QString errMsg = "JSON value is not a positive integer";
-    if (jsonVal.type() != QJsonValue::Type::Double) {
-        return SimpleError{ errMsg };
-    }
+    SimpleError err = { "JSON value is not a positive integer" };
+    if (!jsonVal.isDouble()) { return err; }
 
     double tempFloat = jsonVal.toDouble();
     int tempInt = jsonVal.toInteger();
     // Check that our value has no decimal component.
     if ((double)tempInt != tempFloat) {
-        return SimpleError{ errMsg };
+        return err;
     }
 
     if (tempInt < 0) {
-        return SimpleError{ errMsg };
+        return err;
     }
 
     return tempInt;
@@ -189,8 +192,8 @@ static SimpleResult<int> posIntFromJson(QJsonValueConstRef jsonVal)
  */
 static SimpleResult<double> doubleFromJson(QJsonValueConstRef jsonVal)
 {
-    SimpleError err = { "JSON value is not a boolean" };
-    if (jsonVal.type() != QJsonValue::Type::Double) { return err; }
+    SimpleError err = { "JSON value is not a double" };
+    if (!jsonVal.isDouble()) { return err; }
     return jsonVal.toDouble();
 }
 
@@ -260,17 +263,17 @@ static SimpleResult<QVector<TileCoord>> tileCoordListFromJson(const QJsonValueCo
 
         // Load zoom member.
         SimpleResult<int> result = posIntFromJson(tileCoordJsonArr[0]);
-        if (!result.success) { return err; }
+        if (!result.success) { return result.error(); }
         outTile.zoom = result.value;
 
         // Load X member.
         result = posIntFromJson(tileCoordJsonArr[1]);
-        if (!result.success) { return err; }
+        if (!result.success) { return result.error(); }
         outTile.x = result.value;
 
         // Load Y member.
         result = posIntFromJson(tileCoordJsonArr[2]);
-        if (!result.success) { return err; }
+        if (!result.success) { return result.error(); }
         outTile.y = result.value;
 
         out.push_back(outTile);
@@ -347,9 +350,7 @@ SimpleResult<QVector<TestItem>> loadTestItemsFromJson(const QJsonDocument &json)
         // Check that there are no unrecognized keys.
         {
             SimpleResult<void> result = validateTestItemJsonKeys(testItemJson);
-            if (!result.success) {
-                return SimpleError { result.errorMsg };
-            }
+            if (!result.success) { return result.error(); }
         }
 
         // Load name if any
@@ -357,27 +358,21 @@ SimpleResult<QVector<TestItem>> loadTestItemsFromJson(const QJsonDocument &json)
             auto it = testItemJson.find(TestItem::nameJsonKey());
             if (it != testItemJson.end()) {
                 SimpleResult<QString> result = stringFromJson(*it);
-                if (!result.success) {
-                    return SimpleError{ result.errorMsg };
-                }
+                if (!result.success) { return result.error(); }
                 outItem.name = result.value;
             }
         }
 
         // Load coords if any
         SimpleResult<void> coordGetResult = outItem.loadCoordsFromJson(testItemJson);
-        if (!coordGetResult.success) {
-            return SimpleError{ coordGetResult.errorMsg };
-        }
+        if (!coordGetResult.success) { return coordGetResult.error(); }
 
         // Load "draw-fill"
         {
             auto it = testItemJson.find(TestItem::drawFillJsonKey());
             if (it != testItemJson.end()) {
                 SimpleResult<bool> result = boolFromJson(*it);
-                if (!result.success) {
-                    return SimpleError{ result.errorMsg };
-                }
+                if (!result.success) { return result.error(); }
                 outItem.drawFill = result.value;
             }
         }
@@ -387,9 +382,7 @@ SimpleResult<QVector<TestItem>> loadTestItemsFromJson(const QJsonDocument &json)
             auto it = testItemJson.find(TestItem::drawLinesJsonKey());
             if (it != testItemJson.end()) {
                 SimpleResult<bool> result = boolFromJson(*it);
-                if (!result.success) {
-                    return SimpleError{ result.errorMsg };
-                }
+                if (!result.success) { return result.error(); }
                 outItem.drawLines = result.value;
             }
         }
@@ -399,10 +392,8 @@ SimpleResult<QVector<TestItem>> loadTestItemsFromJson(const QJsonDocument &json)
             auto it = testItemJson.find(TestItem::vpZoomJsonKey());
             if (it != testItemJson.end()) {
                 // Load it as integer
-                SimpleResult<int> result = posIntFromJson(*it);
-                if (!result.success) {
-                    return SimpleError{ result.errorMsg };
-                }
+                SimpleResult<double> result = doubleFromJson(*it);
+                if (!result.success) { return result.error(); }
                 outItem.vpZoom = result.value;
             }
         }
@@ -413,9 +404,7 @@ SimpleResult<QVector<TestItem>> loadTestItemsFromJson(const QJsonDocument &json)
             if (it != testItemJson.end()) {
                 // Load it as integer
                 SimpleResult<int> mapZoomResult = posIntFromJson(*it);
-                if (!mapZoomResult.success) {
-                    return SimpleError{ mapZoomResult.errorMsg };
-                }
+                if (!mapZoomResult.success) { return mapZoomResult.error(); }
                 outItem.mapZoom = mapZoomResult.value;
             }
         }
@@ -433,9 +422,7 @@ SimpleResult<QVector<TestItem>> loadTestItemsFromJson(const QJsonDocument &json)
                     outItem.mapZoom);
             } else {
                 SimpleResult<QVector<TileCoord>> tileCoordsResult = tileCoordListFromJson(*it);
-                if (!tileCoordsResult.success) {
-                    return SimpleError{ tileCoordsResult.errorMsg };
-                }
+                if (!tileCoordsResult.success) { return tileCoordsResult.error(); }
                 outItem.tileCoords = tileCoordsResult.value;
             }
         }
@@ -451,8 +438,8 @@ SimpleResult<QVector<TestItem>> loadTestItemsFromJson(const QJsonDocument &json)
  * \return Returns the list of TestItems if successful. Returns an error message
  * if not successful.
  */
-SimpleResult<QVector<TestItem>> OutputTester::loadTestItems() {
-    QFile file { OutputTester::buildBaselinePath() + QDir::separator() + "testcases.json" };
+SimpleResult<QVector<TestItem>> Merlin::loadTestItems() {
+    QFile file { Merlin::buildBaselinePath() + "/testcases.json" };
     file.open(QFile::ReadOnly);
 
     QJsonParseError parseError;
@@ -479,7 +466,7 @@ SimpleResult<QVector<TestItem>> OutputTester::loadTestItems() {
  * \return Returns the final QImage if successful. Returns an error message
  * if not successful.
  */
-SimpleResult<QImage> OutputTester::render(
+SimpleResult<QImage> Merlin::render(
     const TestItem &item,
     const StyleSheet &stylesheet,
     const QFont &font)

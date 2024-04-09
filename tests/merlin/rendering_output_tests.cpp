@@ -3,13 +3,13 @@
 #include <QProcess>
 #include <QGuiApplication>
 
-#include "OutputTester.h"
+#include "Bach/Merlin/Merlin.h"
 #include "Utilities.h"
 
-namespace OutputTester = Bach::OutputTester;
-using TestItem = OutputTester::TestItem;
-using OutputTester::SimpleResult;
-using Bach::OutputTester::SimpleError;
+namespace Merlin = Bach::Merlin;
+using TestItem = Merlin::TestItem;
+using Merlin::SimpleResult;
+using Merlin::SimpleError;
 
 namespace Bach::TestUtils {
     /*!
@@ -103,21 +103,21 @@ void RenderingTest::initTestCases()
 
     // Load font
     {
-        std::optional<QFont> fontOpt = OutputTester::loadFont();
+        std::optional<QFont> fontOpt = Merlin::loadFont();
         QVERIFY2(fontOpt.has_value(), "Failed to load predetermined font file.");
         this->_font = fontOpt.value();
     }
 
     // Load stylesheet
     {
-        SimpleResult<StyleSheet> result = OutputTester::loadStylesheet();
+        SimpleResult<StyleSheet> result = Merlin::loadStylesheet();
         QVERIFY2(result.success, result.errorMsg.toUtf8());
         this->_stylesheet = std::move(result.value);
     }
 
     // Load test items
     {
-        SimpleResult<QVector<TestItem>> result = OutputTester::loadTestItems();
+        SimpleResult<QVector<TestItem>> result = Merlin::loadTestItems();
         QVERIFY2(result.success, result.errorMsg.toUtf8());
         this->_testItems = result.value;
     }
@@ -365,7 +365,7 @@ void RenderingTest::compare_to_baseline() {
     QString tempDir = this->tempDir();
 
     // Render our image.
-    SimpleResult<QImage> renderResult = OutputTester::render(
+    SimpleResult<QImage> renderResult = Merlin::render(
         testItem,
         stylesheet(),
         font());
@@ -379,8 +379,8 @@ void RenderingTest::compare_to_baseline() {
         generatedImg);
     QVERIFY2(writeSuccess, "Unable to write generated image to temporary file.");
 
-    QString baselinePath = Bach::OutputTester::buildBaselineExpectedOutputPath(testId);
-    QString diffPath = tempDir + QDir::separator() + "different.png";
+    QString baselinePath = Bach::Merlin::buildBaselineExpectedOutputPath(testId);
+    QString diffPath = tempDir + "/different.png";
     int diffThreshold = 5;
 
     SimpleResult<bool> imgCompareResult = runImageComparison(

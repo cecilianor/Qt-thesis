@@ -9,11 +9,8 @@
 	},
 	{
 		"name": "Top worldmap, map zoom 1",
+		"vp-zoom": 0.1,
 		"map-zoom": 1
-	},
-	{
-		"name": "Top worldmap, map zoom 2",
-		"map-zoom": 2
 	},
 	{
 		"name": "Top worldmap, viewport zoom 1",
@@ -40,6 +37,12 @@
 		"name": "Nydalen",
 		"coords": [ 10.765248, 59.949584413 ],
 		"vp-zoom": 12,
+		"map-zoom": 12
+	},
+	{
+		"name": "Nydalen",
+		"coords": [ 10.765248, 59.949584413 ],
+		"vp-zoom": 12.1,
 		"map-zoom": 12
 	},
 	{

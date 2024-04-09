@@ -5,10 +5,10 @@
 
 #include "Utilities.h"
 
-#include "OutputTester.h"
+#include "Bach/Merlin/Merlin.h"
 
-namespace OutputTester = Bach::OutputTester;
-using Bach::OutputTester::TestItem;
+namespace OutputTester = Bach::Merlin;
+using Bach::Merlin::TestItem;
 using OutputTester::SimpleResult;
 using OutputTester::SimpleError;
 
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
         }
         const QImage& generatedImg = renderResult.value;
 
-        QString expectedOutputPath = Bach::OutputTester::buildBaselineExpectedOutputPath(testId);
+        QString expectedOutputPath = Bach::Merlin::buildBaselineExpectedOutputPath(testId);
 
         bool writeToFileSuccess = Bach::writeImageToNewFileHelper(expectedOutputPath, generatedImg);
         if (!writeToFileSuccess) {
