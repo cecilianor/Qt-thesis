@@ -417,6 +417,18 @@ void Bach::paintSingleTileFeature_Point(
     }
 }
 
+/*!
+ * \brief correctAngle
+ * correct the Angle for the road names so that the text rotation angle is always between 270 and 90 (through 360)
+ * \param angle the angle to be corrected
+ * \return the corrected angle
+ */
+static double correctAngle(double angle){
+    if(angle < 270 && angle > 90){
+        angle += 180;
+    }
+    return angle;
+}
 
 void Bach::paintSingleTileFeature_Point_Curved(PaintingDetailsPointCurved details)
 {
@@ -455,7 +467,7 @@ void Bach::paintSingleTileFeature_Point_Curved(PaintingDetailsPointCurved detail
         angle = path.angleAtPercent(percentage);
         painter.save();
         painter.translate(charPosition);
-        painter.rotate(-angle);
+        painter.rotate(-correctAngle(angle));
         painter.drawText(QRectF(0, -100, 100, 200), textToDraw.at(i), Qt::AlignLeft | Qt::AlignVCenter);
         painter.restore();
         length = length + fMetrics.horizontalAdvance(textToDraw.at(i)) + 2;
