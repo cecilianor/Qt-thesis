@@ -82,10 +82,10 @@ Controls whether any line-elements should be rendered in this test-case. Default
 ```json
 [
 	{
-        "name": "Background only",
+		"name": "Background only",
 		"draw-fill": false,
 		"draw-lines": false
-    },
+	},
 	{
 		"name": "Top worldmap"
 	},
