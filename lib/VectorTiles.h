@@ -1,6 +1,7 @@
 #ifndef VECTORTILES_H
 #define VECTORTILES_H
 
+//Qt header files
 #include <QByteArray>
 #include <QFile>
 #include <QList>
@@ -8,10 +9,10 @@
 #include <QPainterPath>
 #include <QRect>
 
-#include <map> // For std::map
+// STL header files
+#include <map>      // For std::map
 #include <optional> // For std::optional
-#include <memory> // For std::unique_ptr
-
+#include <memory>   // For std::unique_ptr
 
 /*
  * This abstract class is the base for all the classes representing different layer features.

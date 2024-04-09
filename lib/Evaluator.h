@@ -1,12 +1,14 @@
 #ifndef EVALUATOR_H
 #define EVALUATOR_H
 
+// Qt header files
 #include <QChar>
 #include <QJsonArray>
 #include <QMap>
 #include <QString>
 #include <QVariant>
 
+// Other header files
 #include "VectorTiles.h"
 
 class Evaluator

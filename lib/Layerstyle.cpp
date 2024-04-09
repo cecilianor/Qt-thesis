@@ -1,7 +1,9 @@
+// Qt header files
 #include <QFile>
 #include <QRegularExpression>
 #include <QtMath>
 
+// Other header files
 #include "Layerstyle.h"
 
 /*!

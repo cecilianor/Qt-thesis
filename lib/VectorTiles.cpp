@@ -1,5 +1,7 @@
+//Qt header files
 #include <QProtobufSerializer>
 
+// Other header files
 #include "VectorTiles.h"
 #include "vector_tile.qpb.h"
 

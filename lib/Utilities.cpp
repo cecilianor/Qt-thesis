@@ -1,8 +1,10 @@
+// Qt header files
 #include <QtEnvironmentVariables>
 #include <QFile>
 #include <QtNetwork>
 #include <QTextStream>
 
+// Other header files
 #include "TileLoader.h"
 #include "Utilities.h"
 

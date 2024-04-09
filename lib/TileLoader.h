@@ -1,6 +1,7 @@
 #ifndef TILELOADER_H
 #define TILELOADER_H
 
+// Qt header files
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QMutex>
@@ -10,11 +11,13 @@
 #include <QThreadPool>
 #include <QUrl>
 
+// STL header files
 #include <functional>
 #include <map>
 #include <memory>
 #include <set>
 
+// Other header files
 #include "RequestTilesResult.h"
 #include "TileCoord.h"
 #include "Utilities.h"

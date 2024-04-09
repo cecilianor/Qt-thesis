@@ -1,5 +1,7 @@
+// STL header files
 #include <functional>
 
+// Other header files
 #include "Evaluator.h"
 #include "Rendering.h"
 

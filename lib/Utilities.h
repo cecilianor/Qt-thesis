@@ -1,10 +1,12 @@
 #ifndef UTILITIES_H
 #define UTILITIES_H
 
+// Qt header files
 #include <QByteArray>
 #include <QJsonDocument>
 #include <QString>
 
+// STL header files
 #include <optional>
 
 /*!

@@ -1,9 +1,11 @@
+// Qt header files
 #include <QJsonDocument>
 #include <QObject>
 #include <QtEnvironmentVariables>
 #include <QTest>
 #include <QTimer>
 
+// Other header files
 #include "TileLoader.h"
 #include "Utilities.h"
 
