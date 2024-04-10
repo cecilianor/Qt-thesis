@@ -131,7 +131,8 @@ QVariant BackgroundStyle::getOpacityAtZoom(int zoomLevel) const
     if (m_backgroundOpacity.isNull()){
         // The default opacity in case no opacity is provided by the style sheet.
         return QVariant(1);
-    } else if (m_backgroundOpacity.typeId() != QMetaType::Type::Double && m_backgroundOpacity.typeId() != QMetaType::Type::QJsonArray){
+    } else if (m_backgroundOpacity.typeId() != QMetaType::Type::Double
+               && m_backgroundOpacity.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, float>> stops = m_backgroundOpacity.value<QList<QPair<int, float>>>();
         if (stops.size() == 0)
             return QVariant(1);
