@@ -106,9 +106,10 @@ QVariant BackgroundStyle::getColorAtZoom(int zoomLevel) const
         // The default color in case no color is provided by the style sheet.
         return QColor(Qt::GlobalColor::black);
     } else if (m_backgroundColor.typeId() != QMetaType::Type::QColor
-               && m_backgroundColor.typeId() != QMetaType::Type::QJsonArray){
+               && m_backgroundColor.typeId() != QMetaType::Type::QJsonArray) {
         QList<QPair<int, QColor>> stops = m_backgroundColor.value<QList<QPair<int, QColor>>>();
-        if(stops.size() == 0) return QColor(Qt::GlobalColor::black);
+        if (stops.size() == 0)
+            return QColor(Qt::GlobalColor::black);
         return QVariant(getStopOutput(stops, zoomLevel));
     } else {
         return m_backgroundColor;
