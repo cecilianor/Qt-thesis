@@ -52,7 +52,12 @@ qt_add_library(maplib STATIC
     lib/Evaluator.cpp
     lib/Utilities.h
     lib/Utilities.cpp
-    lib/RequestTilesResult.h)
+    lib/RequestTilesResult.h
+    lib/layerStyle_Background.cpp
+    lib/Layerstyle_Fill.cpp
+    lib/Layerstyle_Line.cpp
+    lib/Layerstyle_Symbol.cpp
+    lib/Layerstyle_NotImplemented.cpp)
 
 # Qt containers by default don't include asserts (i.e out of bounds checks) in their containers
 # under the RelWithDebInfo config. We enforce that they do to help us catch bugs.
