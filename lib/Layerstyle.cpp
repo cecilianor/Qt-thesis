@@ -759,7 +759,6 @@ QVariant SymbolLayerStyle::getTextOpacityAtZoom(int zoomLevel) const
 std::unique_ptr<NotImplementedStyle> NotImplementedStyle::fromJson(const QJsonObject &json)
 {
     std::unique_ptr<NotImplementedStyle> returnLayerPtr = std::make_unique<NotImplementedStyle>();
-    NotImplementedStyle* returnLayer = new NotImplementedStyle();
     return returnLayerPtr;
 }
 
