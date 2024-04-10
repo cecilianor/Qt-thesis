@@ -1,7 +1,7 @@
 #include <QRegularExpression>
 #include <QtMath>
 
-#include "Layerstyle.h"
+#include "LayerStyle.h"
 
 /*!
  * \brief FillLayerStyle::fromJson parses JSON style data of a layer

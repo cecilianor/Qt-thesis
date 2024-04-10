@@ -1,7 +1,7 @@
 #include <QRegularExpression>
 #include <QtMath>
 
-#include "Layerstyle.h"
+#include "LayerStyle.h"
 
 /*!
  * \brief AbstractLayerStyle::fromJson parses different layer style types.

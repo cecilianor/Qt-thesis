@@ -1,7 +1,7 @@
 #include <QRegularExpression>
 #include <QtMath>
 
-#include "Layerstyle.h"
+#include "LayerStyle.h"
 
 /*!
  * \brief BackgroundStyle::fromJson parses QJsonObject to obtain background

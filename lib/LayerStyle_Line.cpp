@@ -1,7 +1,7 @@
 #include <QRegularExpression>
 #include <QtMath>
 
-#include "Layerstyle.h"
+#include "LayerStyle.h"
 
 /*!
  * \brief LineLayerStyle::fromJson parses data from a QJsonObject
