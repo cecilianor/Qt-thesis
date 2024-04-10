@@ -19,21 +19,25 @@ std::unique_ptr<FillLayerStyle> FillLayerStyle::fromJson(const QJsonObject &json
 
     //Parsing layout properties.
     QJsonObject layout = jsonObj.value("layout").toObject();
-    //visibility property is parsed in AbstractLayerStyle* AbstractLayerStyle::fromJson(const QJsonObject &json)
+    //visibility property is parsed in:
+    // AbstractLayerStyle* AbstractLayerStyle::fromJson(const QJsonObject &jsonObj)
 
     //Parsing paint properties.
     QJsonObject paint = jsonObj.value("paint").toObject();
 
     // Get the antialiasing property from the style sheet or set it to true as a default.
-    returnLayer->m_antialias = paint.contains("fill-antialias") ? paint.value("fill-antialias").toBool() : true;
+    returnLayer->m_antialias = paint.contains("fill-antialias")
+                                   ? paint.value("fill-antialias").toBool() : true;
 
     if (paint.contains("fill-color")){
         QJsonValue fillColor = paint.value("fill-color");
         if (fillColor.isObject()){
-            // Case where the property is an object that has "Stops".
+            // Case where the property is an object that has "stops".
             QList<QPair<int, QColor>> stops;
-            for (const auto &stop
-                 : static_cast<const QJsonArray&>(fillColor.toObject().value("stops").toArray())){
+            QJsonArray arr = fillColor.toObject().value("stops").toArray();
+
+            // Loop over all stops and append a pair of <zoomStop, colorStop> data to `stops`.
+            for (QJsonValueConstRef stop : arr){
                 int zoomStop = stop.toArray().first().toInt();
                 QColor colorStop = Bach::getColorFromString(stop.toArray().last().toString());
                 stops.append(QPair<int, QColor>(zoomStop, colorStop));
@@ -51,13 +55,15 @@ std::unique_ptr<FillLayerStyle> FillLayerStyle::fromJson(const QJsonObject &json
     if (paint.contains("fill-opacity")){
         QJsonValue fillOpacity = paint.value("fill-opacity");
         if (fillOpacity.isObject()){
-            // Case where the property is an object that has "Stops".
+            // Case where the property is an object that has "stops".
             QList<QPair<int, float>> stops;
-            for (const auto &stop
-                 : static_cast<const QJsonArray&>(fillOpacity.toObject().value("stops").toArray())){
-                int zoomSopt = stop.toArray().first().toInt();
+            QJsonArray arr = fillOpacity.toObject().value("stops").toArray();
+
+            // Loop over all stops and append a pair of <zoomStop, opacityStop> to `stops`.
+            for (QJsonValueConstRef stop : arr){
+                int zoomStop = stop.toArray().first().toInt();
                 float opacityStop = stop.toArray().last().toDouble();
-                stops.append(QPair<int, float>(zoomSopt, opacityStop));
+                stops.append(QPair<int, float>(zoomStop, opacityStop));
             }
             returnLayer->m_fillOpacity.setValue(stops);
         } else if (fillOpacity.isArray()){
@@ -72,13 +78,12 @@ std::unique_ptr<FillLayerStyle> FillLayerStyle::fromJson(const QJsonObject &json
     if (paint.contains("fill-outline-color")){
         QJsonValue fillOutlineColor = paint.value("fill-outline-color");
         if (fillOutlineColor.isObject()){
-            // Case where the property is an object that has "Stops".
+            // Case where the property is an object that has "stops".
             QList<QPair<int, QColor>> stops;
-            for (const auto &stop
-                 : static_cast<const QJsonArray&>(fillOutlineColor.toObject().value("stops").toArray())){
-                /* BEWARE!*/
-                // This could potentially be a bug. Talk to Eimen to see what to do here.
-                /* BEWARE*/
+            QJsonArray arr =fillOutlineColor.toObject().value("stops").toArray();
+
+            // Loop over all stops and append a pair of <zoomStop, colorStop> to `stops`.
+            for (QJsonValueConstRef stop: arr){
                 int zoomStop = stop.toArray().first().toInt();
                 QColor colorStop = Bach::getColorFromString(stop.toArray().last().toString());
                 stops.append(QPair<int, QColor>(zoomStop, colorStop));
