@@ -1,7 +1,7 @@
 #include <QObject>
 #include <QTest>
 
-#include "Layerstyle.h"
+#include "LayerStyle.h"
 
 class UnitTesting : public QObject
 {
