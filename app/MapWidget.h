@@ -29,6 +29,7 @@ public:
 
     void paintEvent(QPaintEvent*) override;
     void keyPressEvent(QKeyEvent*) override;
+    void wheelEvent(QWheelEvent *) override;
 
     /* Zoom level of viewport. This is a floating number and can be partially zoomed between
      * discrete steps.

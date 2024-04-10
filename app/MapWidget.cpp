@@ -6,6 +6,7 @@
 #include <QCoreApplication>
 #include <QKeyEvent>
 #include <QPainter>
+#include <QWheelEvent>
 
 /*!
  * \brief The TileType enum determines what tile type to render.
@@ -52,6 +53,47 @@ void MapWidget::keyPressEvent(QKeyEvent* event)
         QWidget::keyPressEvent(event);
     }
 }
+
+/*!
+ * \brief wheelEvent handles mouse wheel or touch pad scrolling.
+ *
+ * The function only implements vertical movement, and has been
+ * tested on a standard vertical mouse that scrolls "up" and "down".
+ *
+ * Note that QWheelEvent can also handle horizontal ("sideways") scrolling,
+ * so MapWidget::wheelEvent can be expanded to support that in the future
+ * if desired.
+ *
+ * \param event records the wheel being moved horizontally or vertically.
+ */
+void MapWidget::wheelEvent(QWheelEvent *event) {
+    {
+        // Calculations are provided by Qt's own source example, here:
+        // https://doc.qt.io/qt-6/qwheelevent.html#angleDelta
+        QPoint numPixels = event->pixelDelta();
+        QPoint numDegrees = event->angleDelta() / 8;
+
+        // Check if degrees or pixels were used to record/measure scrolling.
+        // A positive y value means the wheel was moved vertically away from the user.
+        // A negative y value means the wheel was moved vertically towards the user.
+        if (!numPixels.isNull()) {
+            if (numPixels.y() > 0)
+                zoomIn();
+            else if (numPixels.y() < 0)
+                zoomOut();
+        } else if (!numDegrees.isNull()) {
+            if (numDegrees.y() > 0)
+                zoomIn();
+            else if (numDegrees.y() < 0)
+                zoomOut();
+        }
+        // accept() is called to indicate that the receiver wants
+        // the mouse wheel event. Check the following for more info:
+        // https://doc.qt.io/qt-6/qwheelevent.html#QWheelEvent-2
+        event->accept();
+    }
+}
+
 
 void MapWidget::paintEvent(QPaintEvent *event)
 {
