@@ -99,7 +99,7 @@ public:
     //Layout properties -------------------------------------------
 
     //Paint properties  -------------------------------------------
-    QList<int> m_lineDashArray;
+    QList<qreal> m_lineDashArray;
     //QImage m_linePattern;//Not used for first iteration
     //float m_lineSortKey;//Not used for first iteration
     //QString lineTranslateAnchor = QString("map");//Not used for first iteration
