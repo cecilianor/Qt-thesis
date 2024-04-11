@@ -25,8 +25,9 @@ std::unique_ptr<LineLayerStyle> LineLayerStyle::fromJson(const QJsonObject &json
     // Parsing paint properties.
     QJsonObject paint = jsonObj.value("paint").toObject();
     if (paint.contains("line-dasharray")){
-        for (const auto &length
-             : static_cast<const QJsonArray&>(paint.value("line-dasharray").toArray())){
+        QJsonArray arr = paint.value("line-dasharray").toArray();
+
+        for (QJsonValueConstRef length : arr){
             returnLayer->m_lineDashArray.append(length.toInt());
         }
     }
@@ -34,10 +35,13 @@ std::unique_ptr<LineLayerStyle> LineLayerStyle::fromJson(const QJsonObject &json
     if (paint.contains("line-color")){
         QJsonValue lineColor = paint.value("line-color");
         if (lineColor.isObject()){
-            //Case where the property is an object that has "Stops".
+            //Case where the property is an object that has "stops".
             QList<QPair<int, QColor>> stops;
-            for (const auto &stop
-                 : static_cast<const QJsonArray&>(lineColor.toObject().value("stops").toArray())){
+            QJsonArray arr = lineColor.toObject().value("stops").toArray();
+
+            // Loop over all stops and append a pair of <zoomStop, colorStop> 
+            // data to `stops`.
+            for (QJsonValueConstRef stop : arr) {
                 int zoomStop = stop.toArray().first().toInt();
                 QColor colorStop = Bach::getColorFromString(stop.toArray().last().toString());
                 stops.append(QPair<int , QColor>(zoomStop, colorStop));
@@ -57,8 +61,11 @@ std::unique_ptr<LineLayerStyle> LineLayerStyle::fromJson(const QJsonObject &json
         if (lineOpacity.isObject()){
             // Case where the property is an object that has "Stops".
             QList<QPair<int, float>> stops;
-            for (const auto &stop
-                 : static_cast<const QJsonArray&>(lineOpacity.toObject().value("stops").toArray())){
+            QJsonArray arr = lineOpacity.toObject().value("stops").toArray();
+
+            // Loop over all stops and append a pair of <zoomStop, opacityStop>
+            // data to `stops`.
+            for (QJsonValueConstRef stop : arr) {
                 int zoomStop = stop.toArray().first().toInt();
                 float opacityStop = stop.toArray().last().toDouble();
                 stops.append(QPair<int , float>(zoomStop, opacityStop));
@@ -77,8 +84,11 @@ std::unique_ptr<LineLayerStyle> LineLayerStyle::fromJson(const QJsonObject &json
         if(lineWidth.isObject()){
             // Case where the property is an object that has "Stops".
             QList<QPair<int, int>> stops;
-            for (const auto &stop :
-                 static_cast<const QJsonArray&>(lineWidth.toObject().value("stops").toArray())){
+            QJsonArray arr = lineWidth.toObject().value("stops").toArray();
+
+            // Loop over all stops and append a pair of <zoomStop, widthStop>
+            // data to `stops`.
+            for (QJsonValueConstRef stop : arr) {
                 int zoomStop = stop.toArray().first().toInt();
                 int widthStop = stop.toArray().last().toInt();
                 stops.append(QPair<int, int>(zoomStop, widthStop));
