@@ -1,7 +1,9 @@
-#include "MapZoomControlWidget.h"
-
-#include <QVBoxLayout>
+// Qt header files
 #include <QPushButton>
+#include <QVBoxLayout>
+
+// Other header files
+#include "MapZoomControlWidget.h"
 
 using Bach::MapZoomControlWidget;
 

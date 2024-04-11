@@ -1,3 +1,4 @@
+// Qt header files
 #include <QBuffer>
 #include <QCoreApplication>
 #include <QDir>
@@ -9,6 +10,7 @@
 #include <QScopeGuard>
 #include <QStandardPaths>
 
+// Other header files
 #include "TileCoord.h"
 #include "TileLoader.h"
 #include "Utilities.h"

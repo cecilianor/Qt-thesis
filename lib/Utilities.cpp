@@ -1,8 +1,10 @@
+// Qt header files
 #include <QtEnvironmentVariables>
 #include <QFile>
 #include <QtNetwork>
 #include <QTextStream>
 
+// Other header files
 #include "TileLoader.h"
 #include "Utilities.h"
 
@@ -86,6 +88,19 @@ bool Bach::writeNewFileHelper(const QString& path, const QByteArray &bytes)
     }
 
     return true;
+}
+
+bool Bach::writeImageToNewFileHelper(const QString& path, const QImage &image)
+{
+    QByteArray fileBytes;
+    QBuffer buffer(&fileBytes);
+    if (!buffer.open(QIODevice::WriteOnly)) {
+        return false;
+    }
+    if (!image.save(&buffer, "PNG")) {
+        return false;
+    }
+    return writeNewFileHelper(path, fileBytes);
 }
 
 /*!

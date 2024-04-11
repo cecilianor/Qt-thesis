@@ -1,6 +1,8 @@
+// Qt header files
 #include <QObject>
 #include <QTest>
 
+// Other header files
 #include "Layerstyle.h"
 
 class UnitTesting : public QObject

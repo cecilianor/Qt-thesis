@@ -188,4 +188,7 @@ if (BUILD_TESTS)
     add_test(NAME LayerStyleTest COMMAND layerstyle_test)
     add_test(NAME VectorTileTest COMMAND vectortile_test)
     add_test(NAME EvaluatorTest COMMAND evaluator_test)
+
+    add_subdirectory(tests/merlin)
+
 endif()
