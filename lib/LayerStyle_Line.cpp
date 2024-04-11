@@ -24,17 +24,17 @@ std::unique_ptr<LineLayerStyle> LineLayerStyle::fromJson(const QJsonObject &json
                                   ? layout.value("line-join").toString() : QString("miter");
     // Parsing paint properties.
     QJsonObject paint = jsonObj.value("paint").toObject();
-    if (paint.contains("line-dasharray")){
+    if (paint.contains("line-dasharray")) {
         QJsonArray arr = paint.value("line-dasharray").toArray();
 
-        for (QJsonValueConstRef length : arr){
+        for (QJsonValueConstRef length : arr) {
             returnLayer->m_lineDashArray.append(length.toInt());
         }
     }
 
-    if (paint.contains("line-color")){
+    if (paint.contains("line-color")) {
         QJsonValue lineColor = paint.value("line-color");
-        if (lineColor.isObject()){
+        if (lineColor.isObject()) {
             //Case where the property is an object that has "stops".
             QList<QPair<int, QColor>> stops;
             QJsonArray arr = lineColor.toObject().value("stops").toArray();
@@ -47,7 +47,7 @@ std::unique_ptr<LineLayerStyle> LineLayerStyle::fromJson(const QJsonObject &json
                 stops.append(QPair<int , QColor>(zoomStop, colorStop));
             }
             returnLayer->m_lineColor.setValue(stops);
-        } else if (lineColor.isArray()){
+        } else if (lineColor.isArray()) {
             //Case where the property is an expression.
             returnLayer->m_lineColor.setValue(lineColor.toArray());
         } else {
@@ -56,9 +56,9 @@ std::unique_ptr<LineLayerStyle> LineLayerStyle::fromJson(const QJsonObject &json
         }
     }
 
-    if (paint.contains("line-opacity")){
+    if (paint.contains("line-opacity")) {
         QJsonValue lineOpacity = paint.value("line-opacity");
-        if (lineOpacity.isObject()){
+        if (lineOpacity.isObject()) {
             // Case where the property is an object that has "stops".
             QList<QPair<int, float>> stops;
             QJsonArray arr = lineOpacity.toObject().value("stops").toArray();
@@ -71,7 +71,7 @@ std::unique_ptr<LineLayerStyle> LineLayerStyle::fromJson(const QJsonObject &json
                 stops.append(QPair<int , float>(zoomStop, opacityStop));
             }
             returnLayer->m_lineOpacity.setValue(stops);
-        }else if (lineOpacity.isArray()){
+        }else if (lineOpacity.isArray()) {
             // Case where the property is an expression.
             returnLayer->m_lineOpacity.setValue(lineOpacity.toArray());
         } else { //Case where the property is a numeric value.
@@ -79,9 +79,9 @@ std::unique_ptr<LineLayerStyle> LineLayerStyle::fromJson(const QJsonObject &json
         }
     }
 
-    if(paint.contains("line-width")){
+    if(paint.contains("line-width")) {
         QJsonValue lineWidth = paint.value("line-width");
-        if(lineWidth.isObject()){
+        if(lineWidth.isObject()) {
             // Case where the property is an object that has "stops".
             QList<QPair<int, int>> stops;
             QJsonArray arr = lineWidth.toObject().value("stops").toArray();
@@ -94,7 +94,7 @@ std::unique_ptr<LineLayerStyle> LineLayerStyle::fromJson(const QJsonObject &json
                 stops.append(QPair<int, int>(zoomStop, widthStop));
             }
             returnLayer->m_lineWidth.setValue(stops);
-        } else if (lineWidth.isArray()){
+        } else if (lineWidth.isArray()) {
             // Case where the property is an expression.
             returnLayer->m_lineWidth.setValue(lineWidth.toArray());
         } else {
@@ -116,11 +116,11 @@ std::unique_ptr<LineLayerStyle> LineLayerStyle::fromJson(const QJsonObject &json
  */
 QVariant LineLayerStyle::getLineColorAtZoom(int zoomLevel) const
 {
-    if (m_lineColor.isNull()){
+    if (m_lineColor.isNull()) {
         // The default color in case no color is provided by the style sheet.
         return QVariant(QColor(Qt::GlobalColor::black));
     } else if (m_lineColor.typeId() != QMetaType::Type::QColor
-               && m_lineColor.typeId() != QMetaType::Type::QJsonArray){
+               && m_lineColor.typeId() != QMetaType::Type::QJsonArray) {
         QList<QPair<int, QColor>> stops = m_lineColor.value<QList<QPair<int, QColor>>>();
         if(stops.size() == 0)
             return QVariant(QColor(Qt::GlobalColor::black));
@@ -142,11 +142,11 @@ QVariant LineLayerStyle::getLineColorAtZoom(int zoomLevel) const
  */
 QVariant LineLayerStyle::getLineOpacityAtZoom(int zoomLevel) const
 {
-    if (m_lineOpacity.isNull()){
+    if (m_lineOpacity.isNull()) {
         // The default opacity in case no opacity is provided by the style sheet.
         return QVariant(1);
     } else if (m_lineOpacity.typeId() != QMetaType::Type::Double
-               && m_lineOpacity.typeId() != QMetaType::Type::QJsonArray){
+               && m_lineOpacity.typeId() != QMetaType::Type::QJsonArray) {
         QList<QPair<int, float>> stops = m_lineOpacity.value<QList<QPair<int, float>>>();
         if (stops.size() == 0)
             return QVariant(1);
@@ -167,11 +167,11 @@ QVariant LineLayerStyle::getLineOpacityAtZoom(int zoomLevel) const
  */
 QVariant LineLayerStyle::getLineWidthAtZoom(int zoomLevel) const
 {
-    if (m_lineWidth.isNull()){
+    if (m_lineWidth.isNull()) {
         // The default width in case no width is provided by the style sheet.
         return QVariant(1);
     } else if (m_lineWidth.typeId() != QMetaType::Type::Int
-               && m_lineWidth.typeId() != QMetaType::Type::QJsonArray){
+               && m_lineWidth.typeId() != QMetaType::Type::QJsonArray) {
         QList<QPair<int, int>> stops = m_lineWidth.value<QList<QPair<int, int>>>();
         if (stops.size() == 0)
             return QVariant(1);
@@ -191,9 +191,9 @@ QVariant LineLayerStyle::getLineWidthAtZoom(int zoomLevel) const
  */
 Qt::PenJoinStyle LineLayerStyle::getJoinStyle() const
 {
-    if (m_lineJoin == "bevel"){
+    if (m_lineJoin == "bevel") {
         return Qt::PenJoinStyle::BevelJoin;
-    } else if (m_lineJoin == "miter"){
+    } else if (m_lineJoin == "miter") {
         return Qt::PenJoinStyle::MiterJoin;
     } else {
         return Qt::PenJoinStyle::RoundJoin;

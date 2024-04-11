@@ -64,7 +64,7 @@ std::unique_ptr<BackgroundStyle> BackgroundStyle::fromJson(const QJsonObject &js
                 stops.append(QPair<int, QColor>(zoomStop, colorStop));
             }
             returnLayer->m_backgroundColor.setValue(stops);
-        } else if (backgroundColor.isArray()){
+        } else if (backgroundColor.isArray()) {
             // Case where the property is an expression.
             returnLayer->m_backgroundColor.setValue(backgroundColor.toArray());
         } else {
@@ -73,14 +73,14 @@ std::unique_ptr<BackgroundStyle> BackgroundStyle::fromJson(const QJsonObject &js
         }
     }
 
-    if (paint.contains("background-opacity")){
+    if (paint.contains("background-opacity")) {
         QJsonValue backgroundOpacity= paint.value("background-opacity");
         if (backgroundOpacity.isObject()) {
             // Case where the property is an object that has "Stops"
             QList<QPair<int, float>> stops;
             QJsonArray arr = backgroundOpacity.toObject().value("stops").toArray();
 
-            for (QJsonValueConstRef stop : arr){
+            for (QJsonValueConstRef stop : arr) {
                 int zoomStop = stop.toArray().first().toInt();
                 float opacityStop = stop.toArray().last().toDouble();
 
@@ -88,7 +88,7 @@ std::unique_ptr<BackgroundStyle> BackgroundStyle::fromJson(const QJsonObject &js
                 stops.append(QPair<int, float>(zoomStop, opacityStop));
             }
             returnLayer->m_backgroundOpacity.setValue(stops);
-        } else if (backgroundOpacity.isArray()){
+        } else if (backgroundOpacity.isArray()) {
             // Case where the property is an expression.
             returnLayer->m_backgroundOpacity.setValue(backgroundOpacity.toArray());
         } else {
@@ -110,7 +110,7 @@ std::unique_ptr<BackgroundStyle> BackgroundStyle::fromJson(const QJsonObject &js
  */
 QVariant BackgroundStyle::getColorAtZoom(int zoomLevel) const
 {
-    if (m_backgroundColor.isNull()){
+    if (m_backgroundColor.isNull()) {
         // The default color in case no color is provided by the style sheet.
         return QColor(Qt::GlobalColor::black);
     } else if (m_backgroundColor.typeId() != QMetaType::Type::QColor
@@ -136,11 +136,11 @@ QVariant BackgroundStyle::getColorAtZoom(int zoomLevel) const
  */
 QVariant BackgroundStyle::getOpacityAtZoom(int zoomLevel) const
 {
-    if (m_backgroundOpacity.isNull()){
+    if (m_backgroundOpacity.isNull()) {
         // The default opacity in case no opacity is provided by the style sheet.
         return QVariant(1);
     } else if (m_backgroundOpacity.typeId() != QMetaType::Type::Double
-               && m_backgroundOpacity.typeId() != QMetaType::Type::QJsonArray){
+               && m_backgroundOpacity.typeId() != QMetaType::Type::QJsonArray) {
         QList<QPair<int, float>> stops = m_backgroundOpacity.value<QList<QPair<int, float>>>();
         if (stops.size() == 0)
             return QVariant(1);

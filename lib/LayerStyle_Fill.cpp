@@ -29,15 +29,15 @@ std::unique_ptr<FillLayerStyle> FillLayerStyle::fromJson(const QJsonObject &json
     returnLayer->m_antialias = paint.contains("fill-antialias")
                                    ? paint.value("fill-antialias").toBool() : true;
 
-    if (paint.contains("fill-color")){
+    if (paint.contains("fill-color")) {
         QJsonValue fillColor = paint.value("fill-color");
-        if (fillColor.isObject()){
+        if (fillColor.isObject()) {
             // Case where the property is an object that has "stops".
             QList<QPair<int, QColor>> stops;
             QJsonArray arr = fillColor.toObject().value("stops").toArray();
 
             // Loop over all stops and append a pair of <zoomStop, colorStop> data to `stops`.
-            for (QJsonValueConstRef stop : arr){
+            for (QJsonValueConstRef stop : arr) {
                 int zoomStop = stop.toArray().first().toInt();
                 QColor colorStop = Bach::getColorFromString(stop.toArray().last().toString());
                 stops.append(QPair<int, QColor>(zoomStop, colorStop));
@@ -52,7 +52,7 @@ std::unique_ptr<FillLayerStyle> FillLayerStyle::fromJson(const QJsonObject &json
         }
     }
 
-    if (paint.contains("fill-opacity")){
+    if (paint.contains("fill-opacity")) {
         QJsonValue fillOpacity = paint.value("fill-opacity");
         if (fillOpacity.isObject()) {
             // Case where the property is an object that has "stops".
@@ -66,7 +66,7 @@ std::unique_ptr<FillLayerStyle> FillLayerStyle::fromJson(const QJsonObject &json
                 stops.append(QPair<int, float>(zoomStop, opacityStop));
             }
             returnLayer->m_fillOpacity.setValue(stops);
-        } else if (fillOpacity.isArray()){
+        } else if (fillOpacity.isArray()) {
             // Case where the property is an expression.
             returnLayer->m_fillOpacity.setValue(fillOpacity.toArray());
         } else {
@@ -75,7 +75,7 @@ std::unique_ptr<FillLayerStyle> FillLayerStyle::fromJson(const QJsonObject &json
         }
     }
 
-    if (paint.contains("fill-outline-color")){
+    if (paint.contains("fill-outline-color")) {
         QJsonValue fillOutlineColor = paint.value("fill-outline-color");
         if (fillOutlineColor.isObject()) {
             // Case where the property is an object that has "stops".
@@ -139,7 +139,7 @@ QVariant FillLayerStyle::getFillOpacityAtZoom(int zoomLevel) const
         // The default opacity in case no opacity is provided by the style sheet.
         return QVariant(1);
     } else if (m_fillOpacity.typeId() != QMetaType::Type::QColor
-               && m_fillOpacity.typeId() != QMetaType::Type::QJsonArray){
+               && m_fillOpacity.typeId() != QMetaType::Type::QJsonArray) {
         QList<QPair<int, float>> stops = m_fillOpacity.value<QList<QPair<int, float>>>();
         if (stops.size() == 0) {
             return QVariant(1);

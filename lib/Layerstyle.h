@@ -283,7 +283,6 @@ namespace Bach {
             return returnColor;
         }
     }
-
 }
 
 #endif // LAYERSTYLE_H
