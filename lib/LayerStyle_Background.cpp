@@ -43,21 +43,27 @@ std::unique_ptr<BackgroundStyle> BackgroundStyle::fromJson(const QJsonObject &js
             // This produced a warning:
             // c++11 range-loop might detach Qt container (QJsonArray) [clazy-range-loop-detach]
             //
-            // The fix for that was addressed after Googling possible solutions. See:
+            // The initial fix came about by Googling possible solutions. See:
             //  https://forum.qt.io/topic/146125/c-11-range-loop-might-detach-qt-container-qset-clazy-range-loop-detach/2
             //
             // Copilot was then asked to update the code based on the discussion in that thread and using
-            // the appropriate static cast instead of the alternate `qAsConst`.
-            for (const auto &stop : static_cast<const QJsonArray&>
-                 (backgroundColor.toObject().value("stops").toArray()))
-            {
+            // the appropriate static cast instead of the alternate `qAsConst`:
+            //  for (const auto &stop
+            //       : static_cast<const QJsonArray&>(backgroundColor.toObject().value("stops").toArray()))
+            //
+            // This is also bad, since it may not retain all the toObject.value.toArray data correctly.
+            //
+            // It was finally solved by discussing it in the team and changing it to:
+            QJsonArray arr = backgroundColor.toObject().value("stops").toArray();
+
+            for (QJsonValueConstRef stop : arr) {
                 int zoomStop = stop.toArray().first().toInt();
                 QColor colorStop = Bach::getColorFromString(stop.toArray().last().toString());
+
+                // Append a QPair with <zoomStop, colorStop> to `stops`.
                 stops.append(QPair<int, QColor>(zoomStop, colorStop));
             }
-
             returnLayer->m_backgroundColor.setValue(stops);
-
         } else if (backgroundColor.isArray()){
             // Case where the property is an expression.
             returnLayer->m_backgroundColor.setValue(backgroundColor.toArray());
@@ -72,11 +78,13 @@ std::unique_ptr<BackgroundStyle> BackgroundStyle::fromJson(const QJsonObject &js
         if (backgroundOpacity.isObject()) {
             // Case where the property is an object that has "Stops"
             QList<QPair<int, float>> stops;
-            for (const auto &stop : static_cast<const QJsonArray&>
-                 (backgroundOpacity.toObject().value("stops").toArray()))
-            {
+            QJsonArray arr = backgroundOpacity.toObject().value("stops").toArray();
+
+            for (QJsonValueConstRef stop : arr){
                 int zoomStop = stop.toArray().first().toInt();
                 float opacityStop = stop.toArray().last().toDouble();
+
+                // Append a QPair with <zoomStop, opacityStop> to `stops`.
                 stops.append(QPair<int, float>(zoomStop, opacityStop));
             }
             returnLayer->m_backgroundOpacity.setValue(stops);
