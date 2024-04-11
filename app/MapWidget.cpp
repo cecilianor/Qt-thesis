@@ -1,12 +1,11 @@
-#include "MapWidget.h"
-
-#include "Rendering.h"
-
-#include <QtMath>
 #include <QCoreApplication>
 #include <QKeyEvent>
 #include <QPainter>
+#include <QtMath>
 #include <QWheelEvent>
+
+#include "MapWidget.h"
+#include "Rendering.h"
 
 /*!
  * \brief The TileType enum determines what tile type to render.
@@ -52,6 +51,79 @@ void MapWidget::keyPressEvent(QKeyEvent* event)
     } else {
         QWidget::keyPressEvent(event);
     }
+}
+
+/*!
+ * \brief MapWidget::mousePressEvent registers if the mouse is pressed.
+ *
+ * \param event is the event that registered if the mouse is pressed.
+ */
+void MapWidget::mousePressEvent(QMouseEvent *event)
+{
+    if(event->buttons() == Qt::MouseButton::LeftButton){
+        mouseStartPosition = event->pos();
+    }
+}
+
+/*!
+ * \brief MapWidget::mouseReleaseEvent registers that mouse buttons are released.
+ *
+ * The function can reset the mouseStartPosition variable to the point {-1, -1}.
+ *
+ * \param event is the event that fires if mouse buttons are released.
+ */
+void MapWidget::mouseReleaseEvent(QMouseEvent *event)
+{
+    // mouseStartPosition = {-1,-1};
+}
+
+/*!
+ * \brief MapWidget::mouseMoveEvent records mouse position while a
+ * mouse button is pressed.
+ *
+ * Note that a button has to be pressed at the same time for
+ * this function to run.
+ *
+ * \param event is the event where the mouse is moved around.
+ */
+void MapWidget::mouseMoveEvent(QMouseEvent *event)
+{
+    mouseCurrentPosition = event->pos();
+    //qDebug() << "Current mouse position:   x: " << currentMousePosition.rx()
+    //         << "   y: " << currentMousePosition.ry();
+
+    // Calculate the difference between the current and original mouse position.
+    QPointF diff = mouseCurrentPosition - mouseStartPosition;
+
+    // Scale the difference variable based on zoom level.
+    diff *= 1/(std::pow(2, getViewportZoomLevel()));
+
+    // Translate normalized coordinates to world coordinate space.
+    auto world_x = x * width();
+    auto world_y = y * height();
+
+    // Find where to move the position to in the world coordinate space.
+    auto new_x = world_x - diff.rx();
+    auto new_y = world_y - diff.ry();
+
+    // Normalise the new coordinates so they can be put back in the norm space.
+    auto new_x_norm = Bach::normalizeValueToZeroOneRange(new_x, 0, width());
+    auto new_y_norm = Bach::normalizeValueToZeroOneRange(new_y, 0, height());
+
+    //qDebug() << "Current normalized mouse position:   x: " << new_x_norm
+    //         << "   y: " << new_y_norm ;
+    //qDebug() << "Current x,y:   x: " << x
+    //         << "   y: " << y ;
+
+    // Move to the map to the new position.
+    x = new_x_norm;
+    y = new_y_norm;
+
+   // Store the current mouse position before re-rendering.
+    mouseStartPosition = mouseCurrentPosition;
+
+    // Call update to render the window.
+    update();
 }
 
 /*!
