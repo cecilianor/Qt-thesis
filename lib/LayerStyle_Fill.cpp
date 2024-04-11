@@ -43,10 +43,10 @@ std::unique_ptr<FillLayerStyle> FillLayerStyle::fromJson(const QJsonObject &json
                 stops.append(QPair<int, QColor>(zoomStop, colorStop));
             }
             returnLayer->m_fillColor.setValue(stops);
-        }else if (fillColor.isArray()){
+        } else if (fillColor.isArray()) {
             // Case where the property is an expression.
             returnLayer->m_fillColor.setValue(fillColor.toArray());
-        }else {
+        } else {
             // Case where the property is a color value.
             returnLayer->m_fillColor.setValue(Bach::getColorFromString(fillColor.toString()));
         }
@@ -54,13 +54,13 @@ std::unique_ptr<FillLayerStyle> FillLayerStyle::fromJson(const QJsonObject &json
 
     if (paint.contains("fill-opacity")){
         QJsonValue fillOpacity = paint.value("fill-opacity");
-        if (fillOpacity.isObject()){
+        if (fillOpacity.isObject()) {
             // Case where the property is an object that has "stops".
             QList<QPair<int, float>> stops;
             QJsonArray arr = fillOpacity.toObject().value("stops").toArray();
 
             // Loop over all stops and append a pair of <zoomStop, opacityStop> to `stops`.
-            for (QJsonValueConstRef stop : arr){
+            for (QJsonValueConstRef stop : arr) {
                 int zoomStop = stop.toArray().first().toInt();
                 float opacityStop = stop.toArray().last().toDouble();
                 stops.append(QPair<int, float>(zoomStop, opacityStop));
@@ -77,19 +77,19 @@ std::unique_ptr<FillLayerStyle> FillLayerStyle::fromJson(const QJsonObject &json
 
     if (paint.contains("fill-outline-color")){
         QJsonValue fillOutlineColor = paint.value("fill-outline-color");
-        if (fillOutlineColor.isObject()){
+        if (fillOutlineColor.isObject()) {
             // Case where the property is an object that has "stops".
             QList<QPair<int, QColor>> stops;
             QJsonArray arr =fillOutlineColor.toObject().value("stops").toArray();
 
             // Loop over all stops and append a pair of <zoomStop, colorStop> to `stops`.
-            for (QJsonValueConstRef stop: arr){
+            for (QJsonValueConstRef stop: arr) {
                 int zoomStop = stop.toArray().first().toInt();
                 QColor colorStop = Bach::getColorFromString(stop.toArray().last().toString());
                 stops.append(QPair<int, QColor>(zoomStop, colorStop));
             }
             returnLayer->m_fillOutlineColor.setValue(stops);
-        } else if (fillOutlineColor.isArray()){
+        } else if (fillOutlineColor.isArray()) {
             // Case where the property is an expression.
             returnLayer->m_fillOutlineColor.setValue(fillOutlineColor.toArray());
         } else {
@@ -113,11 +113,11 @@ std::unique_ptr<FillLayerStyle> FillLayerStyle::fromJson(const QJsonObject &json
  */
 QVariant FillLayerStyle::getFillColorAtZoom(int zoomLevel) const
 {
-    if (m_fillColor.isNull()){
+    if (m_fillColor.isNull()) {
         // The default color in case no color is provided by the style sheet.
         return QColor(Qt::GlobalColor::black);
     } else if (m_fillColor.typeId() != QMetaType::Type::QColor
-               && m_fillColor.typeId() != QMetaType::Type::QJsonArray){
+               && m_fillColor.typeId() != QMetaType::Type::QJsonArray) {
         QList<QPair<int, QColor>> stops = m_fillColor.value<QList<QPair<int, QColor>>>();
         if (stops.size() == 0)
             return QColor(Qt::GlobalColor::black);
@@ -135,7 +135,7 @@ QVariant FillLayerStyle::getFillColorAtZoom(int zoomLevel) const
  */
 QVariant FillLayerStyle::getFillOpacityAtZoom(int zoomLevel) const
 {
-    if (m_fillOpacity.isNull()){
+    if (m_fillOpacity.isNull()) {
         // The default opacity in case no opacity is provided by the style sheet.
         return QVariant(1);
     } else if (m_fillOpacity.typeId() != QMetaType::Type::QColor
