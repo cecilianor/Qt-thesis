@@ -93,7 +93,7 @@ std::unique_ptr<FillLayerStyle> FillLayerStyle::fromJson(const QJsonObject &json
             // Case where the property is an expression.
             returnLayer->m_fillOutlineColor.setValue(fillOutlineColor.toArray());
         } else {
-            //Case where the property is a color value.
+            // Case where the property is a color value.
             returnLayer->m_fillOutlineColor.setValue(Bach::getColorFromString(fillOutlineColor.toString()));
         }
     }

@@ -22,9 +22,9 @@ std::unique_ptr<BackgroundStyle> BackgroundStyle::fromJson(const QJsonObject &js
 {
     std::unique_ptr<BackgroundStyle> returnLayerPtr = std::make_unique<BackgroundStyle>();
     BackgroundStyle* returnLayer = returnLayerPtr.get();
-    // Parsing layout properties
+    // Parsing layout properties.
     QJsonObject layout = jsonObj.value("layout").toObject();
-    // Visibility property is parsed in AbstractLayerStyle::fromJson
+    // Visibility property is parsed in AbstractLayerStyle::fromJson.
 
     // Parsing paint properties.
     QJsonObject paint = jsonObj.value("paint").toObject();
@@ -68,7 +68,7 @@ std::unique_ptr<BackgroundStyle> BackgroundStyle::fromJson(const QJsonObject &js
             // Case where the property is an expression.
             returnLayer->m_backgroundColor.setValue(backgroundColor.toArray());
         } else {
-            // Case where the property is a color value
+            // Case where the property is a color value.
             returnLayer->m_backgroundColor.setValue(Bach::getColorFromString(backgroundColor.toString()));
         }
     }
@@ -89,10 +89,10 @@ std::unique_ptr<BackgroundStyle> BackgroundStyle::fromJson(const QJsonObject &js
             }
             returnLayer->m_backgroundOpacity.setValue(stops);
         } else if (backgroundOpacity.isArray()){
-            // Case where the property is an expression
+            // Case where the property is an expression.
             returnLayer->m_backgroundOpacity.setValue(backgroundOpacity.toArray());
         } else {
-            // Case where the property is a numeric value
+            // Case where the property is a numeric value.
             returnLayer->m_backgroundOpacity.setValue(backgroundOpacity.toDouble());
         }
     }

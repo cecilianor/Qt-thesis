@@ -59,7 +59,7 @@ std::unique_ptr<LineLayerStyle> LineLayerStyle::fromJson(const QJsonObject &json
     if (paint.contains("line-opacity")){
         QJsonValue lineOpacity = paint.value("line-opacity");
         if (lineOpacity.isObject()){
-            // Case where the property is an object that has "Stops".
+            // Case where the property is an object that has "stops".
             QList<QPair<int, float>> stops;
             QJsonArray arr = lineOpacity.toObject().value("stops").toArray();
 
@@ -82,7 +82,7 @@ std::unique_ptr<LineLayerStyle> LineLayerStyle::fromJson(const QJsonObject &json
     if(paint.contains("line-width")){
         QJsonValue lineWidth = paint.value("line-width");
         if(lineWidth.isObject()){
-            // Case where the property is an object that has "Stops".
+            // Case where the property is an object that has "stops".
             QList<QPair<int, int>> stops;
             QJsonArray arr = lineWidth.toObject().value("stops").toArray();
 

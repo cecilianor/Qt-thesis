@@ -23,7 +23,7 @@ std::unique_ptr<SymbolLayerStyle> SymbolLayerStyle::fromJson(const QJsonObject &
     if (layout.contains("text-size")){
         QJsonValue textSize = layout.value("text-size");
         if (textSize.isObject()){
-            // Case where the property is an object that has "Stops".
+            // Case where the property is an object that has "stops".
             QList<QPair<int, int>> stops;
             QJsonArray arr = textSize.toObject().value("stops").toArray();
 
@@ -71,7 +71,7 @@ std::unique_ptr<SymbolLayerStyle> SymbolLayerStyle::fromJson(const QJsonObject &
     if (paint.contains("text-color")){
         QJsonValue textColor = paint.value("text-color");
         if (textColor.isObject()){
-            // Case where the property is an object that has "Stops".
+            // Case where the property is an object that has "stops".
             QList<QPair<int, QColor>> stops;
             QJsonArray arr = textColor.toObject().value("stops").toArray();
 
@@ -95,7 +95,7 @@ std::unique_ptr<SymbolLayerStyle> SymbolLayerStyle::fromJson(const QJsonObject &
     if (paint.contains("text-opacity")){
         QJsonValue textOpacity = paint.value("text-opacity");
         if (textOpacity.isObject()){
-            // Case where the property is an object that has "Stops".
+            // Case where the property is an object that has "stops".
             QList<QPair<int, float>> stops;
             QJsonArray arr = textOpacity.toObject().value("stops").toArray();
 
