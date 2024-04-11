@@ -25,8 +25,11 @@ std::unique_ptr<SymbolLayerStyle> SymbolLayerStyle::fromJson(const QJsonObject &
         if (textSize.isObject()){
             // Case where the property is an object that has "Stops".
             QList<QPair<int, int>> stops;
-            for (const auto &stop
-                 : static_cast<const QJsonArray&>(textSize.toObject().value("stops").toArray())){
+            QJsonArray arr = textSize.toObject().value("stops").toArray();
+
+            // Loop over all stops and append a pair of <zoomStop, sizeStop>
+            // data to `stops`.
+            for (QJsonValueConstRef stop : arr) {
                 int zoomStop = stop.toArray().first().toInt();
                 int sizeStop = stop.toArray().last().toInt();
                 stops.append(QPair<int, int>(zoomStop, sizeStop));
@@ -70,8 +73,11 @@ std::unique_ptr<SymbolLayerStyle> SymbolLayerStyle::fromJson(const QJsonObject &
         if (textColor.isObject()){
             // Case where the property is an object that has "Stops".
             QList<QPair<int, QColor>> stops;
-            for(const auto &stop
-                 : static_cast<const QJsonArray&>(textColor.toObject().value("stops").toArray())){
+            QJsonArray arr = textColor.toObject().value("stops").toArray();
+
+            // Loop over all stops and append a pair of <zoomStop, colorStop>
+            // data to `stops`.
+            for(QJsonValueConstRef stop : arr) {
                 int zoomStop = stop.toArray().first().toInt();
                 QColor colorStop = Bach::getColorFromString(stop.toArray().last().toString());
                 stops.append(QPair<int, QColor>(zoomStop, colorStop));
@@ -91,8 +97,11 @@ std::unique_ptr<SymbolLayerStyle> SymbolLayerStyle::fromJson(const QJsonObject &
         if (textOpacity.isObject()){
             // Case where the property is an object that has "Stops".
             QList<QPair<int, float>> stops;
-            for (const auto &stop
-                 : static_cast<const QJsonArray&>(textOpacity.toObject().value("stops").toArray())){
+            QJsonArray arr = textOpacity.toObject().value("stops").toArray();
+
+            // Loop over all stops and append a pair of <zoomStop, opacityStop>
+            // data to `stops`.
+            for (QJsonValueConstRef stop : arr) {
                 int zoomStop = stop.toArray().first().toInt();
                 float opacityStop = stop.toArray().last().toDouble();
                 stops.append(QPair<int, float>(zoomStop, opacityStop));
