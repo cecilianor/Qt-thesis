@@ -61,15 +61,17 @@ test-cases during execution. Default to an empty string.
 		"draw-lines": false
 	},
 	{
-		"name": "Top worldmap"
-	},
+		"name": "Top worldmap, tile-subset",
+		"map-zoom": 1,
+		"tiles": [ 
+			[1, 0, 0],
+			[1, 1, 1] ]
+	}
 	{
-		"name": "Top worldmap, map zoom 1",
-		"vp-zoom": 0.1,
-	},
-	{
-		"name": "Top worldmap, viewport zoom 1",
-		"vp-zoom": 1
+		"name": "Nydalen",
+		"coords": [ 10.765248, 59.949584413 ],
+		"vp-zoom": 12.1,
+		"map-zoom": 12
 	}
 ]
 ```
