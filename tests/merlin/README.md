@@ -66,7 +66,7 @@ test-cases during execution. Default to an empty string.
 		"tiles": [ 
 			[1, 0, 0],
 			[1, 1, 1] ]
-	}
+	},
 	{
 		"name": "Nydalen",
 		"coords": [ 10.765248, 59.949584413 ],
