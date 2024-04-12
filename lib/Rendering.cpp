@@ -177,7 +177,7 @@ static void paintVectorLayer_Line(
 }
 
 /*!
- * \brief paintVectorLayer_Point
+ * \brief processVectorLayer_Point
  * Call the text rendering function on all the layer's features that pass the layerStyle filter.
  * The rendering function is called after that the features have been ordered according to the rank property.
  * \param painter
@@ -195,16 +195,19 @@ static void paintVectorLayer_Line(
  *
  * \param labelRects
  */
-static void paintVectorLayer_Point(
+static void processVectorLayer_Point(
     QPainter &painter,
     const SymbolLayerStyle &layerStyle,
     const TileLayer& layer,
     double vpZoom,
     int mapZoom,
     int tileWidthPixels,
+    int tileOriginX,
+    int tileOriginY,
     QTransform geometryTransform,
     bool forceNoChangeFontType,
-    QVector<QRect> &labelRects)
+    QVector<QRect> &labelRects,
+    QVector<Bach::vpGlobalText> &vpTextList)
 {
     QVector<QPair<int, PointFeature>> labels; //Used to order text rendering operation based on "rank" property.
     // Iterate over all the features, and filter out anything that is not point  (rendering of line features for curved text in the symbol layer is not yet implemented).
@@ -235,12 +238,38 @@ static void paintVectorLayer_Point(
     //Loop over the ordered label map and render text ignoring labels that would cause an overlap.
     for(const auto &pair : labels){
         painter.save();
-        Bach::paintSingleTileFeature_Point(
+        Bach::processSingleTileFeature_Point(
             {&painter, &layerStyle, &pair.second, mapZoom, vpZoom, geometryTransform},
             tileWidthPixels,
+            tileOriginX,
+            tileOriginY,
             forceNoChangeFontType,
-            labelRects);
+            labelRects,
+            vpTextList);
         painter.restore();
+    }
+    labels.clear();
+}
+
+static void paintText(
+    QPainter &painter,
+    QVector<Bach::vpGlobalText> &vpTextList)
+{
+    painter.setRenderHints(QPainter::Antialiasing, true);
+    QPen pen;
+    for(auto const &globalText : vpTextList){
+        painter.save();
+        painter.resetTransform();
+        painter.translate(globalText.tileOrigin);
+        for(auto const &path : globalText.path){
+
+            pen.setWidth(globalText.outlineSize);
+            pen.setColor(globalText.outlineColor);
+            painter.strokePath(path, pen);
+            painter.fillPath(path, globalText.textColor);
+        }
+        painter.restore();
+
     }
 }
 
@@ -273,11 +302,14 @@ static void paintVectorTile(
     double vpZoom,
     const StyleSheet &styleSheet,
     int tileWidthPixels,
-    const Bach::PaintVectorTileSettings &settings)
+    int tileOriginX,
+    int tileOriginY,
+    const Bach::PaintVectorTileSettings &settings,
+    QVector<QRect> &labelRects,
+    QVector<Bach::vpGlobalText> &vpTextList)
 {
     QTransform geometryTransform;
     geometryTransform.scale(tileWidthPixels, tileWidthPixels);
-    QVector<QRect> labelRects; //Used to prevent text overlapping.
 
     // We start by iterating over each layer style, it determines the order
     // at which we draw the elements of the map.
@@ -319,16 +351,19 @@ static void paintVectorTile(
         } else if(abstractLayerStyle->type() == AbstractLayerStyle::LayerType::symbol){
             if (!settings.drawText)
                 continue;
-            paintVectorLayer_Point(
+            processVectorLayer_Point(
                 painter,
                 *static_cast<const SymbolLayerStyle*>(abstractLayerStyle),
                 layer,
                 vpZoom,
                 mapZoom,
                 tileWidthPixels,
+                tileOriginX,
+                tileOriginY,
                 geometryTransform,
                 settings.forceNoChangeFontType,
-                labelRects);
+                labelRects,
+                vpTextList);
         }
     }
 }
@@ -509,6 +544,7 @@ static void paintTilesGeneric(
         mapZoom);
 
     // Iterate over all possible tiles that can possibly fit in this viewport.
+
     for (TileCoord tileCoord : visibleTiles) {
         TileScreenPlacement tilePlacement = tilePosCalc.calcTileSizeData(tileCoord);
 
@@ -567,6 +603,8 @@ void Bach::paintVectorTiles(
     const PaintVectorTileSettings &settings,
     bool drawDebug)
 {
+    QVector<QRect> labelRects;
+    QVector<Bach::vpGlobalText> vpTextList;
     auto paintSingleTileFn = [&](TileCoord tileCoord, TileScreenPlacement tilePlacement) {
         // See if the tile being rendered has any tile-data associated with it.
         auto tileIt = tileContainer.find(tileCoord);
@@ -581,7 +619,11 @@ void Bach::paintVectorTiles(
             viewportZoom,
             styleSheet,
             tilePlacement.pixelWidth,
-            settings);
+            tilePlacement.pixelPosX,
+            tilePlacement.pixelPosY,
+            settings,
+            labelRects,
+            vpTextList);
     };
 
     paintTilesGeneric(
@@ -593,6 +635,8 @@ void Bach::paintVectorTiles(
         paintSingleTileFn,
         styleSheet,
         drawDebug);
+
+    paintText(painter, vpTextList);
 }
 
 /*!

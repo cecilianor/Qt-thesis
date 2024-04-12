@@ -59,6 +59,14 @@ namespace Bach {
         QTransform transformIn;
     };
 
+    struct vpGlobalText{
+        QPoint tileOrigin;
+        QList<QPainterPath> path;
+        QColor textColor;
+        int outlineSize;
+        QColor outlineColor;
+    };
+
 
     QPair<double, double> lonLatToWorldNormCoord(double lon, double lat);
     QPair<double, double> lonLatToWorldNormCoordDegrees(double lon, double lat);
@@ -70,11 +78,14 @@ namespace Bach {
     void paintSingleTileFeature_Line(PaintingDetailsLine details);
 
 
-    void paintSingleTileFeature_Point(
+    void processSingleTileFeature_Point(
         PaintingDetailsPoint details,
         const int tileSize,
+        int tileOriginX,
+        int tileOriginY,
         bool forceNoChangeFontType,
-        QVector<QRect> &rects);
+        QVector<QRect> &rects,
+        QVector<vpGlobalText> &vpTextList);
 
     void paintSingleTileFeature_Point_Curved(PaintingDetailsPointCurved details);
 

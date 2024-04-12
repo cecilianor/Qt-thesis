@@ -180,7 +180,7 @@ static QList<QString> getCorrectedText(const QString &text, const QFont & font, 
 
 
 /*!
- * \brief paintSimpleText
+ * \brief processSimpleText
  * This function renders text that fits in one line and does not require wrapping.
  * \param text the text to be rendered
  * \param coordinate the coordinates where the text should be rendered. The text is rendered so that the point is right in the middle of the bounding rect of the text.
@@ -194,18 +194,20 @@ static QList<QString> getCorrectedText(const QString &text, const QFont & font, 
  * \param mapZoom
  * \param vpZoom
  */
-static void paintSimpleText(
+static void processSimpleText(
     const QString &text,
     const QPoint &coordinate,
     const int outlineSize,
     const QColor &outlineColor,
     const QFont &textFont,
     QVector<QRect> &rects,
-    QPainter &painter,
     const PointFeature &feature,
     const SymbolLayerStyle &layerStyle,
     const int mapZoom,
-    const double vpZoom)
+    const double vpZoom,
+    int tileOriginX,
+    int tileOriginY,
+    QVector<Bach::vpGlobalText> &vpTextList)
 {
 
     //Create a QPainterPath for the text.
@@ -232,19 +234,22 @@ static void paintSimpleText(
     // Set the pen for the outline color and width.
     QPen outlinePen(outlineColor, outlineSize); // Outline color and width
     //Check if the text overlaps with any previously rendered text.
-    if(isOverlapping(boundingRect.toRect(), rects)) return;
+    QRect globalRect(QPoint(tileOriginX + coordinate.x() - boundingRect.width()/2, tileOriginY + coordinate.y() - boundingRect.height()/2),
+                     QSize(boundingRect.width(), boundingRect.height()));
+    if(isOverlapping(globalRect, rects)) return;
     //Add the total bouding rect to the list of the text rects to check for overlap for upcoming text.
-    rects.append(boundingRect.toRect());
+    rects.append(globalRect);
+    vpTextList.append({QPoint(tileOriginX, tileOriginY), {textPath}, getTextColor(layerStyle, feature, mapZoom, vpZoom), outlineSize, outlineColor});
     //Draw  the text.
-    painter.strokePath(textPath, outlinePen);
-    painter.fillPath(textPath, getTextColor(layerStyle, feature, mapZoom, vpZoom));
+    //painter.strokePath(textPath, outlinePen);
+    //painter.fillPath(textPath, getTextColor(layerStyle, feature, mapZoom, vpZoom));
 }
 
 
 /* Render a text that should be drawn on multiple lines.
  */
 /*!
- * \brief paintCompositeText
+ * \brief processCompositeText
  * This function renders text that requires myltiple lines
  * \param texts the List containing the strings of text to be rendered, each on a separate line.
  * \param coordinates the coordinates where the text should be rendered. The text is rendered so that the point is right in the middle of the union of all the bounding rects of the text strings.
@@ -258,18 +263,20 @@ static void paintSimpleText(
  * \param mapZoom
  * \param vpZoom
  */
-static void paintCompositeText(
+static void processCompositeText(
     const QList<QString> &texts,
     const QPoint &coordinates,
     const int outlineSize,
     const QColor &outlineColor,
     const QFont &textFont,
     QVector<QRect> &rects,
-    QPainter &painter,
     const PointFeature &feature,
     const SymbolLayerStyle &layerStyle,
     const int mapZoom,
-    const double vpZoom)
+    const double vpZoom,
+    int tileOriginX,
+    int tileOriginY,
+    QVector<Bach::vpGlobalText> &vpTextList)
 {
     //The font metrics var is used to calculate how much space does each word consume.
     QFontMetricsF fmetrics(textFont);
@@ -309,17 +316,17 @@ static void paintCompositeText(
     }
 
     //Check if the text overlaps with any previously rendered text.
-    if(isOverlapping(boundingRect, rects)) return;
-
-    // Set the pen for the outline color and width.
-    QPen outlinePen(outlineColor, outlineSize);
+     QRect globalRect(QPoint((tileOriginX + coordinates.x()) - boundingRect.width()/2, (tileOriginY + coordinates.y() - boundingRect.height()/2)),
+                     QSize(boundingRect.width(), boundingRect.height()));
+    if(isOverlapping(globalRect, rects)) return;
     //Add the total bouding rect to the list of the text rects to check for overlap for upcoming text.
-    rects.append(boundingRect);
+    rects.append(globalRect);
     //Draw all the text parts
+    QList<QPainterPath> pathsList;
     for(const auto &path : paths){
-        painter.strokePath(path, outlinePen);
-        painter.fillPath(path, getTextColor(layerStyle, feature, mapZoom, vpZoom));
+        pathsList.append(path);
     }
+    vpTextList.append({QPoint(tileOriginX, tileOriginY), pathsList, getTextColor(layerStyle, feature, mapZoom, vpZoom), outlineSize, outlineColor});
 }
 
 /*!
@@ -335,11 +342,14 @@ static void paintCompositeText(
  *
  * \param rects the list of rectangles used to check for text overlapping.
  */
-void Bach::paintSingleTileFeature_Point(
+void Bach::processSingleTileFeature_Point(
     PaintingDetailsPoint details,
     const int tileSize,
+    int tileOriginX,
+    int tileOriginY,
     bool forceNoChangeFontType,
-    QVector<QRect> &rects)
+    QVector<QRect> &rects,
+    QVector<vpGlobalText> &vpTextList)
 {
     QPainter &painter = *details.painter;
     const SymbolLayerStyle &layerStyle = *details.layerStyle;
@@ -348,6 +358,7 @@ void Bach::paintSingleTileFeature_Point(
     QString textToDraw = getTextContent(layerStyle, feature, details.mapZoom, details.vpZoom);
     //If there is no text then there is nothing to render, we return
     if(textToDraw == "") return;
+    painter.setClipping(false);
 
     //Get the rendering parameters from the layerstyle and set the relevant painter field.
     painter.setBrush(Qt::NoBrush);
@@ -376,7 +387,7 @@ void Bach::paintSingleTileFeature_Point(
     // but when there are 3 points inside the text feature,
     // only index 1 contains the one we expect.
     QPoint coordinates;
-    if (feature.points().length() == 3) {
+    if (feature.points().length() > 1) {
         coordinates = feature.points().at(1);
     } else {
         coordinates = feature.points().at(0);
@@ -386,35 +397,45 @@ void Bach::paintSingleTileFeature_Point(
     transform.scale(tileSize, tileSize);
     //Remap the original coordinates so that they are positioned correctly.
     const QPoint newCoordinates = transform.map(coordinates);
+    if(newCoordinates.x() < 0 || newCoordinates.x() > tileSize || newCoordinates.y() < 0 || newCoordinates.y() > tileSize){
+        painter.setClipping(true);
+        return;
+    }
 
     //The text is rendered differently depending on it it wraps or not.
     if(correctedText.size() == 1) //In case there is only one string to be rendered (no wrapping)
-        paintSimpleText(
+        processSimpleText(
             correctedText.at(0),
             newCoordinates,
             outlineSize,
             outlineColor,
             textFont,
             rects,
-            painter,
             feature,
             layerStyle,
             details.mapZoom,
-            details.vpZoom);
+            details.vpZoom,
+            tileOriginX,
+            tileOriginY,
+            vpTextList);
     else{ //In case there are multiple strings to be redered (text wrapping)
-        paintCompositeText(
+        processCompositeText(
             correctedText,
             newCoordinates,
             outlineSize,
             outlineColor,
             textFont,
             rects,
-            painter,
             feature,
             layerStyle,
             details.mapZoom,
-            details.vpZoom);
+            details.vpZoom,
+            tileOriginX,
+            tileOriginY,
+            vpTextList);
     }
+
+    painter.setClipping(true);
 }
 
 /*!
