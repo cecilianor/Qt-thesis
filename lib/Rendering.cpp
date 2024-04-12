@@ -178,8 +178,9 @@ static void paintVectorLayer_Line(
 
 /*!
  * \brief processVectorLayer_Point
- * Call the text rendering function on all the layer's features that pass the layerStyle filter.
- * The rendering function is called after that the features have been ordered according to the rank property.
+ * Call the text processing function on all the layer's features that pass the layerStyle filter.
+ * The processing function is called after that the features have been ordered according to the rank property.
+ * This will update the vpTextList list with the text that passes the global collision filtering.
  * \param painter
  * The painter object to paint into.
  * It assumes the painter object has had its origin moved to the tiles origin, and is unscaled.
@@ -188,12 +189,14 @@ static void paintVectorLayer_Line(
  * \param mapZoom The map zoom level being rendered.
  * \param vpZoom The zoom level of the viewport.
  * \param geometryTransform the transform to be used to map the features into the correct position.
- *
  * \param forceNoChangeFontType If set to true, the text font
  * rendered will be the one currently set by the QPainter object.
  * If set to false, it will try to use the font suggested by the stylesheet.
- *
- * \param labelRects
+ * \param labelRects The list containing the bounding rectangles for all the text features that  have
+ * been processed. This bounding rects have view port coordinates rather than tile coordinates, which means
+ * that the collision detection will check for all the text in the map widget and not only the text in the current tile.
+ * \param vpTextList a list of structs that contain all the tests that passed the collision filtering along with all the
+ * details necessary to render the text.
  */
 static void processVectorLayer_Point(
     QPainter &painter,
@@ -210,7 +213,7 @@ static void processVectorLayer_Point(
     QVector<Bach::vpGlobalText> &vpTextList)
 {
     QVector<QPair<int, PointFeature>> labels; //Used to order text rendering operation based on "rank" property.
-    // Iterate over all the features, and filter out anything that is not point  (rendering of line features for curved text in the symbol layer is not yet implemented).
+    // Iterate over all the features, and filter out anything that is not point.
     for (auto const& abstractFeature : layer.m_features) {
         if(abstractFeature->type() == AbstractLayerFeature::featureType::line){
             const LineFeature &feature = *static_cast<const LineFeature*>(abstractFeature);
@@ -235,7 +238,7 @@ static void processVectorLayer_Point(
         return a.first < b.first;
     });
 
-    //Loop over the ordered label map and render text ignoring labels that would cause an overlap.
+    //Loop over the ordered label map and add the text that passes the collision filter to the vpTextList list.
     for(const auto &pair : labels){
         painter.save();
         Bach::processSingleTileFeature_Point(
@@ -251,18 +254,27 @@ static void processVectorLayer_Point(
     labels.clear();
 }
 
+/*!
+ * \brief paintText
+ * Loop over all the text elements that passed the collision filter and reder them on screen.
+ * \param painter the painter to be used for text rendering.
+ * \param vpTextList the list of structs containing the necessary elments to render the text.
+ */
 static void paintText(
     QPainter &painter,
     QVector<Bach::vpGlobalText> &vpTextList)
 {
+    //Antialiasing is laways set on for text rendering.
     painter.setRenderHints(QPainter::Antialiasing, true);
     QPen pen;
     for(auto const &globalText : vpTextList){
         painter.save();
+        //Remove any translations/scaling previously done on the painter's transform.
         painter.resetTransform();
+        //move the painter to the origin of the tile that the text belongs to since the coordinates
+        //of each text element is relative to its parent tile rather than the viewport.
         painter.translate(globalText.tileOrigin);
         for(auto const &path : globalText.path){
-
             pen.setWidth(globalText.outlineSize);
             pen.setColor(globalText.outlineColor);
             painter.strokePath(path, pen);
@@ -293,7 +305,12 @@ static void paintText(
  * \param mapZoom The map zoom level being rendered.
  * \param vpZoom The zoom level of the viewport.
  * \param styleSheet
- * \param tileSize The width of the tile in pixels.
+ * \param tileWidthPixels The width of the tile in pixels.
+ * \param tileOriginX the x component of the tile's origin (used for text collistion detection)
+ * \param tileOriginY the y component of the tile's origin (used for text collistion detection)
+ * \param settings
+ * \param labelRects the list containing all the bounding rectangle for previously processed text feratures (used for text collistion detection)
+ * \param vpTextList the list containing all the text elements for all the tiles currently visible on the view port
  */
 static void paintVectorTile(
     const VectorTile &tileData,

@@ -193,6 +193,9 @@ static QList<QString> getCorrectedText(const QString &text, const QFont & font, 
  * \param layerStyle the layerStyle to style the text
  * \param mapZoom
  * \param vpZoom
+ * \param tileOriginX the x component of this feature's parent tile's origin (used for text collistion detection)
+ * \param tileOriginY the y component of this feature's parent tile's origin (used for text collistion detection)
+ * \param vpTextList the list of text features that this text will be added to
  */
 static void processSimpleText(
     const QString &text,
@@ -229,20 +232,14 @@ static void processSimpleText(
     textPath.translate(coordinate);
     boundingRect.translate({textCenteringOffsetX, textCenteringOffsetY});
     boundingRect.translate(coordinate);
-
-
-    // Set the pen for the outline color and width.
-    QPen outlinePen(outlineColor, outlineSize); // Outline color and width
-    //Check if the text overlaps with any previously rendered text.
+    //Check if the text overlaps with any previously processed text.
     QRect globalRect(QPoint(tileOriginX + coordinate.x() - boundingRect.width()/2, tileOriginY + coordinate.y() - boundingRect.height()/2),
                      QSize(boundingRect.width(), boundingRect.height()));
     if(isOverlapping(globalRect, rects)) return;
     //Add the total bouding rect to the list of the text rects to check for overlap for upcoming text.
     rects.append(globalRect);
+    //add the feature's details to the vpTextList
     vpTextList.append({QPoint(tileOriginX, tileOriginY), {textPath}, getTextColor(layerStyle, feature, mapZoom, vpZoom), outlineSize, outlineColor});
-    //Draw  the text.
-    //painter.strokePath(textPath, outlinePen);
-    //painter.fillPath(textPath, getTextColor(layerStyle, feature, mapZoom, vpZoom));
 }
 
 
@@ -262,6 +259,9 @@ static void processSimpleText(
  * \param layerStyle the layerStyle to style the text
  * \param mapZoom
  * \param vpZoom
+ * \param tileOriginX the x component of this feature's parent tile's origin (used for text collistion detection)
+ * \param tileOriginY the y component of this feature's parent tile's origin (used for text collistion detection)
+ * \param vpTextList the list of text features that this text will be added to
  */
 static void processCompositeText(
     const QList<QString> &texts,
@@ -321,7 +321,7 @@ static void processCompositeText(
     if(isOverlapping(globalRect, rects)) return;
     //Add the total bouding rect to the list of the text rects to check for overlap for upcoming text.
     rects.append(globalRect);
-    //Draw all the text parts
+    //add the feature's details to the vpTextList
     QList<QPainterPath> pathsList;
     for(const auto &path : paths){
         pathsList.append(path);
@@ -335,12 +335,13 @@ static void processCompositeText(
  * along with the styling information to one of the two rendering functions above depending if the text is a one liner or if it requires multiple lines.
  * \param details the struct containig all the elemets needed to paint the feature includeing the layerStyle and the feature itself.
  * \param tileSize the size of the current tile in pixels, used to scale the the transform.
- *
  * \param forceNoChangeFontType If set to true, the text font
  * rendered will be the one currently set by the QPainter object.
  * If set to false, it will try to use the font suggested by the stylesheet.
- *
- * \param rects the list of rectangles used to check for text overlapping.
+ * \param tileOriginX the x component of this feature's parent tile's origin (used for text collistion detection)
+ * \param tileOriginY the y component of this feature's parent tile's origin (used for text collistion detection)
+ * \param rects the list of rects that the current feature's rect will be checked against for collision
+ * \param vpTextList the list of text features that this text will be added to if it passses all the filters.
  */
 void Bach::processSingleTileFeature_Point(
     PaintingDetailsPoint details,
@@ -358,7 +359,6 @@ void Bach::processSingleTileFeature_Point(
     QString textToDraw = getTextContent(layerStyle, feature, details.mapZoom, details.vpZoom);
     //If there is no text then there is nothing to render, we return
     if(textToDraw == "") return;
-    painter.setClipping(false);
 
     //Get the rendering parameters from the layerstyle and set the relevant painter field.
     painter.setBrush(Qt::NoBrush);
@@ -386,6 +386,7 @@ void Bach::processSingleTileFeature_Point(
     // We don't actually know why
     // but when there are 3 points inside the text feature,
     // only index 1 contains the one we expect.
+    // possible explanation: the extra coordinated might be there for map duplication (infinite horizontal scrolling)
     QPoint coordinates;
     if (feature.points().length() > 1) {
         coordinates = feature.points().at(1);
@@ -397,13 +398,13 @@ void Bach::processSingleTileFeature_Point(
     transform.scale(tileSize, tileSize);
     //Remap the original coordinates so that they are positioned correctly.
     const QPoint newCoordinates = transform.map(coordinates);
+    //exclude any text that is outside of the tile extent
     if(newCoordinates.x() < 0 || newCoordinates.x() > tileSize || newCoordinates.y() < 0 || newCoordinates.y() > tileSize){
-        painter.setClipping(true);
         return;
     }
 
-    //The text is rendered differently depending on it it wraps or not.
-    if(correctedText.size() == 1) //In case there is only one string to be rendered (no wrapping)
+    //The text is processed differently depending on it it wraps or not.
+    if(correctedText.size() == 1) //In case there is only one string to be processed (no wrapping)
         processSimpleText(
             correctedText.at(0),
             newCoordinates,
@@ -418,7 +419,7 @@ void Bach::processSingleTileFeature_Point(
             tileOriginX,
             tileOriginY,
             vpTextList);
-    else{ //In case there are multiple strings to be redered (text wrapping)
+    else{ //In case there are multiple strings to be processed (text wrapping)
         processCompositeText(
             correctedText,
             newCoordinates,
@@ -434,8 +435,6 @@ void Bach::processSingleTileFeature_Point(
             tileOriginY,
             vpTextList);
     }
-
-    painter.setClipping(true);
 }
 
 /*!
@@ -451,6 +450,12 @@ static double correctAngle(double angle){
     return angle;
 }
 
+
+/*!
+ * \brief Bach::paintSingleTileFeature_Point_Curved
+ * Render road names on a path.
+ * \param details the struct containing all the details for the text rendering.
+ */
 void Bach::paintSingleTileFeature_Point_Curved(PaintingDetailsPointCurved details)
 {
     QPainter &painter = *details.painter;
