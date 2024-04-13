@@ -1,4 +1,6 @@
 #include <functional>
+#include <QTextLayout>
+#include <QTextCharFormat>
 
 #include "Evaluator.h"
 #include "Rendering.h"
@@ -9,6 +11,7 @@ Bach::PaintVectorTileSettings Bach::PaintVectorTileSettings::getDefault()
     out.drawFill = true;
     out.drawLines = true;
     out.drawText = true;
+    out.useQTextLayout = true;
     return out;
 }
 
@@ -71,7 +74,7 @@ static bool isLayerShown(const AbstractLayerStyle &layerStyle, int mapZoom)
 {
     return
         layerStyle.m_visibility == "visible" &&
-        mapZoom <= layerStyle.m_maxZoom &&
+        mapZoom < layerStyle.m_maxZoom &&
         mapZoom >= layerStyle.m_minZoom;
 }
 
@@ -259,27 +262,59 @@ static void processVectorLayer_Point(
  * Loop over all the text elements that passed the collision filter and reder them on screen.
  * \param painter the painter to be used for text rendering.
  * \param vpTextList the list of structs containing the necessary elments to render the text.
+ * \param params this containes the bool used to switch text rendering methods.
  */
 static void paintText(
     QPainter &painter,
-    QVector<Bach::vpGlobalText> &vpTextList)
+    QVector<Bach::vpGlobalText> &vpTextList,
+    Bach::PaintVectorTileSettings params)
 {
-    //Antialiasing is laways set on for text rendering.
-    painter.setRenderHints(QPainter::Antialiasing, true);
+
     QPen pen;
+    QTextCharFormat charFormat;
+    QTextLayout::FormatRange formatRange;
+    QTextLayout textLayout;
+    QString text;
+
     for(auto const &globalText : vpTextList){
         painter.save();
         //Remove any translations/scaling previously done on the painter's transform.
         painter.resetTransform();
+        painter.setClipping(false);
         //move the painter to the origin of the tile that the text belongs to since the coordinates
         //of each text element is relative to its parent tile rather than the viewport.
         painter.translate(globalText.tileOrigin);
-        for(auto const &path : globalText.path){
+        QFontMetrics fmetrics(globalText.font);
+        if(params.useQTextLayout){
+            for(int i = 0; i < globalText.text.size(); i++){
+            text = globalText.text.at(i);
             pen.setWidth(globalText.outlineSize);
             pen.setColor(globalText.outlineColor);
-            painter.strokePath(path, pen);
-            painter.fillPath(path, globalText.textColor);
+            textLayout.setText(text);
+            textLayout.setFont(globalText.font);
+            textLayout.beginLayout();
+            textLayout.createLine();
+            textLayout.endLayout();
+            charFormat.setTextOutline(pen);
+            formatRange.format = charFormat;
+            formatRange.length = text.length();
+            formatRange.start = 0;
+            QPointF textPosition(globalText.position.at(i).x(), globalText.position.at(i).y() - fmetrics.height()/2);
+            textLayout.draw(&painter, textPosition, {formatRange},QRect(0, 0, 0, 0));
+            }
+        }else{
+            //Antialiasing is laways set on for text rendering with the QPainter drawPath.
+            painter.setRenderHints(QPainter::Antialiasing, true);
+            for(const auto &path : globalText.path){
+                pen.setWidth(globalText.outlineSize);
+                pen.setColor(globalText.outlineColor);
+                painter.strokePath(path, pen);
+                painter.fillPath(path, globalText.textColor);
+            }
         }
+
+
+
         painter.restore();
 
     }
@@ -653,7 +688,7 @@ void Bach::paintVectorTiles(
         styleSheet,
         drawDebug);
 
-    paintText(painter, vpTextList);
+    paintText(painter, vpTextList, settings);
 }
 
 /*!

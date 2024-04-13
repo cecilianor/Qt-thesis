@@ -239,7 +239,15 @@ static void processSimpleText(
     //Add the total bouding rect to the list of the text rects to check for overlap for upcoming text.
     rects.append(globalRect);
     //add the feature's details to the vpTextList
-    vpTextList.append({QPoint(tileOriginX, tileOriginY), {textPath}, getTextColor(layerStyle, feature, mapZoom, vpZoom), outlineSize, outlineColor});
+    vpTextList.append({QPoint(tileOriginX, tileOriginY),
+                       {textPath},
+                       {text},
+                       {QPoint(coordinate.x() + textCenteringOffsetX, coordinate.y() + textCenteringOffsetY)},
+                       textFont,
+                       getTextColor(layerStyle, feature, mapZoom, vpZoom),
+                       outlineSize,
+                       outlineColor,
+                       boundingRect.toRect()});
 }
 
 
@@ -284,6 +292,7 @@ static void processCompositeText(
     qreal height = fmetrics.height();
     //This will hold the paths for all the substrings of the text.
     QList<QPainterPath> paths;
+    QList<QPoint> points;
     // Create a temporary QPainterPath for the loop.
     QPainterPath temp;
     //Loop over each substring and calculate its correct position.
@@ -306,6 +315,7 @@ static void processCompositeText(
         boundingRect.translate(coordinates);
         //Add the current text path to the list and clear it for the next iteration.
         paths.append(temp);
+        points.append(QPoint(coordinates.x() + textCenteringOffsetX, coordinates.y() + textCenteringOffsetY + ((i - (texts.size() / 2.)) * height)));
         temp.clear();
     }
 
@@ -326,7 +336,15 @@ static void processCompositeText(
     for(const auto &path : paths){
         pathsList.append(path);
     }
-    vpTextList.append({QPoint(tileOriginX, tileOriginY), pathsList, getTextColor(layerStyle, feature, mapZoom, vpZoom), outlineSize, outlineColor});
+    vpTextList.append({QPoint(tileOriginX, tileOriginY),
+                       pathsList,
+                       texts,
+                       points,
+                       textFont,
+                       getTextColor(layerStyle, feature, mapZoom, vpZoom),
+                       outlineSize,
+                       outlineColor,
+                       boundingRect});
 }
 
 /*!

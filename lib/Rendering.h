@@ -62,9 +62,13 @@ namespace Bach {
     struct vpGlobalText{
         QPoint tileOrigin;
         QList<QPainterPath> path;
+        QList<QString> text;
+        QList<QPoint> position;
+        QFont font;
         QColor textColor;
         int outlineSize;
         QColor outlineColor;
+        QRect boundingRect;
     };
 
 
@@ -132,6 +136,13 @@ namespace Bach {
          *  the one that is already set by the QPainter beforehand.
          */
         bool forceNoChangeFontType = {};
+
+        /*!
+         * \brief
+         * used to switch the rendering function between the QPainter drawPath function
+         * and the QTextLayout draw function for text rendering.
+         */
+        bool useQTextLayout = {};
 
         static PaintVectorTileSettings getDefault();
     };
