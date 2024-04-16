@@ -214,7 +214,7 @@ static HttpResponse loadStyleSheetBytes(
 {
     // Create full path for the target stylesheet JSON file
     QString styleSheetCachePath =
-        TileLoader::getGeneralCacheFolder() + QDir::separator() +
+        Bach::TileLoader::getGeneralCacheFolder() + QDir::separator() +
         "styleSheetCache.json";
 
     // Try to load the style sheet from file first.
@@ -388,7 +388,7 @@ static std::optional<QJsonDocument> loadVectorTileSheet(
     const QString &sourceType)
 {
     const QString cachePath = QDir::cleanPath(
-        TileLoader::getGeneralCacheFolder() +
+        Bach::TileLoader::getGeneralCacheFolder() +
         QDir::separator() +
         "vectorTileSheet.json");
 
@@ -472,7 +472,7 @@ static std::optional<QJsonDocument> loadRasterTileSheetJson(
 {
     // Check if this tilesheet exists in disk.
     const QString cachePath = QDir::cleanPath(
-        TileLoader::getGeneralCacheFolder() +
+        Bach::TileLoader::getGeneralCacheFolder() +
         QDir::separator() +
         "rasterTileSheet.json");
 

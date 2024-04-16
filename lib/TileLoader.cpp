@@ -15,6 +15,8 @@
 #include "TileLoader.h"
 #include "Utilities.h"
 
+using Bach::TileLoader;
+
 // This might not be ideal place to define this struct.
 struct TileResultType : public Bach::RequestTilesResult {
     virtual ~TileResultType() {
@@ -112,11 +114,20 @@ std::unique_ptr<TileLoader> TileLoader::newLocalOnly(StyleSheet&& styleSheet)
  * This function is mostly used for testing purposes.
  *
  * \param Takes the directory path to read/write cache into.
+ *
+ * \param The amount of worker threads, if not set to nullopt. Defaults
+ * to nullopt.
  */
-std::unique_ptr<TileLoader> TileLoader::newDummy(const QString &diskCachePath)
-{
+std::unique_ptr<TileLoader> TileLoader::newDummy(
+    const QString &diskCachePath,
+    std::optional<int> workerThreadCount)
+{    
     auto out = std::unique_ptr<TileLoader>(new TileLoader());
     TileLoader &tileLoader = *out;
+    if (workerThreadCount.has_value()) {
+        tileLoader.getThreadPool().setMaxThreadCount(workerThreadCount.value());
+    }
+
     tileLoader.tileCacheDiskPath = diskCachePath;
     tileLoader.useWeb = false;
     return out;
@@ -219,10 +230,10 @@ QString TileLoader::getTileDiskPath(TileCoord coord, TileType tileType)
  */
 QScopedPointer<Bach::RequestTilesResult> TileLoader::requestTiles(
     const std::set<TileCoord> &input,
-    TileLoadedCallbackFn signalFn,
+    const TileLoadedCallbackFn &signalFn,
     bool loadMissingTiles)
 {
-    auto out = new TileResultType;
+    TileResultType* out = new TileResultType;
     // Temporary: We just need some way to handle when the user makes
     // a dummy TileLoader with no stylesheet, but tries to request one anyways.
     if (!styleSheet.m_layerStyles.empty())
@@ -447,7 +458,7 @@ void TileLoader::loadFromWeb(TileCoord coord, TileLoadedCallbackFn signalFn)
  */
 void TileLoader::queueTileLoadingJobs(
     const QVector<TileCoord> &input,
-    TileLoadedCallbackFn signalFn)
+    const TileLoadedCallbackFn &signalFn)
 {
     // We can assume all input tiles do not exist in memory.
 

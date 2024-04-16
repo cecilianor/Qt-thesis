@@ -9,6 +9,8 @@
 #include "TileLoader.h"
 #include "Utilities.h"
 
+using TileLoader = Bach::TileLoader;
+
 class UnitTesting : public QObject
 {
     Q_OBJECT
