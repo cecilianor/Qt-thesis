@@ -190,5 +190,6 @@ if (BUILD_TESTS)
     add_test(NAME EvaluatorTest COMMAND evaluator_test)
 
     add_subdirectory(tests/merlin)
-
+    add_subdirectory(tests/tile_parsing_benchmark)
+    add_subdirectory(tests/tileloader_threaded_benchmark)
 endif()
