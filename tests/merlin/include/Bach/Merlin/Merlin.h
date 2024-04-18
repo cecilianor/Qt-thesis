@@ -7,7 +7,7 @@
 #include <QVector>
 
 #include "TileCoord.h"
-#include "Layerstyle.h"
+#include "LayerStyle.h"
 
 #ifndef BACH_RENDEROUTPUT_BASELINE_DIR
 #error "C++ define 'BACH_RENDEROUTPUT_BASELINE_DIR' was not defined. This likely means a build error."
