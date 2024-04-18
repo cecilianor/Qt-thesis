@@ -95,8 +95,18 @@ void MapWidget::mouseMoveEvent(QMouseEvent *event)
     // Calculate the difference between the current and original mouse position.
     QPointF diff = mouseCurrentPosition - mouseStartPosition;
 
+    // Scaling factor used when zooming.
+    auto scalar = 1/(std::pow(2, getViewportZoomLevel()));
+
+    // Calculate window aspect ratio, used to scale x coordinate
+    // correctly. This was added in after talking to ChatGPT about
+    // what could be the cause of the problem.
+    double windowAspectRatio = static_cast<double>(width())
+                               / static_cast<double>(height());
+
     // Scale the difference variable based on zoom level.
-    diff *= 1/(std::pow(2, getViewportZoomLevel()));
+    diff *= scalar;
+    diff.rx() *= windowAspectRatio;
 
     // Translate normalized coordinates to world coordinate space.
     auto world_x = x * width();
