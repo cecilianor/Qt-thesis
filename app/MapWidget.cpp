@@ -1,11 +1,12 @@
-#include "MapWidget.h"
-
-#include "Rendering.h"
-
-#include <QtMath>
+// Qt header files
 #include <QCoreApplication>
 #include <QKeyEvent>
+#include <QtMath>
 #include <QPainter>
+
+// Other header files
+#include "MapWidget.h"
+#include "Rendering.h"
 
 /*!
  * \brief The TileType enum determines what tile type to render.

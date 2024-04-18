@@ -1,7 +1,10 @@
 #ifndef MAPPANCONTROLWIDGET_H
 #define MAPPANCONTROLWIDGET_H
 
+// Qt header files
 #include <QWidget>
+
+// Other header files
 #include "MapWidget.h"
 
 namespace Bach {

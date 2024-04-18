@@ -26,7 +26,6 @@ std::unique_ptr<LineLayerStyle> LineLayerStyle::fromJson(const QJsonObject &json
     QJsonObject paint = jsonObj.value("paint").toObject();
     if (paint.contains("line-dasharray")) {
         QJsonArray arr = paint.value("line-dasharray").toArray();
-
         for (QJsonValueConstRef length : arr) {
             returnLayer->m_lineDashArray.append(length.toInt());
         }

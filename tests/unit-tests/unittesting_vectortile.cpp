@@ -1,6 +1,8 @@
+// Qt header files
 #include <QObject>
 #include <QTest>
 
+// Other header files
 #include "VectorTiles.h"
 
 class UnitTesting : public QObject

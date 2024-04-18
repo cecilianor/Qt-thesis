@@ -1,5 +1,7 @@
+// STL header files
 #include <functional>
 
+// Other header files
 #include "Evaluator.h"
 #include "Rendering.h"
 
@@ -226,7 +228,7 @@ static void paintVectorLayer_Point(
     }
 
     //Sort the labels map in increasing order based on the laber's "rank"
-    std::sort(labels.begin(), labels.end(), [](const QPair<int, PointFeature>& a, const QPair<int, PointFeature>& b) {
+    std::stable_sort(labels.begin(), labels.end(), [](const QPair<int, PointFeature>& a, const QPair<int, PointFeature>& b) {
         return a.first < b.first;
     });
 
