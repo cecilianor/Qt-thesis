@@ -102,7 +102,7 @@ public:
     Qt::PenJoinStyle getJoinStyle() const;
     Qt::PenCapStyle getCapStyle() const;
 
-    QList<int> m_lineDashArray;
+    QList<qreal> m_lineDashArray;
 
 private:
     QString m_lineCap;
@@ -167,6 +167,8 @@ public:
     StyleSheet& operator=(StyleSheet&&) = default;
 
     static std::optional<StyleSheet> fromJson(const QJsonDocument&);
+    static std::optional<StyleSheet> fromJsonBytes(const QByteArray& input);
+    static std::optional<StyleSheet> fromJsonFile(const QString& path);
 
     QString m_id;
     int m_version;
