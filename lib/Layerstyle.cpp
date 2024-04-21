@@ -484,7 +484,7 @@ QVariant LineLayerStyle::getLineOpacityAtZoom(int zoomLevel) const
     if (m_lineOpacity.isNull()){
         // The default opacity in case no opacity is provided by the style sheet.
         return QVariant(1);
-    } else if (m_lineOpacity.typeId() != QMetaType::Type::Double
+    } else if (m_lineOpacity.typeId() != QMetaType::Type::Float
                && m_lineOpacity.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, float>> stops = m_lineOpacity.value<QList<QPair<int, float>>>();
         if (stops.size() == 0)
@@ -593,6 +593,72 @@ std::unique_ptr<SymbolLayerStyle> SymbolLayerStyle::fromJson(const QJsonObject &
         }
     }
 
+
+    if (layout.contains("text-max-angle")){
+        QJsonValue textSize = layout.value("text-max-angle");
+        if (textSize.isObject()){
+            // Case where the property is an object that has "Stops".
+            QList<QPair<int, int>> stops;
+            for (const auto &stop
+                 : static_cast<const QJsonArray&>(textSize.toObject().value("stops").toArray())){
+                int zoomStop = stop.toArray().first().toInt();
+                int angleStop = stop.toArray().last().toInt();
+                stops.append(QPair<int, int>(zoomStop, angleStop));
+            }
+            returnLayer->m_textMaxAngle.setValue(stops);
+        } else if (textSize.isArray()){
+            // Case where the property is an expression.
+            returnLayer->m_textMaxAngle.setValue(textSize.toArray());
+        } else {
+            // Case where the property is a numeric value.
+            returnLayer->m_textMaxAngle.setValue(textSize.toInt());
+        }
+    }
+
+
+    if (layout.contains("symbol-spacing")){
+        QJsonValue textSize = layout.value("symbol-spacing");
+        if (textSize.isObject()){
+            // Case where the property is an object that has "Stops".
+            QList<QPair<int, int>> stops;
+            for (const auto &stop
+                 : static_cast<const QJsonArray&>(textSize.toObject().value("stops").toArray())){
+                int zoomStop = stop.toArray().first().toInt();
+                int sizeStop = stop.toArray().last().toInt();
+                stops.append(QPair<int, int>(zoomStop, sizeStop));
+            }
+            returnLayer->m_symbolSpacing.setValue(stops);
+        } else if (textSize.isArray()){
+            // Case where the property is an expression.
+            returnLayer->m_symbolSpacing.setValue(textSize.toArray());
+        } else {
+            // Case where the property is a numeric value.
+            returnLayer->m_symbolSpacing.setValue(textSize.toInt());
+        }
+    }
+
+    if (layout.contains("text-letter-spacing")){
+        QJsonValue textSize = layout.value("text-letter-spacing");
+        if (textSize.isObject()){
+            // Case where the property is an object that has "Stops".
+            QList<QPair<int, float>> stops;
+            for (const auto &stop
+                 : static_cast<const QJsonArray&>(textSize.toObject().value("stops").toArray())){
+                int zoomStop = stop.toArray().first().toInt();
+                float spaceStop = stop.toArray().last().toInt();
+                stops.append(QPair<int, float>(zoomStop, spaceStop));
+            }
+            returnLayer->m_textLetterSpacing.setValue(stops);
+        } else if (textSize.isArray()){
+            // Case where the property is an expression.
+            returnLayer->m_textLetterSpacing.setValue(textSize.toArray());
+        } else {
+            // Case where the property is a numeric value.
+            returnLayer->m_textLetterSpacing.setValue(textSize.toDouble());
+        }
+    }
+
+
     if (layout.contains("text-font")){
         returnLayer->m_textFont = layout.value("text-font").toVariant().toStringList();
     } else {
@@ -689,7 +755,7 @@ QVariant SymbolLayerStyle::getTextSizeAtZoom(int zoomLevel) const
     if (m_textSize.isNull()){
         // The default size in case no size is provided by the style sheet.
         return QVariant(16);
-    } else if (m_textSize.typeId() != QMetaType::Type::Double
+    } else if (m_textSize.typeId() != QMetaType::Type::Int
                && m_textSize.typeId() != QMetaType::Type::QJsonArray){
         QList<QPair<int, int>> stops = m_textSize.value<QList<QPair<int, int>>>();
         if (stops.size() == 0)
@@ -697,6 +763,63 @@ QVariant SymbolLayerStyle::getTextSizeAtZoom(int zoomLevel) const
         return QVariant(getStopOutput(stops, zoomLevel));
     } else {
         return QVariant(m_textSize);
+    }
+}
+
+/*!
+ * \brief SymbolLayerStyle::getSymbolSpacingAtZoom returns spacing between symbols for road names.
+ *
+ * The returned QVariant will contain a float if the value is not an expression,
+ *  or a QJsonArray otherwise
+ *
+ * \param zoomLevel is the zoom level for which to calculate the size.
+ * \return a QVariant containing either an int or a QJsonArray with data.
+ */
+QVariant SymbolLayerStyle::getSymbolSpacingAtZoom(int zoomLevel) const
+{
+    if (m_textSize.isNull()){
+        // The default size in case no size is provided by the style sheet.
+        return QVariant(250);
+    } else if (m_textSize.typeId() != QMetaType::Type::Int
+               && m_textSize.typeId() != QMetaType::Type::QJsonArray){
+        QList<QPair<int, int>> stops = m_textSize.value<QList<QPair<int, int>>>();
+        if (stops.size() == 0)
+            return QVariant(250);
+        return QVariant(getStopOutput(stops, zoomLevel));
+    } else {
+        return QVariant(m_textSize);
+    }
+}
+
+QVariant SymbolLayerStyle::getTextMaxAngleAtZoom(int zoomLevel) const
+{
+    if (m_textMaxAngle.isNull()){
+        // The default size in case no size is provided by the style sheet.
+        return QVariant(45);
+    } else if (m_textMaxAngle.typeId() != QMetaType::Type::Int
+               && m_textMaxAngle.typeId() != QMetaType::Type::QJsonArray){
+        QList<QPair<int, int>> stops = m_textMaxAngle.value<QList<QPair<int, int>>>();
+        if (stops.size() == 0)
+            return QVariant(45);
+        return QVariant(getStopOutput(stops, zoomLevel));
+    } else {
+        return QVariant(m_textMaxAngle);
+    }
+}
+
+QVariant SymbolLayerStyle::gettextLetterSpacingAtZoom(int zoomLevel) const
+{
+    if (m_textLetterSpacing.isNull()){
+        // The default size in case no size is provided by the style sheet.
+        return QVariant(0);
+    } else if (m_textLetterSpacing.typeId() != QMetaType::Type::Double
+               && m_textLetterSpacing.typeId() != QMetaType::Type::QJsonArray){
+        QList<QPair<int, int>> stops = m_textLetterSpacing.value<QList<QPair<int, int>>>();
+        if (stops.size() == 0)
+            return QVariant(0);
+        return QVariant(getStopOutput(stops, zoomLevel));
+    } else {
+        return QVariant(m_textLetterSpacing);
     }
 }
 

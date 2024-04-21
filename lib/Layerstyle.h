@@ -131,7 +131,9 @@ public:
     QVariant getTextSizeAtZoom(int zoomLevel) const;
     QVariant getTextColorAtZoom(int zoomLevel) const;
     QVariant getTextOpacityAtZoom(int zoomLevel) const;
-
+    QVariant getSymbolSpacingAtZoom(int zoomLevel) const;
+    QVariant getTextMaxAngleAtZoom(int zoomLevel) const;
+    QVariant gettextLetterSpacingAtZoom(int zoomLevel) const;
     //Layout properties -------------------------------------------
     //bool m_iconAllowOverlap = false;//Not used for first iteration
     //QString m_iconAnchor = QString("center");//Not used for first iteration
@@ -174,9 +176,9 @@ private:
      //QList<QPair<int, int>> m_iconPadding;//Not used for first iteration
      //QList<QPair<int, int>> m_icontRotate;//Not used for first iteration
      //QList<QPair<int, float>> m_iconSize;//Not used for first iteration
-     //QList<QPair<int, int>> m_symbolSpacing;//Not used for first iteration
-     //QList<QPair<int, int>> m_textLetterSpacing;//Not used for first iteration
-     //QList<QPair<int, float>> m_textMaxAngle;//Not used for first iteration
+     QVariant m_symbolSpacing;
+     QVariant m_textLetterSpacing;
+     QVariant m_textMaxAngle;//Not used for first iteration
      //QList<QPair<int,int>> m_textPaddig;//Not used for first iteration
      //QList<QPair<int, float>> m_textRadialOffset;//Not used for first iteration
      //QList<QPair<int, float>> m_textRotate;//Not used for first iteration
