@@ -213,14 +213,22 @@ static void processVectorLayer_Point(
     QTransform geometryTransform,
     bool forceNoChangeFontType,
     QVector<QRect> &labelRects,
-    QVector<Bach::vpGlobalText> &vpTextList)
+    QVector<Bach::vpGlobalText> &vpTextList,
+    QVector<Bach::vpGlobalCurvedText> &vpCurvedTextList)
 {
     QVector<QPair<int, PointFeature>> labels; //Used to order text rendering operation based on "rank" property.
     // Iterate over all the features, and filter out anything that is not point.
     for (auto const& abstractFeature : layer.m_features) {
         if(abstractFeature->type() == AbstractLayerFeature::featureType::line){
             const LineFeature &feature = *static_cast<const LineFeature*>(abstractFeature);
-            Bach::paintSingleTileFeature_Point_Curved({&painter, &layerStyle, &feature, mapZoom, vpZoom, geometryTransform});
+            //Bach::paintSingleTileFeature_Point_Curved({&painter, &layerStyle, &feature, mapZoom, vpZoom, geometryTransform});
+            Bach::processSingleTileFeature_Point_Curved(
+                {&painter, &layerStyle, &feature, mapZoom, vpZoom, geometryTransform},
+                tileWidthPixels,
+                tileOriginX,
+                tileOriginY,
+                labelRects,
+                vpCurvedTextList);
         }else if (abstractFeature->type() == AbstractLayerFeature::featureType::point){ //For normal text (continents /countries / cities / places / ...)
             const PointFeature &feature = *static_cast<const PointFeature*>(abstractFeature);
             // Tests whether the feature should be rendered at all based on possible expression.
@@ -292,13 +300,14 @@ static void paintText(
             pen.setColor(globalText.outlineColor);
             textLayout.setText(text);
             textLayout.setFont(globalText.font);
-            textLayout.beginLayout();
-            textLayout.createLine();
-            textLayout.endLayout();
             charFormat.setTextOutline(pen);
             formatRange.format = charFormat;
             formatRange.length = text.length();
             formatRange.start = 0;
+            painter.setPen(globalText.textColor);
+            textLayout.beginLayout();
+            textLayout.createLine();
+            textLayout.endLayout();
             QPointF textPosition(globalText.position.at(i).x(), globalText.position.at(i).y() - fmetrics.height()/2);
             textLayout.draw(&painter, textPosition, {formatRange},QRect(0, 0, 0, 0));
             }
@@ -315,6 +324,59 @@ static void paintText(
 
 
 
+        painter.restore();
+
+    }
+}
+
+/*!
+ * \brief paintText
+ * Loop over all the text elements that passed the collision filter and reder them on screen.
+ * \param painter the painter to be used for text rendering.
+ * \param vpTextList the list of structs containing the necessary elments to render the text.
+ * \param params this containes the bool used to switch text rendering methods.
+ */
+static void paintText_Curved(
+    QPainter &painter,
+    QVector<Bach::vpGlobalCurvedText> &vpTextList)
+{
+
+    QPen pen;
+    QTextCharFormat charFormat;
+    QTextLayout::FormatRange formatRange;
+    QTextLayout textLayout;
+
+    for(auto const &globalText : vpTextList){
+        painter.save();
+        //Remove any translations/scaling previously done on the painter's transform.
+        painter.resetTransform();
+        painter.setClipping(false);
+        //move the painter to the origin of the tile that the text belongs to since the coordinates
+        //of each text element is relative to its parent tile rather than the viewport.
+        painter.translate(globalText.tileOrigin);
+            for(const auto &text : globalText.textList){
+                QFontMetrics fmetrics(globalText.font);
+                textLayout.setText(text.character);
+                textLayout.setFont(globalText.font);
+                pen.setWidth(globalText.outlineSize);
+                pen.setColor(globalText.outlineColor);
+                charFormat.setTextOutline(pen);
+                formatRange.format = charFormat;
+                formatRange.length = 1;
+                formatRange.start = 0;
+                painter.save();
+                painter.setOpacity(globalText.opacity);
+                painter.setPen(globalText.textColor);
+                painter.translate(text.position);
+                painter.rotate(text.angle);
+                textLayout.beginLayout();
+                textLayout.createLine();
+                textLayout.endLayout();
+                QPoint offsetTextPos(0, -fmetrics.height());
+                textLayout.draw(&painter, offsetTextPos, {formatRange},QRect(0, 0, 0, 0));
+                textLayout.clearLayout();
+                painter.restore();
+            }
         painter.restore();
 
     }
@@ -358,7 +420,8 @@ static void paintVectorTile(
     int tileOriginY,
     const Bach::PaintVectorTileSettings &settings,
     QVector<QRect> &labelRects,
-    QVector<Bach::vpGlobalText> &vpTextList)
+    QVector<Bach::vpGlobalText> &vpTextList,
+    QVector<Bach::vpGlobalCurvedText> &vpCurvedTextList)
 {
     QTransform geometryTransform;
     geometryTransform.scale(tileWidthPixels, tileWidthPixels);
@@ -415,7 +478,8 @@ static void paintVectorTile(
                 geometryTransform,
                 settings.forceNoChangeFontType,
                 labelRects,
-                vpTextList);
+                vpTextList,
+                vpCurvedTextList);
         }
     }
 }
@@ -657,6 +721,7 @@ void Bach::paintVectorTiles(
 {
     QVector<QRect> labelRects;
     QVector<Bach::vpGlobalText> vpTextList;
+    QVector<Bach::vpGlobalCurvedText> vpCurvedTextList;
     auto paintSingleTileFn = [&](TileCoord tileCoord, TileScreenPlacement tilePlacement) {
         // See if the tile being rendered has any tile-data associated with it.
         auto tileIt = tileContainer.find(tileCoord);
@@ -675,7 +740,8 @@ void Bach::paintVectorTiles(
             tilePlacement.pixelPosY,
             settings,
             labelRects,
-            vpTextList);
+            vpTextList,
+            vpCurvedTextList);
     };
 
     paintTilesGeneric(
@@ -688,7 +754,9 @@ void Bach::paintVectorTiles(
         styleSheet,
         drawDebug);
 
+    //After rendering all the other layers , we render all the text that should be currently visible on the viewport.
     paintText(painter, vpTextList, settings);
+    paintText_Curved(painter, vpCurvedTextList);
 }
 
 /*!

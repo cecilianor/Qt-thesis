@@ -71,6 +71,22 @@ namespace Bach {
         QRect boundingRect;
     };
 
+    struct singleCurvedTextCharacter{
+        QChar character;
+        QPointF position;
+        qreal angle;
+    };
+
+    struct vpGlobalCurvedText{
+        QVector<singleCurvedTextCharacter> textList;
+        QFont font;
+        QColor textColor;
+        float opacity;
+        QPoint tileOrigin;
+        QColor outlineColor;
+        int outlineSize;
+    };
+
 
     QPair<double, double> lonLatToWorldNormCoord(double lon, double lat);
     QPair<double, double> lonLatToWorldNormCoordDegrees(double lon, double lat);
@@ -85,13 +101,21 @@ namespace Bach {
     void processSingleTileFeature_Point(
         PaintingDetailsPoint details,
         const int tileSize,
-        int tileOriginX,
-        int tileOriginY,
-        bool forceNoChangeFontType,
+        const int tileOriginX,
+        const int tileOriginY,
+        const bool forceNoChangeFontType,
         QVector<QRect> &rects,
         QVector<vpGlobalText> &vpTextList);
 
     void paintSingleTileFeature_Point_Curved(PaintingDetailsPointCurved details);
+
+    void processSingleTileFeature_Point_Curved(
+        PaintingDetailsPointCurved details,
+        const int tileSize,
+        int tileOriginX,
+        int tileOriginY,
+        QVector<QRect> &rects,
+        QVector<vpGlobalCurvedText> &vpCurvedTextList);
 
 
     int calcMapZoomLevelForTileSizePixels(

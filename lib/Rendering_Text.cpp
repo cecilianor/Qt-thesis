@@ -1,5 +1,6 @@
 #include "Evaluator.h"
 #include "Rendering.h"
+#include <QRandomGenerator>
 
 
 /*!
@@ -124,6 +125,65 @@ static QString getTextContent(
         }
         return feature.featureMetaData[textFieldKey].toString();
     }
+}
+
+
+/*!
+ * \brief getTextMaxAngle
+ * Get the max angle allowed between two adjacent character in curved text.
+ * \param layerStyle the layerStyle containing the color variable
+ * \param feature the feature to be used in case the QVariant is an expression
+ * \param mapZoom the map zoom level to be used in case the QVariant is an expression
+ * \param vpZoom the viewport zoom level to be used in case the QVariant is an expression
+ * \return an int with the max angle value
+ */
+static int getTextMaxAngle(
+    const SymbolLayerStyle &layerStyle,
+    const AbstractLayerFeature &feature,
+    int mapZoom,
+    double vpZoom)
+{
+    QVariant angle = layerStyle.getTextMaxAngleAtZoom(mapZoom);
+    // The layer style might return an expression, we need to resolve it.
+    if(angle.typeId() == QMetaType::Type::QJsonArray){
+        angle = Evaluator::resolveExpression(
+            angle.toJsonArray(),
+            &feature,
+            mapZoom,
+            vpZoom);
+    }
+    return angle.value<int>();
+}
+
+
+/*!
+ * \brief getTextLetterSpacing
+ * Get the space between adjacent character in curved text.
+ * \param layerStyle the layerStyle containing the color variable
+ * \param feature the feature to be used in case the QVariant is an expression
+ * \param mapZoom the map zoom level to be used in case the QVariant is an expression
+ * \param vpZoom the viewport zoom level to be used in case the QVariant is an expression
+ * \param fontSize used to convert the spacing value from ems to pixels
+ * \return an int with the max angle value
+ */
+static float getTextLetterSpacing(
+    const SymbolLayerStyle &layerStyle,
+    const AbstractLayerFeature &feature,
+    int mapZoom,
+    double vpZoom,
+    int fontSize)
+{
+    QVariant spacing = layerStyle.gettextLetterSpacingAtZoom(mapZoom);
+    // The layer style might return an expression, we need to resolve it.
+    if(spacing.typeId() == QMetaType::Type::QJsonArray){
+        spacing = Evaluator::resolveExpression(
+            spacing.toJsonArray(),
+            &feature,
+            mapZoom,
+            vpZoom);
+    }
+    float spacingValue = spacing.value<float>() * fontSize;
+    return spacingValue;
 }
 
 
@@ -348,7 +408,7 @@ static void processCompositeText(
 }
 
 /*!
- * \brief Bach::paintSingleTileFeature_Point
+ * \brief Bach::processSingleTileFeature_Point
  * This function is called in the tile rendering loop. It is responsible for processing the feture and layerstyle, and passing the text to be rendered
  * along with the styling information to one of the two rendering functions above depending if the text is a one liner or if it requires multiple lines.
  * \param details the struct containig all the elemets needed to paint the feature includeing the layerStyle and the feature itself.
@@ -364,9 +424,9 @@ static void processCompositeText(
 void Bach::processSingleTileFeature_Point(
     PaintingDetailsPoint details,
     const int tileSize,
-    int tileOriginX,
-    int tileOriginY,
-    bool forceNoChangeFontType,
+    const int tileOriginX,
+    const int tileOriginY,
+    const bool forceNoChangeFontType,
     QVector<QRect> &rects,
     QVector<vpGlobalText> &vpTextList)
 {
@@ -468,13 +528,31 @@ static double correctAngle(double angle){
     return angle;
 }
 
+static bool isTextFlipped(double angle){
+    if(angle < 270 && angle > 90){
+        return true;
+    }
+    return false;
+}
 
-/*!
- * \brief Bach::paintSingleTileFeature_Point_Curved
- * Render road names on a path.
- * \param details the struct containing all the details for the text rendering.
- */
-void Bach::paintSingleTileFeature_Point_Curved(PaintingDetailsPointCurved details)
+static int calctotalTextHorizontalAdvance(QFontMetrics fMetrics, QString text, int letterSpacing){
+    int totalHorizontalAdvance = 0;
+    QVector<QString> splitText = text.split(" ");
+    for(const auto& text : splitText){
+        totalHorizontalAdvance += fMetrics.horizontalAdvance(text) + letterSpacing*text.size();
+    }
+
+    return totalHorizontalAdvance + ((splitText.size()-1) * fMetrics.horizontalAdvance(" "));
+}
+
+
+void Bach::processSingleTileFeature_Point_Curved(
+    PaintingDetailsPointCurved details,
+    const int tileSize,
+    int tileOriginX,
+    int tileOriginY,
+    QVector<QRect> &rects,
+    QVector<vpGlobalCurvedText> &vpCurvedTextList)
 {
     QPainter &painter = *details.painter;
     const SymbolLayerStyle &layerStyle = *details.layerStyle;
@@ -483,39 +561,70 @@ void Bach::paintSingleTileFeature_Point_Curved(PaintingDetailsPointCurved detail
     QString textToDraw = getTextContent(layerStyle, feature, details.mapZoom, details.vpZoom).toUpper();
     //If there is no text then there is nothing to render, we return
     if(textToDraw == "") return;
-
-    //Get the rendering parameters from the layerstyle and set the relevant painter field.
-    painter.setBrush(Qt::NoBrush);
     int textSize = getTextSize(layerStyle, feature, details.mapZoom, details.vpZoom);
     QFont textFont = QFont(layerStyle.m_textFont);
+    float spacing = getTextLetterSpacing(layerStyle, feature, details.mapZoom, details.vpZoom, textSize);
     textFont.setPixelSize(textSize);
-    painter.setOpacity(getTextOpacity(layerStyle, feature, details.mapZoom, details.vpZoom));
-    //Text is always antialised (otherwise it does not look good)
-    painter.setRenderHints(QPainter::Antialiasing, true);
+    const int outlineSize = layerStyle.m_textHaloWidth.toInt();
+    QColor outlineColor = layerStyle.m_textHaloColor.value<QColor>();
 
     //Get the coordinates for the text rendering
     QTransform transform = details.transformIn;
     transform.scale(1 / 4096.0, 1 / 4096.0);
-    const QPainterPath &path = transform.map(feature.line());
-
-    //transform.scale(tileSize, tileSize);
-    //Remap the original coordinates so that they are positioned correctly.
+    QPainterPath path = transform.map(feature.line());
+    painter.setPen(Qt::red);
+    painter.setRenderHints(QPainter::Antialiasing, true);
+    painter.drawPath(path);
     QFontMetrics fMetrics(textFont);
-    //double letterSpacing = layerStyle.m_textLetterSpacing.toDouble() * textFont.pixelSize();
-    qreal length = 10;
+    if(calctotalTextHorizontalAdvance(fMetrics, textToDraw, spacing) > path.length()) return;
+    bool flipText = isTextFlipped(path.angleAtPercent(0));
+    int maxAngle = getTextMaxAngle(layerStyle, feature, details.mapZoom, details.vpZoom);
+    qreal length = 0;
     qreal percentage = path.percentAtLength(length);
     qreal angle;
     QPointF charPosition;
-    for(int i = 0; i < textToDraw.size(); i++){
-        charPosition = path.pointAtPercent(percentage);
-        angle = path.angleAtPercent(percentage);
-        painter.save();
-        painter.translate(charPosition);
-        painter.rotate(-correctAngle(angle));
-        painter.drawText(QRectF(0, -100, 100, 200), textToDraw.at(i), Qt::AlignLeft | Qt::AlignVCenter);
-        painter.restore();
-        length = length + fMetrics.horizontalAdvance(textToDraw.at(i)) + 2;
-        percentage = path.percentAtLength(length);
+    qreal preAngle = path.angleAtPercent(0);
+    QVector<Bach::singleCurvedTextCharacter> charsVector;
+    QRect textRect(path.pointAtPercent(0).x(), path.pointAtPercent(0).y() - fMetrics.height()/2, fMetrics.horizontalAdvance(textToDraw.at(0)), fMetrics.height());
+    if(flipText){
+        for(int i = textToDraw.size() - 1; i >= 0; i--){
+            charPosition = path.pointAtPercent(percentage);
+            angle = path.angleAtPercent(percentage);
+            if(std::abs(angle - preAngle) > maxAngle) return;
+            charsVector.append({textToDraw.at(i), charPosition, -(angle + 180)});
+            QRect charRect(charPosition.x(), charPosition.y() - fMetrics.height()/2, fMetrics.horizontalAdvance(textToDraw.at(i)), fMetrics.height());
+            textRect = textRect.united(charRect);
+            float letterSpacing = (textToDraw.at(i) == ' ') ? 0 : spacing;
+            length = length + fMetrics.horizontalAdvance(textToDraw.at(i)) + letterSpacing;
+            percentage = path.percentAtLength(length);
+            preAngle = angle;
+        }
+    }else{
+        for(int i = 0; i < textToDraw.size(); i++){
+            charPosition = path.pointAtPercent(percentage);
+            angle = path.angleAtPercent(percentage);
+            if(std::abs(angle - preAngle) > maxAngle) return;
+            charsVector.append({textToDraw.at(i), charPosition, -angle});
+            QRect charRect(charPosition.x(), charPosition.y() - fMetrics.height()/2, fMetrics.horizontalAdvance(textToDraw.at(i)), fMetrics.height());
+            textRect = textRect.united(charRect);
+            float letterSpacing = (textToDraw.at(i) == ' ') ? 0 : spacing;
+            length = length + fMetrics.horizontalAdvance(textToDraw.at(i)) + letterSpacing;
+            percentage = path.percentAtLength(length);
+            preAngle = angle;
+        }
+    }
+    textRect.translate(tileOriginX, tileOriginY);
+    if(isOverlapping(textRect, rects)){
+        return;
+    }else{
+        rects.append(textRect);
+        vpCurvedTextList.append({charsVector,
+                                 textFont,
+                                 getTextColor(layerStyle, feature, details.mapZoom, details.vpZoom),
+                                 getTextOpacity(layerStyle, feature, details.mapZoom, details.vpZoom),
+                                 QPoint(tileOriginX, tileOriginY),
+                                 outlineColor,
+                                 outlineSize});
     }
 }
 
