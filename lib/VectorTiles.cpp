@@ -217,7 +217,7 @@ LineFeature* lineFeatureFromProto(const vector_tile::Tile::Feature &feature)
 
     qint32 x = 0;
     qint32 y = 0;
-
+    QPainterPath path;
     for(int i = 0; i < feature.geometry().size(); ) {
         quint32 point = feature.geometry().at(i);
         quint32 commandId = point & 0x7;
@@ -232,9 +232,52 @@ LineFeature* lineFeatureFromProto(const vector_tile::Tile::Feature &feature)
             y += ((point >> 1) ^ (-(point & 1)));
             i++;
             if (commandId == 1) {
-                newFeature->line().moveTo(x, y);
+                path.moveTo(x, y);
             } else if (commandId == 2) {
-                newFeature->line().lineTo(x, y);
+                path.lineTo(x, y);
+            }
+            count--;
+        }
+    }
+    newFeature->line() = path;
+    return newFeature;
+}
+
+
+/*!
+ * \brief lineFeatureFromProto
+ *  Decode the geometry of a layer's line feature from the desrialized protocol buffer.
+ * \param feature a refrence to the layer's feature from the deserialized protocol buffer
+ * \return a pointer of type LineFeature conatininf the decoded geometry as a QPainterPath.
+ */
+LineFeature* textLineFeatureFromProto(const vector_tile::Tile::Feature &feature)
+{
+    LineFeature *newFeature = new LineFeature();
+
+    qint32 x = 0;
+    qint32 y = 0;
+    QPainterPath path;
+    for(int i = 0; i < feature.geometry().size(); ) {
+        quint32 point = feature.geometry().at(i);
+        quint32 commandId = point & 0x7;
+        quint32 count = point >> 3;
+        i++;
+
+        while(count > 0 && i < feature.geometry().size() - 1) {
+            point = feature.geometry().at(i);
+            x += ((point >> 1) ^ (-(point & 1)));
+            i++;
+            point = feature.geometry().at(i);
+            y += ((point >> 1) ^ (-(point & 1)));
+            i++;
+            if (commandId == 1) {
+                if(path.length() > newFeature->line().length()){
+                    newFeature->line() = path;
+                    path.clear();
+                }
+                path.moveTo(x, y);
+            } else if (commandId == 2) {
+                path.lineTo(x, y);
             }
             count--;
         }
@@ -360,7 +403,12 @@ bool VectorTile::DeserializeMessage(QByteArray data)
                 newLayer->m_features.append(newFeature);
                 break;
             case vector_tile::Tile::GeomType::LINESTRING:
-                newFeature = lineFeatureFromProto(feature);
+                if(newLayer->name() == "transportation_name"){
+                    newFeature = textLineFeatureFromProto(feature);
+                }else{
+                    newFeature = lineFeatureFromProto(feature);
+                }
+
                 newFeature->tags = feature.tags().toList();
                 populateFeatureMetaData(newFeature, layerKeys, lyerValues);
                 newLayer->m_features.append(newFeature);
@@ -413,7 +461,11 @@ std::optional<VectorTile> Bach::tileFromByteArray(const QByteArray &bytes)
                 newLayer->m_features.append(newFeature);
                 break;
             case vector_tile::Tile::GeomType::LINESTRING:
-                newFeature = lineFeatureFromProto(feature);
+                if(newLayer->name() == "transportation_name"){
+                    newFeature = textLineFeatureFromProto(feature);
+                }else{
+                    newFeature = lineFeatureFromProto(feature);
+                }
                 newFeature->tags = feature.tags().toList();
                 populateFeatureMetaData(newFeature, layerKeys, lyerValues);
                 newLayer->m_features.append(newFeature);
