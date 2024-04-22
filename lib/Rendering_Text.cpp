@@ -292,22 +292,30 @@ static void processSimpleText(
     textPath.translate(coordinate);
     boundingRect.translate({textCenteringOffsetX, textCenteringOffsetY});
     boundingRect.translate(coordinate);
+
     //Check if the text overlaps with any previously processed text.
-    QRect globalRect(QPoint(tileOriginX + coordinate.x() - boundingRect.width()/2, tileOriginY + coordinate.y() - boundingRect.height()/2),
-                     QSize(boundingRect.width(), boundingRect.height()));
+    QRect globalRect {
+        QPoint {
+            (int)(tileOriginX + coordinate.x() - boundingRect.width()/2),
+            (int)(tileOriginY + coordinate.y() - boundingRect.height()/2) },
+        QSize {
+            (int)boundingRect.width(),
+            (int)boundingRect.height() } };
     if(isOverlapping(globalRect, rects)) return;
     //Add the total bouding rect to the list of the text rects to check for overlap for upcoming text.
     rects.append(globalRect);
     //add the feature's details to the vpTextList
-    vpTextList.append({QPoint(tileOriginX, tileOriginY),
-                       {textPath},
-                       {text},
-                       {QPoint(coordinate.x() + textCenteringOffsetX, coordinate.y() + textCenteringOffsetY)},
-                       textFont,
-                       getTextColor(layerStyle, feature, mapZoom, vpZoom),
-                       outlineSize,
-                       outlineColor,
-                       boundingRect.toRect()});
+    vpTextList.append({ QPoint(tileOriginX, tileOriginY),
+        { textPath },
+        { text },
+        { QPoint{
+            (int)(coordinate.x() + textCenteringOffsetX),
+            (int)(coordinate.y() + textCenteringOffsetY) } },
+        textFont,
+        getTextColor(layerStyle, feature, mapZoom, vpZoom),
+        outlineSize,
+        outlineColor,
+        boundingRect.toRect()});
 }
 
 
@@ -369,9 +377,13 @@ static void processCompositeText(
         //other substrings.
         qreal textCenteringOffsetX = -boundingRect.width() / 2.;
         qreal textCenteringOffsetY = boundingRect.height() / 2.;
-        temp.translate({textCenteringOffsetX, textCenteringOffsetY + ((i - (texts.size() / 2.)) * height)});
+        temp.translate({
+            textCenteringOffsetX,
+            textCenteringOffsetY + ((i - (texts.size() / 2.)) * height) });
         temp.translate(coordinates);
-        boundingRect.translate({textCenteringOffsetX, textCenteringOffsetY + ((i - (texts.size() / 2.)) * height)});
+        boundingRect.translate({
+            textCenteringOffsetX,
+            textCenteringOffsetY + ((i - (texts.size() / 2.)) * height) });
         boundingRect.translate(coordinates);
         //Add the current text path to the list and clear it for the next iteration.
         paths.append(temp);
