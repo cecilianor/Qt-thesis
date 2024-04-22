@@ -409,7 +409,7 @@ static void processCompositeText(
 
 /*!
  * \brief Bach::processSingleTileFeature_Point
- * This function is called in the tile rendering loop. It is responsible for processing the feture and layerstyle, and passing the text to be rendered
+ * This function is called in the tile rendering loop. It is responsible for processing the feature and layerstyle, and passing the text to be rendered
  * along with the styling information to one of the two rendering functions above depending if the text is a one liner or if it requires multiple lines.
  * \param details the struct containig all the elemets needed to paint the feature includeing the layerStyle and the feature itself.
  * \param tileSize the size of the current tile in pixels, used to scale the the transform.
@@ -516,18 +516,12 @@ void Bach::processSingleTileFeature_Point(
 }
 
 /*!
- * \brief correctAngle
- * correct the Angle for the road names so that the text rotation angle is always between 270 and 90 (through 360)
- * \param angle the angle to be corrected
- * \return the corrected angle
+ * \brief isTextFlipped
+ * Determin if the text should be flipped or not. Text is flipped only if the first character's roation angle is
+ *  between 90 and 270
+ * \param angle the angle to be checked
+ * \return true if the text should be flipped, or false otherwise
  */
-static double correctAngle(double angle){
-    if(angle < 270 && angle > 90){
-        angle += 180;
-    }
-    return angle;
-}
-
 static bool isTextFlipped(double angle){
     if(angle < 270 && angle > 90){
         return true;
@@ -535,17 +529,36 @@ static bool isTextFlipped(double angle){
     return false;
 }
 
+/*!
+ * \brief calctotalTextHorizontalAdvance
+ * Calculate the total horizontal advance fo the text. The value includes the space between
+ * letters and white spaces as well.
+ * \param fMetrics the QFontMetrics object used to calculate the distance
+ * \param text the text for wich the distance is calculated
+ * \param letterSpacing the distance between individual letters
+ * \return the total horizontal distance of the text
+ */
 static int calctotalTextHorizontalAdvance(QFontMetrics fMetrics, QString text, int letterSpacing){
     int totalHorizontalAdvance = 0;
     QVector<QString> splitText = text.split(" ");
     for(const auto& text : splitText){
         totalHorizontalAdvance += fMetrics.horizontalAdvance(text) + letterSpacing*text.size();
     }
-
     return totalHorizontalAdvance + ((splitText.size()-1) * fMetrics.horizontalAdvance(" "));
 }
 
-
+/*!
+ * \brief Bach::processSingleTileFeature_Point_Curved
+ * This function is called in the tile rendering loop. It is responsible for processing curved text. The function filters out texts
+ * based on multiple parameters and then adds the text to be rendered to the text list. Curved text is represented as a list of structs
+ * each containing a charater with its position and rotation.
+ * \param details the struct containig all the elemets needed to paint the feature includeing the layerStyle and the feature itself.
+ * \param tileSize the size of the current tile in pixels, used to scale the the transform.
+ * \param tileOriginX the x component of this feature's parent tile's origin (used for text collistion detection)
+ * \param tileOriginY the y component of this feature's parent tile's origin (used for text collistion detection)
+ * \param rects the list of rects that the current feature's rect will be checked against for collision
+ * \param vpCurvedTextList the list of curved text features that this text will be added to if it passses all the filters.
+ */
 void Bach::processSingleTileFeature_Point_Curved(
     PaintingDetailsPointCurved details,
     const int tileSize,
@@ -561,6 +574,7 @@ void Bach::processSingleTileFeature_Point_Curved(
     QString textToDraw = getTextContent(layerStyle, feature, details.mapZoom, details.vpZoom).toUpper();
     //If there is no text then there is nothing to render, we return
     if(textToDraw == "") return;
+    //Get the styling parameters
     int textSize = getTextSize(layerStyle, feature, details.mapZoom, details.vpZoom);
     QFont textFont = QFont(layerStyle.m_textFont);
     float spacing = getTextLetterSpacing(layerStyle, feature, details.mapZoom, details.vpZoom, textSize);
@@ -572,11 +586,11 @@ void Bach::processSingleTileFeature_Point_Curved(
     QTransform transform = details.transformIn;
     transform.scale(1 / 4096.0, 1 / 4096.0);
     QPainterPath path = transform.map(feature.line());
-    painter.setPen(Qt::red);
-    painter.setRenderHints(QPainter::Antialiasing, true);
-    painter.drawPath(path);
     QFontMetrics fMetrics(textFont);
+
+    //Check if the path is long enough to render the text at least once
     if(calctotalTextHorizontalAdvance(fMetrics, textToDraw, spacing) > path.length()) return;
+    //Check if the text should be rotated 180 degrees or not
     bool flipText = isTextFlipped(path.angleAtPercent(0));
     int maxAngle = getTextMaxAngle(layerStyle, feature, details.mapZoom, details.vpZoom);
     qreal length = 0;
@@ -585,11 +599,14 @@ void Bach::processSingleTileFeature_Point_Curved(
     QPointF charPosition;
     qreal preAngle = path.angleAtPercent(0);
     QVector<Bach::singleCurvedTextCharacter> charsVector;
+    //This is the bounding rect for the text. It is used to check for text collision
     QRect textRect(path.pointAtPercent(0).x(), path.pointAtPercent(0).y() - fMetrics.height()/2, fMetrics.horizontalAdvance(textToDraw.at(0)), fMetrics.height());
-    if(flipText){
+    if(flipText){ //In case the text is to be flipped, it must be rendered starting from the last character
         for(int i = textToDraw.size() - 1; i >= 0; i--){
             charPosition = path.pointAtPercent(percentage);
             angle = path.angleAtPercent(percentage);
+            //If the path would cause the text to be rendered with a large angle difference betweem two
+            //adjacent characters, we cancel the text processing
             if(std::abs(angle - preAngle) > maxAngle) return;
             charsVector.append({textToDraw.at(i), charPosition, -(angle + 180)});
             QRect charRect(charPosition.x(), charPosition.y() - fMetrics.height()/2, fMetrics.horizontalAdvance(textToDraw.at(i)), fMetrics.height());
@@ -603,6 +620,8 @@ void Bach::processSingleTileFeature_Point_Curved(
         for(int i = 0; i < textToDraw.size(); i++){
             charPosition = path.pointAtPercent(percentage);
             angle = path.angleAtPercent(percentage);
+            //If the path would cause the text to be rendered with a large angle difference betweem two
+            //adjacent characters, we cancel the text processing
             if(std::abs(angle - preAngle) > maxAngle) return;
             charsVector.append({textToDraw.at(i), charPosition, -angle});
             QRect charRect(charPosition.x(), charPosition.y() - fMetrics.height()/2, fMetrics.horizontalAdvance(textToDraw.at(i)), fMetrics.height());
@@ -613,11 +632,15 @@ void Bach::processSingleTileFeature_Point_Curved(
             preAngle = angle;
         }
     }
+    //Chan ge the rects coordinates so that it is relative to the view port rather than the tile origin
     textRect.translate(tileOriginX, tileOriginY);
+    //Check for overlap with other text and cancel processing if this text overllaps with another
     if(isOverlapping(textRect, rects)){
         return;
     }else{
+        //Add this text's total bouding rect to the list of the text rects to check for overlap for upcoming text.
         rects.append(textRect);
+        //Queue this text for rendering by adding it to the texts list.
         vpCurvedTextList.append({charsVector,
                                  textFont,
                                  getTextColor(layerStyle, feature, details.mapZoom, details.vpZoom),
