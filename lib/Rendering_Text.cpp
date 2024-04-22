@@ -216,11 +216,15 @@ static bool isOverlapping(const QRect &textRect, const QVector<QRect> &rectList)
  * \param rectWidth the maximum width allowed for the text rectangle.
  * \return a QList containing 1 QString if the text fits in the rectable of n > 1 QStrings if it does not.
  */
-static QList<QString> getCorrectedText(const QString &text, const QFont & font, const int rectWidth){
+static QList<QString> getCorrectedText(
+    const QString &text,
+    const QFont &font,
+    const int rectWidth)
+{
     QFontMetrics fontMetrics(font);
     int rectWidthInPix = font.pixelSize() * rectWidth;
     if(fontMetrics.horizontalAdvance(text) <= rectWidthInPix)
-        return QList<QString>(text);
+        return { text };
 
     QList<QString> words = text.split(" ");
     QList<QString> wordClusters;
@@ -387,36 +391,44 @@ static void processCompositeText(
         boundingRect.translate(coordinates);
         //Add the current text path to the list and clear it for the next iteration.
         paths.append(temp);
-        points.append(QPoint(coordinates.x() + textCenteringOffsetX, coordinates.y() + textCenteringOffsetY + ((i - (texts.size() / 2.)) * height)));
+        points.append(QPoint{
+            (int)(coordinates.x() + textCenteringOffsetX),
+            (int)(coordinates.y() + textCenteringOffsetY + ((i - (texts.size() / 2.)) * height)) });
         temp.clear();
     }
 
     //Combine the bounding rects of all the substrings to get the total bounding rect.
     QRect boundingRect = paths.at(0).boundingRect().toRect();
-    for(const auto &path : paths.sliced(1)){
+    for(const QPainterPath &path : paths.sliced(1)){
         boundingRect = boundingRect.united(path.boundingRect().toRect());
     }
 
     //Check if the text overlaps with any previously rendered text.
-     QRect globalRect(QPoint((tileOriginX + coordinates.x()) - boundingRect.width()/2, (tileOriginY + coordinates.y() - boundingRect.height()/2)),
-                     QSize(boundingRect.width(), boundingRect.height()));
+     QRect globalRect {
+        QPoint{
+            (tileOriginX + coordinates.x()) - boundingRect.width()/2,
+            (tileOriginY + coordinates.y() - boundingRect.height()/2) },
+        QSize {
+            boundingRect.width(),
+            boundingRect.height() } };
     if(isOverlapping(globalRect, rects)) return;
     //Add the total bouding rect to the list of the text rects to check for overlap for upcoming text.
     rects.append(globalRect);
     //add the feature's details to the vpTextList
     QList<QPainterPath> pathsList;
-    for(const auto &path : paths){
+    for(const QPainterPath &path : paths){
         pathsList.append(path);
     }
-    vpTextList.append({QPoint(tileOriginX, tileOriginY),
-                       pathsList,
-                       texts,
-                       points,
-                       textFont,
-                       getTextColor(layerStyle, feature, mapZoom, vpZoom),
-                       outlineSize,
-                       outlineColor,
-                       boundingRect});
+    vpTextList.append({
+        QPoint{ tileOriginX, tileOriginY },
+        pathsList,
+        texts,
+        points,
+        textFont,
+        getTextColor(layerStyle, feature, mapZoom, vpZoom),
+        outlineSize,
+        outlineColor,
+        boundingRect});
 }
 
 /*!
@@ -435,10 +447,10 @@ static void processCompositeText(
  */
 void Bach::processSingleTileFeature_Point(
     PaintingDetailsPoint details,
-    const int tileSize,
-    const int tileOriginX,
-    const int tileOriginY,
-    const bool forceNoChangeFontType,
+    int tileSize,
+    int tileOriginX,
+    int tileOriginY,
+    bool forceNoChangeFontType,
     QVector<QRect> &rects,
     QVector<vpGlobalText> &vpTextList)
 {
@@ -448,7 +460,8 @@ void Bach::processSingleTileFeature_Point(
     //Get the text to be rendered.
     QString textToDraw = getTextContent(layerStyle, feature, details.mapZoom, details.vpZoom);
     //If there is no text then there is nothing to render, we return
-    if(textToDraw == "") return;
+    if(textToDraw == "")
+        return;
 
     //Get the rendering parameters from the layerstyle and set the relevant painter field.
 
@@ -568,15 +581,29 @@ static int calctotalTextHorizontalAdvance(QFontMetrics fMetrics, QString text, i
 
 /*!
  * \brief Bach::processSingleTileFeature_Point_Curved
- * This function is called in the tile rendering loop. It is responsible for processing curved text. The function filters out texts
- * based on multiple parameters and then adds the text to be rendered to the text list. Curved text is represented as a list of structs
- * each containing a charater with its position and rotation.
- * \param details the struct containig all the elemets needed to paint the feature includeing the layerStyle and the feature itself.
- * \param tileSize the size of the current tile in pixels, used to scale the the transform.
- * \param tileOriginX the x component of this feature's parent tile's origin (used for text collistion detection)
- * \param tileOriginY the y component of this feature's parent tile's origin (used for text collistion detection)
- * \param rects the list of rects that the current feature's rect will be checked against for collision
- * \param vpCurvedTextList the list of curved text features that this text will be added to if it passses all the filters.
+ * This function is called in the tile rendering loop.
+ * It is responsible for processing curved text. The function filters out texts
+ * based on multiple parameters and then adds the text to be rendered to the text list.
+ * Curved text is represented as a list of structs each containing a
+ * charater with its position and rotation.
+ *
+ * \param details the struct containig all the elemets needed to
+ * paint the feature including the layerStyle and the feature itself.
+ *
+ * \param tileSize the size of the current tile in pixels,
+ * used to scale the the transform.
+ *
+ * \param tileOriginX the x component of this feature's parent
+ * tile's origin (used for text collistion detection)
+ *
+ * \param tileOriginY the y component of this feature's parent
+ * tile's origin (used for text collistion detection)
+ *
+ * \param rects the list of rects that the current feature's
+ * rect will be checked against for collision
+ *
+ * \param vpCurvedTextList the list of curved text features
+ * that this text will be added to if it passses all the filters.
  */
 void Bach::processSingleTileFeature_Point_Curved(
     PaintingDetailsPointCurved details,
@@ -620,13 +647,14 @@ void Bach::processSingleTileFeature_Point_Curved(
     QVector<Bach::singleCurvedTextCharacter> charsVector;
     //This is the bounding rect for the text. It is used to check for text collision
     QRect textRect(path.pointAtPercent(0).x(), path.pointAtPercent(0).y() - fMetrics.height()/2, fMetrics.horizontalAdvance(textToDraw.at(0)), fMetrics.height());
-    if(flipText){ //In case the text is to be flipped, it must be rendered starting from the last character
-        for(int i = textToDraw.size() - 1; i >= 0; i--){
+    if (flipText) { //In case the text is to be flipped, it must be rendered starting from the last character
+        for (int i = textToDraw.size() - 1; i >= 0; i--) {
             charPosition = path.pointAtPercent(percentage);
             angle = path.angleAtPercent(percentage);
             //If the path would cause the text to be rendered with a large angle difference betweem two
             //adjacent characters, we cancel the text processing
-            if(std::abs(angle - preAngle) > maxAngle) return;
+            if(std::abs(angle - preAngle) > maxAngle)
+                return;
             charsVector.append({textToDraw.at(i), charPosition, -(angle + 180)});
             QRect charRect(charPosition.x(), charPosition.y() - fMetrics.height()/2, fMetrics.horizontalAdvance(textToDraw.at(i)), fMetrics.height());
             textRect = textRect.united(charRect);
@@ -635,13 +663,14 @@ void Bach::processSingleTileFeature_Point_Curved(
             percentage = path.percentAtLength(length);
             preAngle = angle;
         }
-    }else{
-        for(int i = 0; i < textToDraw.size(); i++){
+    } else {
+        for (int i = 0; i < textToDraw.size(); i++) {
             charPosition = path.pointAtPercent(percentage);
             angle = path.angleAtPercent(percentage);
             //If the path would cause the text to be rendered with a large angle difference betweem two
             //adjacent characters, we cancel the text processing
-            if(std::abs(angle - preAngle) > maxAngle) return;
+            if(std::abs(angle - preAngle) > maxAngle)
+                return;
             charsVector.append({textToDraw.at(i), charPosition, -angle});
             QRect charRect(charPosition.x(), charPosition.y() - fMetrics.height()/2, fMetrics.horizontalAdvance(textToDraw.at(i)), fMetrics.height());
             textRect = textRect.united(charRect);
@@ -660,13 +689,14 @@ void Bach::processSingleTileFeature_Point_Curved(
         //Add this text's total bouding rect to the list of the text rects to check for overlap for upcoming text.
         rects.append(textRect);
         //Queue this text for rendering by adding it to the texts list.
-        vpCurvedTextList.append({charsVector,
-                                 textFont,
-                                 getTextColor(layerStyle, feature, details.mapZoom, details.vpZoom),
-                                 getTextOpacity(layerStyle, feature, details.mapZoom, details.vpZoom),
-                                 QPoint(tileOriginX, tileOriginY),
-                                 outlineColor,
-                                 outlineSize});
+        vpCurvedTextList.append({
+            charsVector,
+            textFont,
+            getTextColor(layerStyle, feature, details.mapZoom, details.vpZoom),
+            getTextOpacity(layerStyle, feature, details.mapZoom, details.vpZoom),
+            QPoint{ tileOriginX, tileOriginY },
+            outlineColor,
+            outlineSize });
     }
 }
 
