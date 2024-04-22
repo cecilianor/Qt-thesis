@@ -182,7 +182,7 @@ static void paintVectorLayer_Line(
 /*!
  * \brief processVectorLayer_Point
  * Call the text processing function on all the layer's features that pass the layerStyle filter.
- * The processing function is called after that the features have been ordered according to the rank property.
+ * For normal text, the processing function is called after that the features have been ordered according to the rank property.
  * This will update the vpTextList list with the text that passes the global collision filtering.
  * \param painter
  * The painter object to paint into.
@@ -198,7 +198,9 @@ static void paintVectorLayer_Line(
  * \param labelRects The list containing the bounding rectangles for all the text features that  have
  * been processed. This bounding rects have view port coordinates rather than tile coordinates, which means
  * that the collision detection will check for all the text in the map widget and not only the text in the current tile.
- * \param vpTextList a list of structs that contain all the tests that passed the collision filtering along with all the
+ * \param vpTextList a list of structs that contain all the texts that passed the collision filtering along with all the
+ * details necessary to render the text.
+ * \param vpCurvedTextList a list of structs that contain all the curved texts that passed the collision filtering along with all the
  * details necessary to render the text.
  */
 static void processVectorLayer_Point(
@@ -267,7 +269,7 @@ static void processVectorLayer_Point(
 
 /*!
  * \brief paintText
- * Loop over all the text elements that passed the collision filter and reder them on screen.
+ * Loop over all the text elements that passed the collision filter and render them on screen.
  * \param painter the painter to be used for text rendering.
  * \param vpTextList the list of structs containing the necessary elments to render the text.
  * \param params this containes the bool used to switch text rendering methods.
@@ -293,13 +295,16 @@ static void paintText(
         //of each text element is relative to its parent tile rather than the viewport.
         painter.translate(globalText.tileOrigin);
         QFontMetrics fmetrics(globalText.font);
-        if(params.useQTextLayout){
+        if(params.useQTextLayout){ //Use QTextLayout for text rendering
             for(int i = 0; i < globalText.text.size(); i++){
             text = globalText.text.at(i);
+            //Set the pen to be used for text outline
             pen.setWidth(globalText.outlineSize);
             pen.setColor(globalText.outlineColor);
+            //Set the text layout parameters
             textLayout.setText(text);
             textLayout.setFont(globalText.font);
+            //Set the formatRange parameters
             charFormat.setTextOutline(pen);
             formatRange.format = charFormat;
             formatRange.length = text.length();
@@ -308,10 +313,11 @@ static void paintText(
             textLayout.beginLayout();
             textLayout.createLine();
             textLayout.endLayout();
+            //Corrected text position
             QPointF textPosition(globalText.position.at(i).x(), globalText.position.at(i).y() - fmetrics.height()/2);
             textLayout.draw(&painter, textPosition, {formatRange},QRect(0, 0, 0, 0));
             }
-        }else{
+        }else{ //Use QPainter for text rendering
             //Antialiasing is laways set on for text rendering with the QPainter drawPath.
             painter.setRenderHints(QPainter::Antialiasing, true);
             for(const auto &path : globalText.path){
@@ -321,24 +327,21 @@ static void paintText(
                 painter.fillPath(path, globalText.textColor);
             }
         }
-
-
-
         painter.restore();
 
     }
 }
 
 /*!
- * \brief paintText
- * Loop over all the text elements that passed the collision filter and reder them on screen.
+ * \brief paintText_Curved
+ * Loop over all the text elements in the curved text list that passed the collision filter and render them on screen.
  * \param painter the painter to be used for text rendering.
  * \param vpTextList the list of structs containing the necessary elments to render the text.
  * \param params this containes the bool used to switch text rendering methods.
  */
 static void paintText_Curved(
     QPainter &painter,
-    QVector<Bach::vpGlobalCurvedText> &vpTextList)
+    QVector<Bach::vpGlobalCurvedText> &vpCurvedTextList)
 {
 
     QPen pen;
@@ -346,7 +349,7 @@ static void paintText_Curved(
     QTextLayout::FormatRange formatRange;
     QTextLayout textLayout;
 
-    for(auto const &globalText : vpTextList){
+    for(auto const &globalText : vpCurvedTextList){
         painter.save();
         //Remove any translations/scaling previously done on the painter's transform.
         painter.resetTransform();
@@ -356,22 +359,27 @@ static void paintText_Curved(
         painter.translate(globalText.tileOrigin);
             for(const auto &text : globalText.textList){
                 QFontMetrics fmetrics(globalText.font);
-                textLayout.setText(text.character);
-                textLayout.setFont(globalText.font);
+                //Set the pen to be used for text outline
                 pen.setWidth(globalText.outlineSize);
                 pen.setColor(globalText.outlineColor);
+                //Set the formatRange parameters
                 charFormat.setTextOutline(pen);
                 formatRange.format = charFormat;
                 formatRange.length = 1;
                 formatRange.start = 0;
+                //Set the painter rendering parameters
                 painter.save();
                 painter.setOpacity(globalText.opacity);
                 painter.setPen(globalText.textColor);
                 painter.translate(text.position);
                 painter.rotate(text.angle);
+                //Set the text layout parameters
+                textLayout.setText(text.character);
+                textLayout.setFont(globalText.font);
                 textLayout.beginLayout();
                 textLayout.createLine();
                 textLayout.endLayout();
+                //Get the corrected text position
                 QPoint offsetTextPos(0, -fmetrics.height());
                 textLayout.draw(&painter, offsetTextPos, {formatRange},QRect(0, 0, 0, 0));
                 textLayout.clearLayout();
