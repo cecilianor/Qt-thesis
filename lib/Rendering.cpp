@@ -127,11 +127,12 @@ static void paintVectorLayer_Fill(
     QTransform geometryTransform)
 {
     // Iterate over all the features, and filter out anything that is not fill.
-    for (const AbstractLayerFeature *abstractFeature : layer.m_features) {
+    for (const std::unique_ptr<AbstractLayerFeature> &abstractFeature : layer.m_features) {
         if (abstractFeature->type() != AbstractLayerFeature::featureType::polygon)
             continue;
 
-        const auto &feature = *static_cast<const PolygonFeature*>(abstractFeature);
+
+        const auto &feature = *static_cast<const PolygonFeature*>(abstractFeature.get());
 
         if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
             continue;
@@ -165,10 +166,10 @@ static void paintVectorLayer_Line(
     QTransform geometryTransform)
 {
     // Iterate over all the features, and filter out anything that is not line.
-    for (const AbstractLayerFeature *abstractFeature : layer.m_features) {
+    for (const std::unique_ptr<AbstractLayerFeature> &abstractFeature : layer.m_features) {
         if (abstractFeature->type() != AbstractLayerFeature::featureType::line)
             continue;
-        const auto &feature = *static_cast<const LineFeature*>(abstractFeature);
+        const auto &feature = *static_cast<const LineFeature*>(abstractFeature.get());
 
         // Tests whether the feature should be rendered at all based on possible expression.
         if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
@@ -222,9 +223,9 @@ static void processVectorLayer_Point(
 {
     QVector<QPair<int, PointFeature>> labels; //Used to order text rendering operation based on "rank" property.
     // Iterate over all the features, and filter out anything that is not point.
-    for (auto const& abstractFeature : layer.m_features) {
+    for (const std::unique_ptr<AbstractLayerFeature> &abstractFeature : layer.m_features) {
         if(abstractFeature->type() == AbstractLayerFeature::featureType::line){
-            const LineFeature &feature = *static_cast<const LineFeature*>(abstractFeature);
+            const LineFeature &feature = *static_cast<const LineFeature*>(abstractFeature.get());
             //Bach::paintSingleTileFeature_Point_Curved({&painter, &layerStyle, &feature, mapZoom, vpZoom, geometryTransform});
             Bach::processSingleTileFeature_Point_Curved(
                 {&painter, &layerStyle, &feature, mapZoom, vpZoom, geometryTransform},
@@ -234,7 +235,7 @@ static void processVectorLayer_Point(
                 labelRects,
                 vpCurvedTextList);
         }else if (abstractFeature->type() == AbstractLayerFeature::featureType::point){ //For normal text (continents /countries / cities / places / ...)
-            const PointFeature &feature = *static_cast<const PointFeature*>(abstractFeature);
+            const PointFeature &feature = *static_cast<const PointFeature*>(abstractFeature.get());
             // Tests whether the feature should be rendered at all based on possible expression.
             if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
                 continue;
