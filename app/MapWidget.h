@@ -32,6 +32,32 @@ public:
 
     void paintEvent(QPaintEvent*) override;
     void keyPressEvent(QKeyEvent*) override;
+    void mousePressEvent(QMouseEvent*) override;
+    void mouseMoveEvent(QMouseEvent*) override;
+    void mouseReleaseEvent(QMouseEvent*) override;
+    void wheelEvent(QWheelEvent *) override;
+
+    /*!
+     * \brief mouseStartPosition stores the location of the cursor.
+     *
+     * {-1, -1} is set as the initial value. The mouse can never reach
+     * this location in the window since each axis starts at 0 and then
+     * increases in the positive direction.
+     *
+     * The variable stores the cursor location immediately after it's
+     * been pressed.
+     */
+    QPoint mouseStartPosition = {-1, -1};
+    /*!
+     * \brief mouseCurrentPosition stores the location of the cursor.
+     *
+     * {-1, -1} is set as the initial value. The mouse can never reach
+     * this location in the window since each axis starts at 0 and then
+     * increases in the positive direction.
+     *
+     * The variable stores the current cursor location while rendering.
+     */
+    QPoint mouseCurrentPosition = {-1, -1};
 
     /* Zoom level of viewport. This is a floating number and can be partially zoomed between
      * discrete steps.
