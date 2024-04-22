@@ -13,7 +13,6 @@ Bach::PaintVectorTileSettings Bach::PaintVectorTileSettings::getDefault()
     out.drawFill = true;
     out.drawLines = true;
     out.drawText = true;
-    out.useQTextLayout = true;
     return out;
 }
 
@@ -298,8 +297,7 @@ static void paintText(
         //of each text element is relative to its parent tile rather than the viewport.
         painter.translate(globalText.tileOrigin);
         QFontMetrics fmetrics(globalText.font);
-        if(params.useQTextLayout){ //Use QTextLayout for text rendering
-            for(int i = 0; i < globalText.text.size(); i++){
+        for(int i = 0; i < globalText.text.size(); i++){
             text = globalText.text.at(i);
             //Set the pen to be used for text outline
             pen.setWidth(globalText.outlineSize);
@@ -319,16 +317,7 @@ static void paintText(
             //Corrected text position
             QPointF textPosition(globalText.position.at(i).x(), globalText.position.at(i).y() - fmetrics.height()/2);
             textLayout.draw(&painter, textPosition, {formatRange},QRect(0, 0, 0, 0));
-            }
-        }else{ //Use QPainter for text rendering
-            //Antialiasing is laways set on for text rendering with the QPainter drawPath.
-            painter.setRenderHints(QPainter::Antialiasing, true);
-            for(const auto &path : globalText.path){
-                pen.setWidth(globalText.outlineSize);
-                pen.setColor(globalText.outlineColor);
-                painter.strokePath(path, pen);
-                painter.fillPath(path, globalText.textColor);
-            }
+
         }
         painter.restore();
 

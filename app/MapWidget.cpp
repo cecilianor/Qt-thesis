@@ -80,7 +80,6 @@ void MapWidget::paintEvent(QPaintEvent *event)
         paintSettings.drawFill = isRenderingFill();
         paintSettings.drawLines = isRenderingLines();
         paintSettings.drawText = isRenderingText();
-        paintSettings.useQTextLayout = isUsingTextLayout();
 
         // Then run the function to paint all vector tiles into this MapWidget.
         Bach::paintVectorTiles(
@@ -237,11 +236,6 @@ void MapWidget::setShouldDrawLines(bool drawLines)
 void MapWidget::setShouldDrawText(bool drawText)
 {
     renderText = drawText;
-    update();
-}
-
-void MapWidget::setShouldUseTextLayout(bool useTextLayout){
-    this->useTextLayout = useTextLayout;
     update();
 }
 

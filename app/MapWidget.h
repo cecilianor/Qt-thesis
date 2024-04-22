@@ -110,8 +110,6 @@ private:
     // If true, we should render line-elements.
     bool renderText = true;
 
-    //if true, we should use QTextLayout to render text
-    bool useTextLayout = true;
 public:
     bool isShowingDebug() const { return showDebug; }
     bool isRenderingVector() const { return renderVectorTile; }
@@ -121,8 +119,6 @@ public:
     void setShouldDrawLines(bool);
     bool isRenderingText() const { return renderText; }
     void setShouldDrawText(bool);
-    bool isUsingTextLayout() const { return useTextLayout; }
-    void setShouldUseTextLayout(bool);
 public slots:
     void toggleIsShowingDebug();
     void toggleIsRenderingVectorTile();

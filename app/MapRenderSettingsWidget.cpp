@@ -125,18 +125,4 @@ MapRenderSettingsWidget::MapRenderSettingsWidget(MapWidget* mapWidget) : QWidget
                 mapWidget->setShouldDrawText(boxIsChecked == Qt::Checked);
             });
     }
-
-    // Setup the checkbox and text for using textLayout.
-    {
-        QCheckBox *checkbox = new QCheckBox("QTextLayout", this);
-        checkbox->setCheckState(mapWidget->isUsingTextLayout() ? Qt::Checked : Qt::Unchecked);
-        layout->addWidget(checkbox);
-        QObject::connect(
-            checkbox,
-            &QCheckBox::checkStateChanged,
-            mapWidget,
-            [=](Qt::CheckState boxIsChecked) {
-                mapWidget->setShouldUseTextLayout(boxIsChecked == Qt::Checked);
-            });
-    }
 }
