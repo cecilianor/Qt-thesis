@@ -162,7 +162,7 @@ int TileLayer::extent() const
  * \brief polygonFeatureFromProto
  * Decode the geometry of a layer's polygon feature from the desrialized protocol buffer.
  * \param feature a refrence to the layer's feature from the deserialized protocol buffer
- * \return a pointer of type PolygonFeature conatininf the decoded geometry as a QPainterPath.
+ * \return a pointer of type PolygonFeature conatining the decoded geometry as a QPainterPath.
  */
 PolygonFeature* polygonFeatureFromProto(const vector_tile::Tile::Feature &feature)
 {
@@ -209,7 +209,7 @@ PolygonFeature* polygonFeatureFromProto(const vector_tile::Tile::Feature &featur
  * \brief lineFeatureFromProto
  *  Decode the geometry of a layer's line feature from the desrialized protocol buffer.
  * \param feature a refrence to the layer's feature from the deserialized protocol buffer
- * \return a pointer of type LineFeature conatininf the decoded geometry as a QPainterPath.
+ * \return a pointer of type LineFeature conatining the decoded geometry as a QPainterPath.
  */
 LineFeature* lineFeatureFromProto(const vector_tile::Tile::Feature &feature)
 {
@@ -243,12 +243,13 @@ LineFeature* lineFeatureFromProto(const vector_tile::Tile::Feature &feature)
     return newFeature;
 }
 
-
 /*!
- * \brief lineFeatureFromProto
+ * \brief textLineFeatureFromProto
  *  Decode the geometry of a layer's line feature from the desrialized protocol buffer.
+ *  This function deals with decoding line geometry for text features. It only includes the
+ *  line with the largest length in the QPainterPath.
  * \param feature a refrence to the layer's feature from the deserialized protocol buffer
- * \return a pointer of type LineFeature conatininf the decoded geometry as a QPainterPath.
+ * \return a pointer of type LineFeature conatining the decoded geometry as a QPainterPath.
  */
 LineFeature* textLineFeatureFromProto(const vector_tile::Tile::Feature &feature)
 {
@@ -289,7 +290,7 @@ LineFeature* textLineFeatureFromProto(const vector_tile::Tile::Feature &feature)
  * \brief pointFeatureFromProto
  * Decode the geometry of a layer's point feature from the desrialized protocol buffer.
  * \param feature a refrence to the layer's feature from the deserialized protocol buffer.
- * \return a pointer of type PointFeature conatininf the decoded geometry as a QList<QPoint>.
+ * \return a pointer of type PointFeature conatining the decoded geometry as a QList<QPoint>.
  */
 PointFeature* pointFeatureFromProto(const vector_tile::Tile::Feature &feature)
 {
@@ -316,9 +317,7 @@ PointFeature* pointFeatureFromProto(const vector_tile::Tile::Feature &feature)
     return newFeature;
 }
 
-/*Extracts the feature's metadata from the layers keys and values lists
- *
-*/
+
 /*!
  * \brief populateFeatureMetaData
  * Extracts the feature's metadata from the layers keys and values lists
