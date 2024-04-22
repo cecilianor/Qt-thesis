@@ -1,6 +1,9 @@
+// Qt header files
+#include <QFile>
 #include <QRegularExpression>
 #include <QtMath>
 
+// Other header files
 #include "Layerstyle.h"
 
 /*!
@@ -95,4 +98,34 @@ std::optional<StyleSheet> StyleSheet::fromJson(const QJsonDocument &input)
     StyleSheet out;
     out.parseSheet(input);
     return out;
+}
+
+std::optional<StyleSheet> StyleSheet::fromJsonBytes(const QByteArray& input)
+{
+    QJsonParseError parseError;
+    QJsonDocument jsonDoc = QJsonDocument::fromJson(input, &parseError);
+    if (parseError.error != QJsonParseError::NoError) {
+        return std::nullopt;
+    }
+    return fromJson(jsonDoc);
+}
+
+/*!
+ * \brief fromJsonFile
+ * Load a StyleSheet from a JSON file.
+ *
+ * Uses QFile internally.
+ *
+ * \param path Path to the file.
+ *
+ * \return Returns the StyleSheet object if successful. Returns null if not.
+ */
+std::optional<StyleSheet> StyleSheet::fromJsonFile(const QString& path)
+{
+    QFile file{ path };
+    bool openSuccess = file.open(QFile::ReadOnly);
+    if (!openSuccess) {
+        return std::nullopt;
+    }
+    return fromJsonBytes(file.readAll());
 }

@@ -1,9 +1,10 @@
-#include "MapRenderSettingsWidget.h"
-
+// Qt headers
 #include <QCheckBox>
 #include <QPushButton>
 #include <QVBoxLayout>
 
+// Other header files
+#include "MapRenderSettingsWidget.h"
 #include "Rendering.h"
 
 using Bach::MapRenderSettingsWidget;

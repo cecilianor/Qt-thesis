@@ -7,3 +7,6 @@ The core goal is to develop a native and open-source parser and renderer for the
 
 ## How to Build the Project
 Build instructions can be found in [BUILD_INSTRUCTIONS.md](BUILD_INSTRUCTIONS.md)
+
+## Merlin
+Details on the rendering testing system can be found in [tests/merlin/README.md](tests/merlin/README.md)

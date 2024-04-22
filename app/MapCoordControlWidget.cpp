@@ -1,11 +1,12 @@
-#include "MapCoordControlWidget.h"
-
+// Qt header files
 #include <QDoubleValidator>
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
 
+// Other header files
+#include "MapCoordControlWidget.h"
 #include "Rendering.h"
 
 using Bach::MapCoordControlWidget;

@@ -103,13 +103,13 @@ void Bach::paintSingleTileFeature_Line(Bach::PaintingDetailsLine details)
     QPen pen = painter.pen();
 
     pen.setColor(getLineColor(layerStyle, feature, details.mapZoom, details.vpZoom));
-    // Not sure how to take opacity into account yet.
-    // There's some interaction happening with the color.
-    //painter.setOpacity(getLineOpacity(layerStyle, feature, mapZoom, vpZoom));
-
+    painter.setOpacity(getLineOpacity(layerStyle, feature,  details.mapZoom,  details.vpZoom));
     pen.setWidth(getLineWidth(layerStyle, feature, details.mapZoom, details.vpZoom));
     pen.setCapStyle(layerStyle.getCapStyle());
     pen.setJoinStyle(layerStyle.getJoinStyle());
+    if(!layerStyle.m_lineDashArray.isEmpty()){
+        pen.setDashPattern(layerStyle.m_lineDashArray);
+    }
 
     painter.setPen(pen);
     painter.setBrush(Qt::NoBrush);

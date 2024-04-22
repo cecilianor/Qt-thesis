@@ -1,9 +1,11 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
+// Qt header files
 #include <QKeyEvent>
+#include <QMainWindow>
 
+// Other header files
 #include "MapWidget.h"
 
 namespace Bach {

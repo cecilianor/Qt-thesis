@@ -1,14 +1,17 @@
 #ifndef MAPWIDGET_H
 #define MAPWIDGET_H
 
-#include <QWidget>
+// Qt header files
 #include <QScopedPointer>
+#include <QWidget>
 
+// STL header files
 #include <functional>
 #include <set>
 
-#include "TileCoord.h"
+// Other header files
 #include "RequestTilesResult.h"
+#include "TileCoord.h"
 
 /*!
  * \class
@@ -132,6 +135,7 @@ private:
 
     // If true, we should render line-elements.
     bool renderText = true;
+
 public:
     bool isShowingDebug() const { return showDebug; }
     bool isRenderingVector() const { return renderVectorTile; }

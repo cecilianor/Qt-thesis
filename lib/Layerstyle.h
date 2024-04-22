@@ -1,6 +1,7 @@
 #ifndef LAYERSTYLE_H
 #define LAYERSTYLE_H
 
+// Qt header files
 #include <QColor>
 #include <QFont>
 #include <QImage>
@@ -99,7 +100,7 @@ public:
     //Layout properties -------------------------------------------
 
     //Paint properties  -------------------------------------------
-    QList<int> m_lineDashArray;
+    QList<qreal> m_lineDashArray;
     //QImage m_linePattern;//Not used for first iteration
     //float m_lineSortKey;//Not used for first iteration
     //QString lineTranslateAnchor = QString("map");//Not used for first iteration
@@ -131,7 +132,9 @@ public:
     QVariant getTextSizeAtZoom(int zoomLevel) const;
     QVariant getTextColorAtZoom(int zoomLevel) const;
     QVariant getTextOpacityAtZoom(int zoomLevel) const;
-
+    QVariant getSymbolSpacingAtZoom(int zoomLevel) const;
+    QVariant getTextMaxAngleAtZoom(int zoomLevel) const;
+    QVariant gettextLetterSpacingAtZoom(int zoomLevel) const;
     //Layout properties -------------------------------------------
     //bool m_iconAllowOverlap = false;//Not used for first iteration
     //QString m_iconAnchor = QString("center");//Not used for first iteration
@@ -174,9 +177,9 @@ private:
      //QList<QPair<int, int>> m_iconPadding;//Not used for first iteration
      //QList<QPair<int, int>> m_icontRotate;//Not used for first iteration
      //QList<QPair<int, float>> m_iconSize;//Not used for first iteration
-     //QList<QPair<int, int>> m_symbolSpacing;//Not used for first iteration
-     //QList<QPair<int, int>> m_textLetterSpacing;//Not used for first iteration
-     //QList<QPair<int, float>> m_textMaxAngle;//Not used for first iteration
+     QVariant m_symbolSpacing;
+     QVariant m_textLetterSpacing;
+     QVariant m_textMaxAngle;//Not used for first iteration
      //QList<QPair<int,int>> m_textPaddig;//Not used for first iteration
      //QList<QPair<int, float>> m_textRadialOffset;//Not used for first iteration
      //QList<QPair<int, float>> m_textRotate;//Not used for first iteration
@@ -213,6 +216,8 @@ public:
     ~StyleSheet();
     StyleSheet& operator=(StyleSheet&&) = default;
     static std::optional<StyleSheet> fromJson(const QJsonDocument&);
+    static std::optional<StyleSheet> fromJsonBytes(const QByteArray&);
+    static std::optional<StyleSheet> fromJsonFile(const QString &path);
 
     void parseSheet(const QJsonDocument &styleSheet);
     QString m_id;

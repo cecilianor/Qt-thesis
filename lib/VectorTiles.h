@@ -1,6 +1,7 @@
 #ifndef VECTORTILES_H
 #define VECTORTILES_H
 
+//Qt header files
 #include <QByteArray>
 #include <QFile>
 #include <QList>
@@ -8,10 +9,10 @@
 #include <QPainterPath>
 #include <QRect>
 
-#include <map> // For std::map
+// STL header files
+#include <map>      // For std::map
 #include <optional> // For std::optional
-#include <memory> // For std::unique_ptr
-
+#include <memory>   // For std::unique_ptr
 
 /*
  * This abstract class is the base for all the classes representing different layer features.
@@ -100,7 +101,9 @@ class TileLayer {
 
 public:
     TileLayer(int version, QString name, int extent);
-    ~TileLayer();
+    TileLayer(TileLayer&&) = default;
+    TileLayer(const TileLayer&) = delete;
+    ~TileLayer() = default;
 
     int version() const;
 
@@ -108,7 +111,7 @@ public:
 
     int extent() const;
 
-    QList<AbstractLayerFeature*> m_features;
+    std::vector<std::unique_ptr<AbstractLayerFeature>> m_features;
 
 private:
     const int m_version;
@@ -134,6 +137,8 @@ public:
     ~VectorTile() = default;
 
     bool DeserializeMessage(QByteArray data);
+    static std::optional<VectorTile> fromByteArray(const QByteArray &bytes);
+    static std::optional<VectorTile> fromFile(const QString &path);
     std::map<QString, std::unique_ptr<TileLayer>> m_layers;
 };
 

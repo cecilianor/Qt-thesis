@@ -1,9 +1,11 @@
 #ifndef MAPRENDERSETTINGSWIDGET_H
 #define MAPRENDERSETTINGSWIDGET_H
 
-#include <QWidget>
+// Qt header files
 #include <QBoxLayout>
+#include <QWidget>
 
+// Other header files
 #include "MapWidget.h"
 
 namespace Bach {

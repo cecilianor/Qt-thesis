@@ -1,7 +1,9 @@
-#include "MapPanControlWidget.h"
-
+// Qt header files
 #include <QGridLayout>
 #include <QPushButton>
+
+// Other header files
+#include "MapPanControlWidget.h"
 
 using Bach::MapPanControlWidget;
 

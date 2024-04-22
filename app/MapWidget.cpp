@@ -1,9 +1,12 @@
+// Qt header files
 #include <QCoreApplication>
 #include <QKeyEvent>
+#include <QtMath>
 #include <QPainter>
 #include <QtMath>
 #include <QWheelEvent>
 
+// Other header files
 #include "MapWidget.h"
 #include "Rendering.h"
 
@@ -60,7 +63,7 @@ void MapWidget::keyPressEvent(QKeyEvent* event)
  */
 void MapWidget::mousePressEvent(QMouseEvent *event)
 {
-    if(event->buttons() == Qt::MouseButton::LeftButton){
+    if (event->buttons() == Qt::MouseButton::LeftButton) {
         mouseStartPosition = event->pos();
     }
 }
