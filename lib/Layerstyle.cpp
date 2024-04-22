@@ -769,7 +769,7 @@ QVariant SymbolLayerStyle::getTextSizeAtZoom(int zoomLevel) const
 /*!
  * \brief SymbolLayerStyle::getSymbolSpacingAtZoom returns spacing between symbols for road names.
  *
- * The returned QVariant will contain a float if the value is not an expression,
+ * The returned QVariant will contain an int if the value is not an expression,
  *  or a QJsonArray otherwise
  *
  * \param zoomLevel is the zoom level for which to calculate the size.
@@ -791,6 +791,16 @@ QVariant SymbolLayerStyle::getSymbolSpacingAtZoom(int zoomLevel) const
     }
 }
 
+/*!
+ * \brief SymbolLayerStyle::getTextMaxAngleAtZoom returns the maximum allowe angle difference
+ * between two adjacent characters in curved text.
+ *
+ * The returned QVariant will contain an int if the value is not an expression,
+ *  or a QJsonArray otherwise
+ *
+ * \param zoomLevel is the zoom level for which to calculate the size.
+ * \return a QVariant containing either an int or a QJsonArray with data.
+ */
 QVariant SymbolLayerStyle::getTextMaxAngleAtZoom(int zoomLevel) const
 {
     if (m_textMaxAngle.isNull()){
@@ -807,6 +817,16 @@ QVariant SymbolLayerStyle::getTextMaxAngleAtZoom(int zoomLevel) const
     }
 }
 
+/*!
+ * \brief SymbolLayerStyle::gettextLetterSpacingAtZoom returns spacing between characters
+ * in ems
+ *
+ * The returned QVariant will contain an float if the value is not an expression,
+ *  or a QJsonArray otherwise
+ *
+ * \param zoomLevel is the zoom level for which to calculate the size.
+ * \return a QVariant containing either a float or a QJsonArray with data.
+ */
 QVariant SymbolLayerStyle::gettextLetterSpacingAtZoom(int zoomLevel) const
 {
     if (m_textLetterSpacing.isNull()){
@@ -814,7 +834,7 @@ QVariant SymbolLayerStyle::gettextLetterSpacingAtZoom(int zoomLevel) const
         return QVariant(0);
     } else if (m_textLetterSpacing.typeId() != QMetaType::Type::Double
                && m_textLetterSpacing.typeId() != QMetaType::Type::QJsonArray){
-        QList<QPair<int, int>> stops = m_textLetterSpacing.value<QList<QPair<int, int>>>();
+        QList<QPair<int, float>> stops = m_textLetterSpacing.value<QList<QPair<int, float>>>();
         if (stops.size() == 0)
             return QVariant(0);
         return QVariant(getStopOutput(stops, zoomLevel));
