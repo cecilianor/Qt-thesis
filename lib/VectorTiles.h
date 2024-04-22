@@ -101,7 +101,9 @@ class TileLayer {
 
 public:
     TileLayer(int version, QString name, int extent);
-    ~TileLayer();
+    TileLayer(TileLayer&&) = default;
+    TileLayer(const TileLayer&) = delete;
+    ~TileLayer() = default;
 
     int version() const;
 
@@ -109,7 +111,7 @@ public:
 
     int extent() const;
 
-    QList<AbstractLayerFeature*> m_features;
+    std::vector<std::unique_ptr<AbstractLayerFeature>> m_features;
 
 private:
     const int m_version;

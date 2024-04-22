@@ -109,6 +109,7 @@ private:
 
     // If true, we should render line-elements.
     bool renderText = true;
+
 public:
     bool isShowingDebug() const { return showDebug; }
     bool isRenderingVector() const { return renderVectorTile; }
