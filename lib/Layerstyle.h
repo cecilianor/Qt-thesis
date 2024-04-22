@@ -1,6 +1,7 @@
 #ifndef LAYERSTYLE_H
 #define LAYERSTYLE_H
 
+// Qt header files
 #include <QColor>
 #include <QFont>
 #include <QImage>
@@ -99,7 +100,7 @@ public:
     //Layout properties -------------------------------------------
 
     //Paint properties  -------------------------------------------
-    QList<int> m_lineDashArray;
+    QList<qreal> m_lineDashArray;
     //QImage m_linePattern;//Not used for first iteration
     //float m_lineSortKey;//Not used for first iteration
     //QString lineTranslateAnchor = QString("map");//Not used for first iteration
@@ -215,6 +216,8 @@ public:
     ~StyleSheet();
     StyleSheet& operator=(StyleSheet&&) = default;
     static std::optional<StyleSheet> fromJson(const QJsonDocument&);
+    static std::optional<StyleSheet> fromJsonBytes(const QByteArray&);
+    static std::optional<StyleSheet> fromJsonFile(const QString &path);
 
     void parseSheet(const QJsonDocument &styleSheet);
     QString m_id;
@@ -235,6 +238,55 @@ inline T getStopOutput(QList<QPair<int, T>> list, int currentZoom)
         }
     }
     return list.last().second;
+}
+
+namespace Bach {
+
+    /*!
+     * \brief getColorFromString creates a QColor object from an HSL color string.
+     *
+     * The string is expected to be in one of the following formats:
+     *      "hsl(hue, stauration%, lightness%)"
+     *      "hsla(hue, stauration%, lightness%, alpha)"
+     *
+     * \param colorString is a QString containing color data.
+     *
+     * \return a QColor object.
+     */
+    inline QColor getColorFromString(QString colorString)
+    {
+        colorString.remove(" ");
+        //All parameters for QColor::fromHslF need to be between 0 and 1.
+        if (colorString.startsWith("hsl(")) {
+            static QRegularExpression re(".*\\((\\d+),(\\d+)%,(\\d+)%\\)");
+            QRegularExpressionMatch match = re.match(colorString);
+            if (match.capturedTexts().length() >= 4) {
+                return QColor::fromHslF(match.capturedTexts().at(1).toInt()/359.,
+                                        match.capturedTexts().at(2).toInt()/100.,
+                                        match.capturedTexts().at(3).toInt()/100.);
+            }
+        }
+        if (colorString.startsWith("hsla(")) {
+            static QRegularExpression re(".*\\((\\d+),(\\d+)%,(\\d+)%,(\\d?\\.?\\d*)\\)");
+            QRegularExpressionMatch match = re.match(colorString);
+            if (match.capturedTexts().length() >= 5) {
+                return QColor::fromHslF(match.capturedTexts().at(1).toInt()/359.,
+                                        match.capturedTexts().at(2).toInt()/100.,
+                                        match.capturedTexts().at(3).toInt()/100.,
+                                        match.capturedTexts().at(4).toFloat());
+            }
+        }
+
+        /* Should there be some kind of error handling here, or this intended in the final return statement? */
+        //In case the color has a different format than expected. If the format cannot be handeled by QColor, we return black as a default color.
+        QColor returnColor = QColor::fromString(colorString);
+        if(!returnColor.isValid()){
+            return Qt::black;
+        }else{
+            return returnColor;
+        }
+    }
+
 }
 
 #endif // LAYERSTYLE_H

@@ -439,9 +439,10 @@ void Bach::processSingleTileFeature_Point(
     if(textToDraw == "") return;
 
     //Get the rendering parameters from the layerstyle and set the relevant painter field.
-    painter.setBrush(Qt::NoBrush);
-    int textSize = getTextSize(layerStyle, feature, details.mapZoom, details.vpZoom);
 
+    // If the flag 'forceNoChangeFontType' it means we should use the
+    // font object already set by the painter.
+    // So we count on the font already set by the painter object.
     QFont textFont;
     if (forceNoChangeFontType) {
         textFont = painter.font();
@@ -449,10 +450,16 @@ void Bach::processSingleTileFeature_Point(
         textFont = QFont(layerStyle.m_textFont);
     }
 
+    int textSize = getTextSize(layerStyle, feature, details.mapZoom, details.vpZoom);
     textFont.setPixelSize(textSize);
+
+    painter.setBrush(Qt::NoBrush);
+
     painter.setOpacity(getTextOpacity(layerStyle, feature, details.mapZoom, details.vpZoom));
+
     const int outlineSize = layerStyle.m_textHaloWidth.toInt();
     QColor outlineColor = layerStyle.m_textHaloColor.value<QColor>();
+
     //Text is always antialised (otherwise it does not look good)
     painter.setRenderHints(QPainter::Antialiasing, true);
 

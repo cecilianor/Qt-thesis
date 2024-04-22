@@ -1,11 +1,12 @@
-#include "MainWindow.h"
-
+// Qt header files
 #include <QShowEvent>
 
-#include "MapPanControlWidget.h"
-#include "MapZoomControlWidget.h"
+// Other header files
+#include "MainWindow.h"
 #include "MapCoordControlWidget.h"
+#include "MapPanControlWidget.h"
 #include "MapRenderSettingsWidget.h"
+#include "MapZoomControlWidget.h"
 
 using Bach::MainWindow;
 

@@ -1,10 +1,12 @@
 #ifndef RENDERING_HPP
 #define RENDERING_HPP
 
+// Qt header files
 #include <QMap>
 #include <QPainter>
 #include <QPair>
 
+// Other header files
 #include "Layerstyle.h"
 #include "TileCoord.h"
 #include "VectorTiles.h"

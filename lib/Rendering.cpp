@@ -1,7 +1,9 @@
+// STL header files
 #include <functional>
 #include <QTextLayout>
 #include <QTextCharFormat>
 
+// Other header files
 #include "Evaluator.h"
 #include "Rendering.h"
 

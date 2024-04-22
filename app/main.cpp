@@ -24,7 +24,7 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName("qt_thesis_app");
 
     // Print the cache folder to the terminal.
-    qDebug() << "Current file cache can be found in: " << TileLoader::getGeneralCacheFolder();
+    qDebug() << "Current file cache can be found in: " << Bach::TileLoader::getGeneralCacheFolder();
 
     // Read key from file.
     std::optional<QString> mapTilerKeyOpt = Bach::readMapTilerKey("key.txt");
@@ -75,16 +75,16 @@ int main(int argc, char *argv[])
 
     // Create our TileLoader based on whether we can do web
     // or not.
-    std::unique_ptr<TileLoader> tileLoaderPtr;
+    std::unique_ptr<Bach::TileLoader> tileLoaderPtr;
     if (useWeb) {
-        tileLoaderPtr = TileLoader::fromTileUrlTemplate(
+        tileLoaderPtr = Bach::TileLoader::fromTileUrlTemplate(
             pbfUrlTemplate,
             pngUrlTemplate,
             std::move(styleSheet));
     } else {
-        tileLoaderPtr = TileLoader::newLocalOnly(std::move(styleSheet));
+        tileLoaderPtr = Bach::TileLoader::newLocalOnly(std::move(styleSheet));
     }
-    TileLoader &tileLoader = *tileLoaderPtr;
+    Bach::TileLoader &tileLoader = *tileLoaderPtr;
 
     // Creates the Widget that displays the map.
     auto *mapWidget = new MapWidget;

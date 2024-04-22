@@ -1,10 +1,12 @@
 #ifndef MAPCOORDCONTROLWIDGET_H
 #define MAPCOORDCONTROLWIDGET_H
 
-#include <QWidget>
-#include <QLineEdit>
+// Qt header files
 #include <QBoxLayout>
+#include <QLineEdit>
+#include <QWidget>
 
+// Other header files
 #include "MapWidget.h"
 
 namespace Bach {
