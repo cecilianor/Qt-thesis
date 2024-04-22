@@ -25,8 +25,15 @@ namespace Bach {
      */
     const int defaultDesiredTileSizePixels = 512;
 
-    struct PaintingDetailsPolygon{
-        QPainter *painter;
+    /*!
+     * \internal
+     * \brief The PaintingDetailsPolygon class
+     * Helper class for passing values around internally in painter functions.
+     *
+     * Only for internal use.
+     */
+    struct PaintingDetailsPolygon {
+        QPainter *painter = nullptr;
         const FillLayerStyle *layerStyle = nullptr;
         const PolygonFeature *feature = nullptr;
         int mapZoom{};
@@ -34,8 +41,15 @@ namespace Bach {
         QTransform transformIn;
     };
 
-    struct PaintingDetailsLine{
-        QPainter *painter;
+    /*!
+     * \internal
+     * \brief The PaintingDetailsLine class
+     * Helper class for passing values around internally in painter functions.
+     *
+     * Only for internal use.
+     */
+    struct PaintingDetailsLine {
+        QPainter *painter = nullptr;
         const LineLayerStyle *layerStyle = nullptr;
         const LineFeature *feature = nullptr;
         int mapZoom{};
@@ -43,8 +57,15 @@ namespace Bach {
         QTransform transformIn;
     };
 
-    struct PaintingDetailsPoint{
-        QPainter *painter;
+    /*!
+     * \internal
+     * \brief The PaintingDetailsPoint class
+     * Helper class for passing values around internally in painter functions.
+     *
+     * Only for internal use.
+     */
+    struct PaintingDetailsPoint {
+        QPainter *painter = nullptr;
         const SymbolLayerStyle *layerStyle = nullptr;
         const PointFeature *feature = nullptr;
         int mapZoom{};
@@ -52,8 +73,15 @@ namespace Bach {
         QTransform transformIn;
     };
 
-    struct PaintingDetailsPointCurved{
-        QPainter *painter;
+    /*!
+     * \internal
+     * \brief The PaintingDetailsPointCurved class
+     * Helper class for passing values around internally in painter functions.
+     *
+     * Only for internal use.
+     */
+    struct PaintingDetailsPointCurved {
+        QPainter *painter = nullptr;
         const SymbolLayerStyle *layerStyle = nullptr;
         const LineFeature *feature = nullptr;
         int mapZoom{};
@@ -61,6 +89,13 @@ namespace Bach {
         QTransform transformIn;
     };
 
+    /*!
+     * \internal
+     * \brief The vpGlobalText class
+     * Helper class for passing values around internally in painter functions.
+     *
+     * Only for internal use.
+     */
     struct vpGlobalText{
         QPoint tileOrigin;
         QList<QPainterPath> path;
@@ -73,13 +108,28 @@ namespace Bach {
         QRect boundingRect;
     };
 
-    struct singleCurvedTextCharacter{
+
+    /*!
+     * \internal
+     * \brief The singleCurvedTextCharacter class
+     * Helper class for passing values around internally in painter functions.
+     *
+     * Only for internal use.
+     */
+    struct singleCurvedTextCharacter {
         QChar character;
         QPointF position;
         qreal angle;
     };
 
-    struct vpGlobalCurvedText{
+    /*!
+     * \internal
+     * \brief The vpGlobalCurvedText class
+     * Helper class for passing values around internally in painter functions.
+     *
+     * Only for internal use.
+     */
+    struct vpGlobalCurvedText {
         QVector<singleCurvedTextCharacter> textList;
         QFont font;
         QColor textColor;

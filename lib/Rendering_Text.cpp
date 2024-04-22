@@ -219,7 +219,7 @@ static bool isOverlapping(const QRect &textRect, const QVector<QRect> &rectList)
 static QList<QString> getCorrectedText(
     const QString &text,
     const QFont &font,
-    const int rectWidth)
+    int rectWidth)
 {
     QFontMetrics fontMetrics(font);
     int rectWidthInPix = font.pixelSize() * rectWidth;
@@ -264,14 +264,14 @@ static QList<QString> getCorrectedText(
 static void processSimpleText(
     const QString &text,
     const QPoint &coordinate,
-    const int outlineSize,
+    int outlineSize,
     const QColor &outlineColor,
     const QFont &textFont,
     QVector<QRect> &rects,
     const PointFeature &feature,
     const SymbolLayerStyle &layerStyle,
-    const int mapZoom,
-    const double vpZoom,
+    int mapZoom,
+    double vpZoom,
     int tileOriginX,
     int tileOriginY,
     QVector<Bach::vpGlobalText> &vpTextList)
@@ -346,14 +346,14 @@ static void processSimpleText(
 static void processCompositeText(
     const QList<QString> &texts,
     const QPoint &coordinates,
-    const int outlineSize,
-    const QColor &outlineColor,
+    int outlineSize,
+    QColor &outlineColor,
     const QFont &textFont,
     QVector<QRect> &rects,
     const PointFeature &feature,
     const SymbolLayerStyle &layerStyle,
-    const int mapZoom,
-    const double vpZoom,
+    int mapZoom,
+    double vpZoom,
     int tileOriginX,
     int tileOriginY,
     QVector<Bach::vpGlobalText> &vpTextList)
@@ -405,7 +405,7 @@ static void processCompositeText(
 
     //Check if the text overlaps with any previously rendered text.
      QRect globalRect {
-        QPoint{
+        QPoint {
             (tileOriginX + coordinates.x()) - boundingRect.width()/2,
             (tileOriginY + coordinates.y() - boundingRect.height()/2) },
         QSize {
@@ -509,12 +509,12 @@ void Bach::processSingleTileFeature_Point(
     //Remap the original coordinates so that they are positioned correctly.
     const QPoint newCoordinates = transform.map(coordinates);
     //exclude any text that is outside of the tile extent
-    if(newCoordinates.x() < 0 || newCoordinates.x() > tileSize || newCoordinates.y() < 0 || newCoordinates.y() > tileSize){
+    if (newCoordinates.x() < 0 || newCoordinates.x() > tileSize || newCoordinates.y() < 0 || newCoordinates.y() > tileSize){
         return;
     }
 
     //The text is processed differently depending on it it wraps or not.
-    if(correctedText.size() == 1) //In case there is only one string to be processed (no wrapping)
+    if (correctedText.size() == 1) //In case there is only one string to be processed (no wrapping)
         processSimpleText(
             correctedText.at(0),
             newCoordinates,
@@ -529,7 +529,7 @@ void Bach::processSingleTileFeature_Point(
             tileOriginX,
             tileOriginY,
             vpTextList);
-    else{ //In case there are multiple strings to be processed (text wrapping)
+    else { //In case there are multiple strings to be processed (text wrapping)
         processCompositeText(
             correctedText,
             newCoordinates,
@@ -634,8 +634,10 @@ void Bach::processSingleTileFeature_Point_Curved(
     QPainterPath path = transform.map(feature.line());
     QFontMetrics fMetrics(textFont);
 
-    //Check if the path is long enough to render the text at least once
-    if(calctotalTextHorizontalAdvance(fMetrics, textToDraw, spacing) > path.length()) return;
+    // Check if the path is long enough to render the text at least once
+    if(calctotalTextHorizontalAdvance(fMetrics, textToDraw, spacing) > path.length())
+        return;
+
     //Check if the text should be rotated 180 degrees or not
     bool flipText = isTextFlipped(path.angleAtPercent(0));
     int maxAngle = getTextMaxAngle(layerStyle, feature, details.mapZoom, details.vpZoom);
