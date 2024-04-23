@@ -283,7 +283,7 @@ QVariant SymbolLayerStyle::getTextMaxAngleAtZoom(int zoomLevel) const
  * \param zoomLevel is the zoom level for which to calculate the size.
  * \return a QVariant containing either a float or a QJsonArray with data.
  */
-QVariant SymbolLayerStyle::gettextLetterSpacingAtZoom(int zoomLevel) const
+QVariant SymbolLayerStyle::getTextLetterSpacingAtZoom(int zoomLevel) const
 {
     if (m_textLetterSpacing.isNull()){
         // The default size in case no size is provided by the style sheet.
