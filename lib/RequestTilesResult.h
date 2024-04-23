@@ -5,7 +5,7 @@
 #include <QObject>
 
 // Other header files
-#include <Layerstyle.h>
+#include <LayerStyle.h>
 #include <TileCoord.h>
 #include <VectorTiles.h>
 

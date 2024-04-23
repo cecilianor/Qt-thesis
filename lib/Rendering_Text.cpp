@@ -107,7 +107,9 @@ static QString getTextContent(
     double vpZoom)
 {
     QVariant textVariant = layerStyle.m_textField;
-    if(textVariant.isNull() || !textVariant.isValid()) return "";
+    if(textVariant.isNull() || !textVariant.isValid())
+        return "";
+
     // The layer style might return an expression, we need to resolve it.
     if(textVariant.typeId() == QMetaType::Type::QJsonArray){
         textVariant = Evaluator::resolveExpression(
@@ -173,7 +175,7 @@ static float getTextLetterSpacing(
     double vpZoom,
     int fontSize)
 {
-    QVariant spacing = layerStyle.gettextLetterSpacingAtZoom(mapZoom);
+    QVariant spacing = layerStyle.getTextLetterSpacingAtZoom(mapZoom);
     // The layer style might return an expression, we need to resolve it.
     if(spacing.typeId() == QMetaType::Type::QJsonArray){
         spacing = Evaluator::resolveExpression(

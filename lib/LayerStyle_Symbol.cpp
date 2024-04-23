@@ -1,7 +1,7 @@
 #include <QRegularExpression>
 #include <QtMath>
 
-#include "Layerstyle.h"
+#include "LayerStyle.h"
 
 
 /*!
@@ -20,19 +20,22 @@ std::unique_ptr<SymbolLayerStyle> SymbolLayerStyle::fromJson(const QJsonObject &
     QJsonObject layout = jsonObj.value("layout").toObject();
     // Visibility property is parsed in AbstractLayerStyle* AbstractLayerStyle::fromJson(const QJsonObject &json)
 
-    if (layout.contains("text-size")){
+    if (layout.contains("text-size")) {
         QJsonValue textSize = layout.value("text-size");
-        if (textSize.isObject()){
-            // Case where the property is an object that has "Stops".
+        if (textSize.isObject()) {
+            // Case where the property is an object that has "stops".
             QList<QPair<int, int>> stops;
-            for (const auto &stop
-                 : static_cast<const QJsonArray&>(textSize.toObject().value("stops").toArray())){
+            QJsonArray arr = textSize.toObject().value("stops").toArray();
+
+            // Loop over all stops and append a pair of <zoomStop, sizeStop>
+            // data to `stops`.
+            for (QJsonValueConstRef stop : arr) {
                 int zoomStop = stop.toArray().first().toInt();
                 int sizeStop = stop.toArray().last().toInt();
                 stops.append(QPair<int, int>(zoomStop, sizeStop));
             }
             returnLayer->m_textSize.setValue(stops);
-        } else if (textSize.isArray()){
+        } else if (textSize.isArray()) {
             // Case where the property is an expression.
             returnLayer->m_textSize.setValue(textSize.toArray());
         } else {
@@ -41,8 +44,7 @@ std::unique_ptr<SymbolLayerStyle> SymbolLayerStyle::fromJson(const QJsonObject &
         }
     }
 
-
-    if (layout.contains("text-max-angle")){
+    if (layout.contains("text-max-angle")) {
         QJsonValue textSize = layout.value("text-max-angle");
         if (textSize.isObject()){
             // Case where the property is an object that has "Stops".
@@ -64,7 +66,7 @@ std::unique_ptr<SymbolLayerStyle> SymbolLayerStyle::fromJson(const QJsonObject &
     }
 
 
-    if (layout.contains("symbol-spacing")){
+    if (layout.contains("symbol-spacing")) {
         QJsonValue textSize = layout.value("symbol-spacing");
         if (textSize.isObject()){
             // Case where the property is an object that has "Stops".
@@ -85,7 +87,7 @@ std::unique_ptr<SymbolLayerStyle> SymbolLayerStyle::fromJson(const QJsonObject &
         }
     }
 
-    if (layout.contains("text-letter-spacing")){
+    if (layout.contains("text-letter-spacing")) {
         QJsonValue textSize = layout.value("text-letter-spacing");
         if (textSize.isObject()){
             // Case where the property is an object that has "Stops".
@@ -107,15 +109,15 @@ std::unique_ptr<SymbolLayerStyle> SymbolLayerStyle::fromJson(const QJsonObject &
     }
 
 
-    if (layout.contains("text-font")){
+    if (layout.contains("text-font")) {
         returnLayer->m_textFont = layout.value("text-font").toVariant().toStringList();
     } else {
         // Default value for the font if no value was provided.
         returnLayer->m_textFont = {"Open Sans Regular","Arial Unicode MS Regular"};
     }
 
-    if (layout.contains("text-field")){
-        if (layout.value("text-field").isArray()){
+    if (layout.contains("text-field")) {
+        if (layout.value("text-field").isArray()) {
             // Case where the property is an expression.
             returnLayer->m_textField = QVariant(layout.value("text-field").toArray());
         } else {
@@ -124,26 +126,29 @@ std::unique_ptr<SymbolLayerStyle> SymbolLayerStyle::fromJson(const QJsonObject &
         }
     }
 
-    if (layout.contains("text-max-width")){
+    if (layout.contains("text-max-width")) {
         returnLayer->m_textMaxWidth = layout.value("text-max-width").toInt();
     } else {
         returnLayer->m_textMaxWidth = 10;
     }
     // Parsing paint properties.
     QJsonObject paint = jsonObj.value("paint").toObject();
-    if (paint.contains("text-color")){
+    if (paint.contains("text-color")) {
         QJsonValue textColor = paint.value("text-color");
-        if (textColor.isObject()){
-            // Case where the property is an object that has "Stops".
+        if (textColor.isObject()) {
+            // Case where the property is an object that has "stops".
             QList<QPair<int, QColor>> stops;
-            for(const auto &stop
-                 : static_cast<const QJsonArray&>(textColor.toObject().value("stops").toArray())){
+            QJsonArray arr = textColor.toObject().value("stops").toArray();
+
+            // Loop over all stops and append a pair of <zoomStop, colorStop>
+            // data to `stops`.
+            for(QJsonValueConstRef stop : arr) {
                 int zoomStop = stop.toArray().first().toInt();
                 QColor colorStop = Bach::getColorFromString(stop.toArray().last().toString());
                 stops.append(QPair<int, QColor>(zoomStop, colorStop));
             }
             returnLayer->m_textColor.setValue(stops);
-        }else if (textColor.isArray()){
+        }else if (textColor.isArray()) {
             // Case where the property is an expression.
             returnLayer->m_textColor.setValue(textColor.toArray());
         } else {
@@ -152,19 +157,22 @@ std::unique_ptr<SymbolLayerStyle> SymbolLayerStyle::fromJson(const QJsonObject &
         }
     }
 
-    if (paint.contains("text-opacity")){
+    if (paint.contains("text-opacity")) {
         QJsonValue textOpacity = paint.value("text-opacity");
-        if (textOpacity.isObject()){
-            // Case where the property is an object that has "Stops".
+        if (textOpacity.isObject()) {
+            // Case where the property is an object that has "stops".
             QList<QPair<int, float>> stops;
-            for (const auto &stop
-                 : static_cast<const QJsonArray&>(textOpacity.toObject().value("stops").toArray())){
+            QJsonArray arr = textOpacity.toObject().value("stops").toArray();
+
+            // Loop over all stops and append a pair of <zoomStop, opacityStop>
+            // data to `stops`.
+            for (QJsonValueConstRef stop : arr) {
                 int zoomStop = stop.toArray().first().toInt();
                 float opacityStop = stop.toArray().last().toDouble();
                 stops.append(QPair<int, float>(zoomStop, opacityStop));
             }
             returnLayer->m_textOpacity.setValue(stops);
-        } else if (textOpacity.isArray()){
+        } else if (textOpacity.isArray()) {
             // Case where the property is an expression.
             returnLayer->m_textOpacity.setValue(textOpacity.toArray());
         } else {
@@ -173,14 +181,14 @@ std::unique_ptr<SymbolLayerStyle> SymbolLayerStyle::fromJson(const QJsonObject &
         }
     }
 
-    if (paint.contains("text-halo-color")){
+    if (paint.contains("text-halo-color")) {
         QColor haloColor = Bach::getColorFromString(paint.value("text-halo-color").toString());
         returnLayer->m_textHaloColor = haloColor;
     } else {
         returnLayer->m_textHaloColor = QColor(Qt::GlobalColor::black);
     }
 
-    if (paint.contains("text-halo-width")){
+    if (paint.contains("text-halo-width")) {
         returnLayer->m_textHaloWidth =paint.value("text-halo-width").toInt();
     } else {
         returnLayer->m_textHaloWidth = 0;
@@ -200,7 +208,7 @@ std::unique_ptr<SymbolLayerStyle> SymbolLayerStyle::fromJson(const QJsonObject &
  */
 QVariant SymbolLayerStyle::getTextSizeAtZoom(int zoomLevel) const
 {
-    if (m_textSize.isNull()){
+    if (m_textSize.isNull()) {
         // The default size in case no size is provided by the style sheet.
         return QVariant(16);
     } else if (m_textSize.typeId() != QMetaType::Type::Int
@@ -275,7 +283,7 @@ QVariant SymbolLayerStyle::getTextMaxAngleAtZoom(int zoomLevel) const
  * \param zoomLevel is the zoom level for which to calculate the size.
  * \return a QVariant containing either a float or a QJsonArray with data.
  */
-QVariant SymbolLayerStyle::gettextLetterSpacingAtZoom(int zoomLevel) const
+QVariant SymbolLayerStyle::getTextLetterSpacingAtZoom(int zoomLevel) const
 {
     if (m_textLetterSpacing.isNull()){
         // The default size in case no size is provided by the style sheet.
@@ -299,10 +307,11 @@ QVariant SymbolLayerStyle::gettextLetterSpacingAtZoom(int zoomLevel) const
  */
 QVariant SymbolLayerStyle::getTextColorAtZoom(int zoomLevel) const
 {
-    if(m_textColor.isNull()){
+    if(m_textColor.isNull()) {
         // The default color in case no color is provided by the style sheet.
         return QVariant(QColor(Qt::GlobalColor::black));
-    } else if (m_textColor.typeId() != QMetaType::Type::QColor && m_textColor.typeId() != QMetaType::Type::QJsonArray){
+    } else if (m_textColor.typeId() != QMetaType::Type::QColor
+               && m_textColor.typeId() != QMetaType::Type::QJsonArray) {
         QList<QPair<int, QColor>> stops = m_textColor.value<QList<QPair<int, QColor>>>();
         if (stops.size() == 0)
             return QVariant(QColor(Qt::GlobalColor::black));
@@ -324,13 +333,14 @@ QVariant SymbolLayerStyle::getTextColorAtZoom(int zoomLevel) const
  */
 QVariant SymbolLayerStyle::getTextOpacityAtZoom(int zoomLevel) const
 {
-    if (m_textOpacity.isNull()){
+    if (m_textOpacity.isNull()) {
         // The default color in case no color is provided by the style sheet.
         return QVariant(1);
     } else if (m_textOpacity.typeId() != QMetaType::Type::Double
-               && m_textOpacity.typeId() != QMetaType::Type::QJsonArray){
+               && m_textOpacity.typeId() != QMetaType::Type::QJsonArray) {
         QList<QPair<int, float>> stops = m_textOpacity.value<QList<QPair<int, float>>>();
-        if (stops.size() == 0) return QVariant(1);
+        if (stops.size() == 0)
+            return QVariant(1);
         return QVariant(getStopOutput(stops, zoomLevel));
     } else {
         return QVariant(m_textOpacity);
