@@ -8,6 +8,7 @@
 #include <QMap>
 #include <QPainterPath>
 #include <QRect>
+#include <QVariant>
 
 // STL header files
 #include <map>      // For std::map
