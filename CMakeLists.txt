@@ -119,10 +119,6 @@ qt_finalize_executable(application)
 # Apply the windows deployment process to our executable.
 deploy_runtime_dependencies_if_win32(application)
 
-# Create the example command line utility example.
-qt_add_executable(cmd_example cmd_example.cpp)
-target_link_libraries(cmd_example PUBLIC maplib)
-
 # All testing related code goes in here
 if (BUILD_TESTS)
     set(CMAKE_AUTOMOC ON)
