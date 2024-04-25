@@ -251,7 +251,7 @@ void UnitTesting::loadTileFromCache_fails_on_broken_file()
 
     loop.exec();
 
-    std::optional<Bach::LoadedTileState> tileStateResult = tileLoader.getTileState(expectedCoord);
+    std::optional<Bach::LoadedTileState> tileStateResult = tileLoader.getTileState_Vector(expectedCoord);
     QVERIFY2(
         tileStateResult.has_value(),
         "TileLoader::getTileState returned nullopt when it was just reported to have finished loading.");
@@ -313,7 +313,7 @@ void UnitTesting::loadTileFromCache_parses_cached_file_successfully()
 
     loop.exec();
 
-    std::optional<Bach::LoadedTileState> tileStateOpt = tileLoader.getTileState(expectedCoord);
+    std::optional<Bach::LoadedTileState> tileStateOpt = tileLoader.getTileState_Vector(expectedCoord);
     QVERIFY2(
         tileStateOpt.has_value(),
         "TileLoader::getTileState returned nullopt when it was just reported to have finished loading.");

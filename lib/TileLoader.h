@@ -74,13 +74,16 @@ namespace Bach {
 
         static std::unique_ptr<TileLoader> newLocalOnly(StyleSheet&& styleSheet);
 
+        using LoadTileOverrideFnT = QByteArray const*(TileCoord, TileType);
         static std::unique_ptr<TileLoader> newDummy(
             const QString &diskCachePath,
+            std::function<LoadTileOverrideFnT> loadTileOverride = nullptr,
+            bool loadRaster = true,
             std::optional<int> workerThreadCount = std::nullopt);
 
         QString getTileDiskPath(TileCoord coord, TileType tileType);
 
-        std::optional<Bach::LoadedTileState> getTileState(TileCoord) const;
+        std::optional<Bach::LoadedTileState> getTileState_Vector(TileCoord) const;
 
     signals:
         /*!
@@ -102,10 +105,15 @@ namespace Bach {
         // web when loading.
         bool useWeb = true;
 
+        // Controls whether we should load raster-tiles.
+        bool loadRaster = true;
+
+        std::function<LoadTileOverrideFnT> loadTileOverride = nullptr;
+
         // Directory path to tile cache storage.
         QString tileCacheDiskPath;
 
-        struct StoredTile {
+        struct StoredVectorTile {
             // Current loading-state of this tile.
             Bach::LoadedTileState state = {};
 
@@ -113,20 +121,37 @@ namespace Bach {
             //
             // We use std::unique_ptr over QScopedPointer
             // because QScopedPointer doesn't support move semantics.
-            std::unique_ptr<VectorTile> vectorTile;
-            QImage rasterTile;
+            std::unique_ptr<VectorTile> tileData;
 
             // Tells us whether this tile is safe to return to
             // rendering.
-            bool isReadyToRender() const
-            {
+            bool isReadyToRender() const {
                 return state == Bach::LoadedTileState::Ok;
             }
 
             // Creates a new tile-item with a pending state.
-            static StoredTile newPending()
-            {
-                StoredTile temp;
+            static StoredVectorTile newPending() {
+                StoredVectorTile temp;
+                temp.state = Bach::LoadedTileState::Pending;
+                return temp;
+            }
+        };
+
+        struct StoredRasterTile {
+            // Current loading-state of this tile.
+            Bach::LoadedTileState state = {};
+
+            QImage image;
+
+            // Tells us whether this tile is safe to return to
+            // rendering.
+            bool isReadyToRender() const {
+                return state == Bach::LoadedTileState::Ok;
+            }
+
+            // Creates a new tile-item with a pending state.
+            static StoredRasterTile newPending() {
+                StoredRasterTile temp;
                 temp.state = Bach::LoadedTileState::Pending;
                 return temp;
             }
@@ -138,7 +163,15 @@ namespace Bach {
          * We had to use std::map because QMap doesn't support move semantics,
          * which interferes with our automated resource cleanup.
          */
-        std::map<TileCoord, StoredTile> tileMemory;
+        std::map<TileCoord, StoredVectorTile> vectorTileMemory;
+        /* This contains our memory tile-cache.
+         *
+         * IMPORTANT! Only use when 'tileMemoryLock' is locked!
+         *
+         * We had to use std::map because QMap doesn't support move semantics,
+         * which interferes with our automated resource cleanup.
+         */
+        std::map<TileCoord, StoredRasterTile> rasterTileMemory;
 
         // We use unique-ptr here to let use the lock in const methods.
         std::unique_ptr<QMutex> _tileMemoryLock = std::make_unique<QMutex>();
@@ -178,8 +211,12 @@ namespace Bach {
         }
 
     private:
+        struct LoadJob {
+            TileCoord tileCoord;
+            TileType type;
+        };
         void queueTileLoadingJobs(
-            const QVector<TileCoord> &input,
+            const QVector<LoadJob> &input,
             const TileLoadedCallbackFn &signalFn);
 
         // Thread-pool for the tile-loader worker threads.
@@ -187,20 +224,30 @@ namespace Bach {
         // Thread-pool for the tile-loader worker threads.
         QThreadPool &getThreadPool() { return threadPool; }
 
-        bool loadFromDisk(TileCoord coord, TileLoadedCallbackFn signalFn);
-        void networkReplyHandler(
-            QNetworkReply *vectorReply,
+        bool loadFromDisk_Vector(TileCoord coord, TileLoadedCallbackFn signalFn);
+        bool loadFromDisk_Raster(TileCoord coord, TileLoadedCallbackFn signalFn);
+        void networkReplyHandler_Raster(
             QNetworkReply *rasterReply,
             TileCoord coord,
             TileLoadedCallbackFn signalFn);
-        void loadFromWeb(TileCoord coord, TileLoadedCallbackFn signalFn);
-        void writeTileToDisk(
+        void networkReplyHandler_Vector(
+            QNetworkReply *vectorReply,
             TileCoord coord,
-            const QByteArray &vectorBytes,
+            TileLoadedCallbackFn signalFn);
+        void loadFromWeb_Raster(TileCoord coord, TileLoadedCallbackFn signalFn);
+        void loadFromWeb_Vector(TileCoord coord, TileLoadedCallbackFn signalFn);
+        void writeTileToDisk_Raster(
+            TileCoord coord,
             const QByteArray &rasterBytes);
-        void insertIntoTileMemory(
+        void writeTileToDisk_Vector(
+            TileCoord coord,
+            const QByteArray &vectorBytes);
+        void insertIntoTileMemory_Vector(
             TileCoord coord,
             const QByteArray &vectorBytes,
+            TileLoadedCallbackFn signalFn);
+        void insertIntoTileMemory_Raster(
+            TileCoord coord,
             const QByteArray &rasterBytes,
             TileLoadedCallbackFn signalFn);
     };
@@ -211,6 +258,14 @@ namespace Bach {
         const QString& basePath,
         TileCoord coord,
         const QByteArray &vectorBytes,
+        const QByteArray &rasterBytes);
+    bool writeTileToDiskCache_Vector(
+        const QString& basePath,
+        TileCoord coord,
+        const QByteArray &vectorBytes);
+    bool writeTileToDiskCache_Raster(
+        const QString& basePath,
+        TileCoord coord,
         const QByteArray &rasterBytes);
 
     QString tileDiskCacheSubPath(TileCoord coord, TileType tileType);
