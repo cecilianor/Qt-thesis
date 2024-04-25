@@ -6,6 +6,17 @@
 #include <chrono>
 #include <iostream>
 
+
+/*!
+ * \brief iterations
+ * Controls how many iterations we should do on each test.
+ */
+constexpr int iterations = 5;
+
+constexpr bool loadFromMemory = false;
+
+const TileCoord sameTileCoord = { 3, 1, 2 };
+
 namespace Bach::TestUtils {
     /*!
      * \brief The TempDir class is
@@ -88,12 +99,40 @@ static std::set<TileCoord> grabFirst(std::set<TileCoord> in, int count)
 }
 
 // Helper function to let us do early shutdown.
-[[noreturn]] void earlyShutdown(const QString &msg = "")
+[[noreturn]] void shutdown(const QString &msg = "")
 {
     if (msg != "") {
         qCritical() << msg;
     }
     std::exit(EXIT_FAILURE);
+}
+
+void writeTestFilesToCacheDir(QString path)
+{
+    // Write all our files to the temp directory so that the TileLoader will be able to load from it.
+    for (int x = 0; x < 4; x++) {
+        for (int y = 0; y < 8; y++) {
+            QString filename = QString("z3x%1y%2").arg(x).arg(y);
+
+            QFile vectorFile { ":" + filename + ".mvt" };
+            if (!vectorFile.open(QFile::ReadOnly)) {
+                shutdown("Unable to open vector file");
+            }
+
+            QByteArray fileBytes = vectorFile.readAll();
+            if (fileBytes.isEmpty()) {
+                shutdown("Vector file was empty");
+            }
+
+            bool writeSuccess = Bach::writeTileToDiskCache_Vector(
+                path,
+                TileCoord{ 3, x, y },
+                fileBytes);
+            if (!writeSuccess) {
+                shutdown("Unable to write file");
+            }
+        }
+    }
 }
 
 QMap<TileCoord, QByteArray> loadTestFiles()
@@ -107,12 +146,12 @@ QMap<TileCoord, QByteArray> loadTestFiles()
 
             QFile vectorFile { ":" + filename + ".mvt" };
             if (!vectorFile.open(QFile::ReadOnly)) {
-                earlyShutdown("Unable to open vector file.");
+                shutdown("Unable to open vector file");
             }
 
             QByteArray fileBytes = vectorFile.readAll();
             if (fileBytes.isEmpty()) {
-                earlyShutdown("Vector file was empty.");
+                shutdown("Vector file was empty");
             }
 
             out.insert(TileCoord{ 3, x, y }, fileBytes);
@@ -121,15 +160,46 @@ QMap<TileCoord, QByteArray> loadTestFiles()
     return out;
 }
 
-QMap<TileCoord, QByteArray> loadTestFiles_Dummy()
+// Write our vector tile files to temp directory.
+void writeTestFilesToCacheDir_Dummy(QString path)
 {
-    QMap<TileCoord, QByteArray> out;
-
     QString filename = QString("z3x1y2");
 
     QFile file { ":" + filename + ".mvt" };
     if (!file.open(QFile::ReadOnly))
-        earlyShutdown("Unable to open vector file.");
+        shutdown("Unable to open vector file");
+    QByteArray fileBytes = file.readAll();
+    if (fileBytes.isEmpty()) {
+        shutdown("Vector file was empty");
+    }
+
+    // Write all our files to the temp directory so that the TileLoader will be able to load from it.
+    for (int x = 0; x < 4; x++) {
+        for (int y = 0; y < 8; y++) {
+            bool writeSuccess = Bach::writeTileToDiskCache_Vector(
+                path,
+                TileCoord{ 3, x, y },
+                fileBytes);
+            if (!writeSuccess) {
+                shutdown("Unable to write file");
+            }
+        }
+    }
+
+}
+
+QMap<TileCoord, QByteArray> loadTestFiles_Dummy(TileCoord coord)
+{
+    QMap<TileCoord, QByteArray> out;
+
+    QString filename = QString("z%1x%2y%3")
+        .arg(coord.zoom)
+        .arg(coord.x)
+        .arg(coord.y);
+
+    QFile file { ":" + filename + ".mvt" };
+    if (!file.open(QFile::ReadOnly))
+        shutdown("Unable to open vector file");
     QByteArray fileBytes = file.readAll();
 
     // Write all our files to the temp directory so that the TileLoader will be able to load from it.
@@ -151,19 +221,8 @@ QMap<TileCoord, QByteArray> loadTestFiles_Dummy()
  * multi-threadedly.
  */
 struct TestItem {
-    bool singleThread;
+    int threadCount;
     std::set<TileCoord> tileCoords;
-
-    QString name() const {
-        QString out;
-        if (singleThread) {
-            out += "singlethread";
-        } else {
-            out += "multithread";
-        }
-        out += ", " + QString::number(tileCoords.size()) + " tile(s)";
-        return out;
-    }
 };
 
 /*!
@@ -180,39 +239,47 @@ static QVector<TestItem> setupTestItems()
 
     // Single thread, 1
     out.push_back({
-        true,
+        1,
         grabFirst(set, 1) });
 
     // Single thread, 4 tiles
     out.push_back({
-        true,
+        1,
         grabFirst(set, 4) });
 
     // Single thread, 8 tiles
     out.push_back({
-        true,
+        1,
         grabFirst(set, 8) });
 
     // Single thread, 16 tiles
     out.push_back({
-        true,
+        1,
         grabFirst(set, 16) });
 
     // Single thread, 32 tiles
     out.push_back({
-        true,
+        1,
         grabFirst(set, 32) });
 
-    // Now duplicate the test cases except make them multithreaded.
+    // Now duplicate the test cases but make them use 4 threads.
     int oldItemCount = out.size();
     for (int i = 0; i < oldItemCount; i++) {
         TestItem temp = out[i];
-        temp.singleThread = false;
+        temp.threadCount = 4;
+        out.push_back(temp);
+    }
+
+    // Now duplicate the test cases but make them use 8 threads.
+    for (int i = 0; i < oldItemCount; i++) {
+        TestItem temp = out[i];
+        temp.threadCount = 8;
         out.push_back(temp);
     }
 
     return out;
 }
+
 
 /*!
  * \brief runSingleCase
@@ -223,26 +290,19 @@ static QVector<TestItem> setupTestItems()
  */
 static double runSingleCase(
     const TestItem &testItem,
-    const QMap<TileCoord, QByteArray> fileBytes,
+    const QMap<TileCoord, QByteArray> *fileBytes,
     QString cacheDir)
 {
     auto grabFileBytesFn = [&](TileCoord coord, TileType type) -> const QByteArray* {
         if (type == TileType::Raster) {
             return nullptr;
         }
-        auto it = fileBytes.find(coord);
-        if (it == fileBytes.end()) {
+        auto it = fileBytes->find(coord);
+        if (it == fileBytes->end()) {
             return nullptr;
         }
         return &*it;
     };
-
-    // If we're gonna do a multi-threaded test, we pass in nullopt
-    // to the TileLoader and it will select how many threads it wants.
-    std::optional<int> threadWorkerCount = std::nullopt;
-    if (testItem.singleThread) {
-        threadWorkerCount = 1;
-    }
 
     // The TileLoader always loads the tiles in the background,
     // in a non-blocking manner.
@@ -253,9 +313,9 @@ static double runSingleCase(
     // Instantiate the TileLoader.
     std::unique_ptr<TileLoader> tileLoaderPtr = TileLoader::newDummy(
         cacheDir,
-        grabFileBytesFn,
-        false,
-        threadWorkerCount);
+        fileBytes == nullptr ? nullptr : std::function(grabFileBytesFn),
+        false, // Don't load raster tiles.
+        testItem.threadCount);
     TileLoader& tileLoader = *tileLoaderPtr;
 
     // Time critical portion
@@ -298,21 +358,28 @@ static double runSingleCase(
     return timeDurMilli;
 }
 
-/*!
- * \brief iterations
- * Controls how many iterations we should do on each test.
- */
-constexpr int iterations = 5;
-
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
+
+    std::cout << "Iterations per test case: " << iterations << std::endl;
+    if (loadFromMemory) {
+        std::cout << "Loading tiles from memory" << std::endl;
+    } else {
+        std::cout << "Loading tiles from files" << std::endl;
+    }
+
+    std::cout << std::endl;
+
     {
-        QMap<TileCoord, QByteArray> files = loadTestFiles();
+        // Create the temp-dir that we want to store
+        // our files into.
+        Bach::TestUtils::TempDir tempDir;
+        writeTestFilesToCacheDir(tempDir.path());
+
+        QMap<TileCoord, QByteArray> memoryFiles = loadTestFiles();
 
         QVector<TestItem> testItems = setupTestItems();
-
-        std::cout << "Iterations per test case: " << iterations << std::endl;
 
         // Iterate over all test-items and run the benchmark on each of them.
         for (const TestItem &testItem : testItems) {
@@ -322,24 +389,36 @@ int main(int argc, char *argv[])
             for (int iter = 0; iter < iterations; iter++) {
                 double timeMilli = runSingleCase(
                     testItem,
-                    files,
-                    "");
+                    loadFromMemory ? &memoryFiles : nullptr,
+                    tempDir.path());
                 totalTestItemTime += timeMilli;
             }
 
             // Print out the average time it took for this test case.
             // We print it out in seconds
-            QString lineOut = QString("%1: avg. %2 sec")
-                .arg(testItem.name())
-                .arg(totalTestItemTime / iterations / 1000);
+            QString lineOut = QString("%1 thread(s), %2 tiles: avg. %3 millisec")
+                .arg(testItem.threadCount)
+                .arg(testItem.tileCoords.size())
+                .arg(totalTestItemTime / iterations);
             std::cout << lineOut.toStdString() << std::endl;;
         }
     }
 
     std::cout << std::endl;
-    std::cout << "Same-tile-test" << std::endl;
+    QString temp = QString("Same-tile-test (z%1 x%2 y%3)")
+        .arg(sameTileCoord.zoom)
+        .arg(sameTileCoord.x)
+        .arg(sameTileCoord.y);
+    std::cout << temp.toStdString() << std::endl;
     {
-        QMap<TileCoord, QByteArray> files = loadTestFiles_Dummy();
+        // Create the temp-dir that we want to store
+        // our files into.
+        Bach::TestUtils::TempDir tempDir;
+
+        QMap<TileCoord, QByteArray> memoryFiles = loadTestFiles_Dummy(sameTileCoord);
+
+        // Write our vector tile files to temp directory.
+        writeTestFilesToCacheDir_Dummy(tempDir.path());
 
         QVector<TestItem> testItems = setupTestItems();
 
@@ -351,16 +430,17 @@ int main(int argc, char *argv[])
             for (int iter = 0; iter < iterations; iter++) {
                 double timeMilli = runSingleCase(
                     testItem,
-                    files,
-                    "");
+                    loadFromMemory ? &memoryFiles : nullptr,
+                    tempDir.path());
                 totalTestItemTime += timeMilli;
             }
 
             // Print out the average time it took for this test case.
             // We print it out in seconds
-            QString lineOut = QString("%1: avg. %2 sec")
-                .arg(testItem.name())
-                .arg(totalTestItemTime / iterations / 1000);
+            QString lineOut = QString("%1 thread(s), %2 tiles: avg. %3 millisec")
+                .arg(testItem.threadCount)
+                .arg(testItem.tileCoords.size())
+                .arg(totalTestItemTime / iterations);
             std::cout << lineOut.toStdString() << std::endl;;
         }
     }
