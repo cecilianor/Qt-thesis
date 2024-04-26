@@ -42,9 +42,7 @@ Note: If building the project for an headless environment (such as a test-runner
 All our terminal commands on Windows assume you're using PowerShell.
 
 ### Installing Git
-To download our source code, you will need Git installed on your system. Navigate to https://git-scm.com/download/win and follow the installation instructions to install Git for Windows. 
-
-*Note: It is possible to download the repository directly from GitHub as a .zip archive. In that case you may skip this step.*
+To download our source code and some of the prerequisites, you will need Git installed on your system. Navigate to https://git-scm.com/download/win and follow the installation instructions to install Git for Windows. 
 
 ### Installing MSVC through Visual Studio
 This step is to grab the MSVC compiler.
