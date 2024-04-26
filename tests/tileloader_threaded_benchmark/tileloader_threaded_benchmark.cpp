@@ -276,6 +276,16 @@ static QVector<TestItem> setupTestItems()
         temp.threadCount = 8;
         out.push_back(temp);
     }
+    if (QThread::idealThreadCount() > 8) {
+        // Now duplicate the test cases but make them use 16 threads.
+        for (int i = 0; i < oldItemCount; i++) {
+            TestItem temp = out[i];
+            temp.threadCount = QThread::idealThreadCount();
+            out.push_back(temp);
+        }
+    }
+
+
 
     return out;
 }
