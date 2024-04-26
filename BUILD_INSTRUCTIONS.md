@@ -41,6 +41,11 @@ Note: If building the project for an headless environment (such as a test-runner
 ## Prerequisites Windows
 All our terminal commands on Windows assume you're using PowerShell.
 
+### Installing Git
+To download our source code, you will need Git installed on your system. Navigate to https://git-scm.com/download/win and follow the installation instructions to install Git for Windows. 
+
+*Note: It is possible to download the repository directly from GitHub as a .zip archive. In that case you may skip this step.*
+
 ### Installing MSVC through Visual Studio
 This step is to grab the MSVC compiler.
 
@@ -48,7 +53,7 @@ Go to [https://visualstudio.microsoft.com](https://visualstudio.microsoft.com). 
 - MSVC v143
 - C++ CMake tools for Windows
 
-### Installing Qt (including CMake and Ninja)
+### Installing Qt (+ CMake and Ninja) through online installer
 *Note: Unlike in the instructions for Linux, we were not able to establish any working commands to build the Qt Grpc module on Windows. Listed below are the instructions on how to download Qt through their online installer tool. A (free) Qt account is required.*
 
 Go to [https://www.qt.io/download-open-source](https://www.qt.io/download-open-source) and download the Qt online installer. From here you will download "Qt 6.7.0" with the following components, some are optional based on platform and compiler:
