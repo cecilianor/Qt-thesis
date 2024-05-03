@@ -15,8 +15,6 @@ constexpr int iterations = 5;
 
 constexpr bool loadFromMemory = false;
 
-const TileCoord sameTileCoord = { 3, 1, 2 };
-
 namespace Bach::TestUtils {
     /*!
      * \brief The TempDir class is
@@ -58,46 +56,6 @@ namespace Bach::TestUtils {
 
 using Bach::TileLoader;
 
-/*!
- * \internal
- * \brief generateTileCoordSet
- * Helper function to generate a group of tiles.
- * It's hardcoded for zoom level 2.
- *
- * \param width Extracts N amount of tiles from the top-left square of the map.
- * This determines the width of that squared, measured in tiles.
- * \return A set of TileCoords
- */
-static std::set<TileCoord> generateTileCoordSet()
-{
-    std::set<TileCoord> out;
-    for (int x = 0; x < 4; x++) {
-        for (int y = 0; y < 8; y++) {
-            out.insert(TileCoord{ 3, x, y });
-        }
-    }
-    return out;
-}
-
-/*!
- * \brief grabFirst
- * Helper function. Grabs the first N elements of the set.
- * \param in Source set
- * \param count Number of items to grab.
- * \return
- */
-static std::set<TileCoord> grabFirst(std::set<TileCoord> in, int count)
-{
-    // Turn it into a list.
-    std::vector<TileCoord> tempList = { in.begin(), in.end() };
-    // Grab the first N
-    std::set<TileCoord> out;
-    for (int i = 0; i < count; i++) {
-        out.insert(tempList[i]);
-    }
-    return out;
-}
-
 // Helper function to let us do early shutdown.
 [[noreturn]] void shutdown(const QString &msg = "")
 {
@@ -107,111 +65,148 @@ static std::set<TileCoord> grabFirst(std::set<TileCoord> in, int count)
     std::exit(EXIT_FAILURE);
 }
 
-void writeTestFilesToCacheDir(QString path)
-{
-    // Write all our files to the temp directory so that the TileLoader will be able to load from it.
-    for (int x = 0; x < 4; x++) {
-        for (int y = 0; y < 8; y++) {
-            QString filename = QString("z3x%1y%2").arg(x).arg(y);
+static QMap<TileCoord, QString> loadTilePaths() {
+    QMap<TileCoord, QString> out;
 
-            QFile vectorFile { ":" + filename + ".mvt" };
-            if (!vectorFile.open(QFile::ReadOnly)) {
-                shutdown("Unable to open vector file");
-            }
-
-            QByteArray fileBytes = vectorFile.readAll();
-            if (fileBytes.isEmpty()) {
-                shutdown("Vector file was empty");
-            }
-
-            bool writeSuccess = Bach::writeTileToDiskCache_Vector(
-                path,
-                TileCoord{ 3, x, y },
-                fileBytes);
-            if (!writeSuccess) {
-                shutdown("Unable to write file");
-            }
-        }
+    QDir dir{":"};
+    QList<QString> fileList = dir.entryList(QDir::Filter::Files);
+    if (fileList.isEmpty()) {
+        shutdown("No files found");
     }
+
+    static const QRegularExpression re("z(\\d+)x(\\d+)y(\\d+)\\.mvt");
+
+    // Iterate over each file name in the list
+    for (const QString &filePath : fileList) {
+        QRegularExpressionMatch match = re.match(filePath);
+        if (!match.hasMatch()) {
+            shutdown("No match found for file");
+        }
+
+        TileCoord coord;
+        coord.zoom = match.captured(1).toInt();
+        coord.x = match.captured(2).toInt();
+        coord.y = match.captured(3).toInt();
+
+        out.insert(coord, ":" + filePath);
+    }
+
+    return out;
 }
 
-QMap<TileCoord, QByteArray> loadTestFiles()
+static QVector<TileCoord> loadFullTileCoordList_Sorted() {
+    QMap<TileCoord, QString> tileFilePaths = loadTilePaths();
+
+    std::vector<std::pair<TileCoord, qint64>> tileCoordPairs;
+
+    // Iterate over each file name in the list
+    for (const auto &[coord, filePath] : tileFilePaths.asKeyValueRange()) {
+        QFile file{ filePath };
+        if (!file.open(QFile::ReadOnly)) {
+            shutdown("No match found for file");
+        }
+
+        qint64 fileByteCount = file.size();
+
+        tileCoordPairs.push_back({ coord, fileByteCount });
+    }
+    std::sort(
+        tileCoordPairs.begin(),
+        tileCoordPairs.end(),
+        [](const std::pair<TileCoord, qint64> &a, const std::pair<TileCoord, qint64> &b) {
+            return a.second > b.second;
+        });
+    QVector<TileCoord> sortedTileCoords;
+    for (const std::pair<TileCoord, qint64> &item : tileCoordPairs) {
+        sortedTileCoords.push_back(item.first);
+    }
+    return sortedTileCoords;
+}
+
+static QMap<TileCoord, QByteArray> loadTileFiles()
 {
     QMap<TileCoord, QByteArray> out;
 
+    QMap<TileCoord, QString> filePaths = loadTilePaths();
+    for (const auto &[coord, path] : filePaths.asKeyValueRange()) {
+        QFile file{ path };
+        if (!file.open(QFile::ReadOnly)) {
+            shutdown("Unable to open vector file");
+        }
+
+        QByteArray fileBytes = file.readAll();
+
+        if (fileBytes.isEmpty()) {
+            shutdown("Vector file was empty");
+        }
+
+        out.insert(coord, fileBytes);
+    }
+
+    return out;
+}
+
+static QMap<TileCoord, QByteArray> loadTileFiles_Dummy()
+{
+    QMap<TileCoord, QByteArray> out;
+
+    QMap<TileCoord, QString> filePaths = loadTilePaths();
+    for (const auto &[coord, path] : filePaths.asKeyValueRange()) {
+        QFile file{ path };
+        if (!file.open(QFile::ReadOnly)) {
+            shutdown("Unable to open vector file");
+        }
+
+        QByteArray fileBytes = file.readAll();
+
+        if (fileBytes.isEmpty()) {
+            shutdown("Vector file was empty");
+        }
+
+        out.insert(coord, fileBytes);
+    }
+
+    return out;
+}
+
+void writeTestFilesToCacheDir(const QString &outPath)
+{
+    QMap<TileCoord, QByteArray> tileFiles = loadTileFiles();
+
     // Write all our files to the temp directory so that the TileLoader will be able to load from it.
-    for (int x = 0; x < 4; x++) {
-        for (int y = 0; y < 8; y++) {
-            QString filename = QString("z3x%1y%2").arg(x).arg(y);
-
-            QFile vectorFile { ":" + filename + ".mvt" };
-            if (!vectorFile.open(QFile::ReadOnly)) {
-                shutdown("Unable to open vector file");
-            }
-
-            QByteArray fileBytes = vectorFile.readAll();
-            if (fileBytes.isEmpty()) {
-                shutdown("Vector file was empty");
-            }
-
-            out.insert(TileCoord{ 3, x, y }, fileBytes);
+    for (const auto &[coord, fileBytes] : tileFiles.asKeyValueRange()) {
+        bool writeSuccess = Bach::writeTileToDiskCache_Vector(
+            outPath,
+            coord,
+            fileBytes);
+        if (!writeSuccess) {
+            shutdown("Unable to write file");
         }
     }
-    return out;
 }
 
 // Write our vector tile files to temp directory.
-void writeTestFilesToCacheDir_Dummy(QString path)
+static void writeTestFilesToCacheDir_Dummy(
+    const QString &path)
 {
-    QString filename = QString("z3x1y2");
+    // Load the biggest file.
+    QVector<TileCoord> allCoords = loadFullTileCoordList_Sorted();
 
-    QFile file { ":" + filename + ".mvt" };
-    if (!file.open(QFile::ReadOnly))
-        shutdown("Unable to open vector file");
-    QByteArray fileBytes = file.readAll();
-    if (fileBytes.isEmpty()) {
-        shutdown("Vector file was empty");
-    }
+    QMap<TileCoord, QByteArray> tileFiles = loadTileFiles();
 
-    // Write all our files to the temp directory so that the TileLoader will be able to load from it.
-    for (int x = 0; x < 4; x++) {
-        for (int y = 0; y < 8; y++) {
-            bool writeSuccess = Bach::writeTileToDiskCache_Vector(
-                path,
-                TileCoord{ 3, x, y },
-                fileBytes);
-            if (!writeSuccess) {
-                shutdown("Unable to write file");
-            }
+    TileCoord biggestTileCoord = allCoords[0];
+    QByteArray biggestTileFile = tileFiles[biggestTileCoord];
+
+    for (TileCoord coord : allCoords) {
+        bool writeSuccess = Bach::writeTileToDiskCache_Vector(
+            path,
+            coord,
+            biggestTileFile);
+        if (!writeSuccess) {
+            shutdown("Unable to write file");
         }
     }
-
 }
-
-QMap<TileCoord, QByteArray> loadTestFiles_Dummy(TileCoord coord)
-{
-    QMap<TileCoord, QByteArray> out;
-
-    QString filename = QString("z%1x%2y%3")
-        .arg(coord.zoom)
-        .arg(coord.x)
-        .arg(coord.y);
-
-    QFile file { ":" + filename + ".mvt" };
-    if (!file.open(QFile::ReadOnly))
-        shutdown("Unable to open vector file");
-    QByteArray fileBytes = file.readAll();
-
-    // Write all our files to the temp directory so that the TileLoader will be able to load from it.
-    for (int x = 0; x < 4; x++) {
-        for (int y = 0; y < 8; y++) {
-            out.insert(TileCoord{ 3, x, y }, fileBytes);
-        }
-    }
-
-    return out;
-}
-
 
 /*!
  * \class
@@ -233,34 +228,42 @@ struct TestItem {
  */
 static QVector<TestItem> setupTestItems()
 {
-    std::set<TileCoord> set = generateTileCoordSet();
+    QVector<TileCoord> coordsSortedBySize = loadFullTileCoordList_Sorted();
+
+    auto grabFirst = [&](int n) {
+        std::set<TileCoord> out;
+        for (TileCoord item : coordsSortedBySize.first(n)) {
+            out.insert(item);
+        }
+        return out;
+    };
 
     QVector<TestItem> out;
 
     // Single thread, 1
     out.push_back({
         1,
-        grabFirst(set, 1) });
+        grabFirst(1) });
 
     // Single thread, 4 tiles
     out.push_back({
         1,
-        grabFirst(set, 4) });
+        grabFirst(4) });
 
     // Single thread, 8 tiles
     out.push_back({
         1,
-        grabFirst(set, 8) });
+        grabFirst(8) });
 
     // Single thread, 16 tiles
     out.push_back({
         1,
-        grabFirst(set, 16) });
+        grabFirst(16) });
 
     // Single thread, 32 tiles
     out.push_back({
         1,
-        grabFirst(set, 32) });
+        grabFirst(32) });
 
     // Now duplicate the test cases but make them use 4 threads.
     int oldItemCount = out.size();
@@ -372,6 +375,7 @@ int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
 
+
     std::cout << "Iterations per test case: " << iterations << std::endl;
     if (loadFromMemory) {
         std::cout << "Loading tiles from memory" << std::endl;
@@ -381,15 +385,23 @@ int main(int argc, char *argv[])
 
     std::cout << std::endl;
 
+    QMap<TileCoord, QString> tileFilePaths = loadTilePaths();
+    // Sorted by size of the corresponding file.
+    QVector<TileCoord> tileCoordsSorted = loadFullTileCoordList_Sorted();
+    std::pair<TileCoord, QString> biggestTile = {
+        tileCoordsSorted.first(),
+        tileFilePaths[tileCoordsSorted.first()]
+    };
+
+    QVector<TestItem> testItems = setupTestItems();
+
     {
         // Create the temp-dir that we want to store
         // our files into.
         Bach::TestUtils::TempDir tempDir;
         writeTestFilesToCacheDir(tempDir.path());
 
-        QMap<TileCoord, QByteArray> memoryFiles = loadTestFiles();
-
-        QVector<TestItem> testItems = setupTestItems();
+        QMap<TileCoord, QByteArray> memoryFiles = loadTileFiles();
 
         // Iterate over all test-items and run the benchmark on each of them.
         for (const TestItem &testItem : testItems) {
@@ -415,17 +427,13 @@ int main(int argc, char *argv[])
     }
 
     std::cout << std::endl;
-    QString temp = QString("Same-tile-test (z%1 x%2 y%3)")
-        .arg(sameTileCoord.zoom)
-        .arg(sameTileCoord.x)
-        .arg(sameTileCoord.y);
-    std::cout << temp.toStdString() << std::endl;
+    std::cout << "Same-tile test" << std::endl;
     {
         // Create the temp-dir that we want to store
         // our files into.
         Bach::TestUtils::TempDir tempDir;
 
-        QMap<TileCoord, QByteArray> memoryFiles = loadTestFiles_Dummy(sameTileCoord);
+        QMap<TileCoord, QByteArray> memoryFiles = loadTileFiles_Dummy();
 
         // Write our vector tile files to temp directory.
         writeTestFilesToCacheDir_Dummy(tempDir.path());
