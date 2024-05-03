@@ -415,9 +415,9 @@ static void paintVectorTile(
     int mapZoom,
     double vpZoom,
     const StyleSheet &styleSheet,
-    int tileWidthPixels,
-    int tileOriginX,
-    int tileOriginY,
+    double tileWidthPixels,
+    double tileOriginX,
+    double tileOriginY,
     const Bach::PaintVectorTileSettings &settings,
     QVector<QRect> &labelRects,
     QVector<Bach::vpGlobalText> &vpTextList,
@@ -525,9 +525,9 @@ static void drawBackgroundColor(
  * position and size within the viewport.
  */
 struct TileScreenPlacement {
-    int pixelPosX;
-    int pixelPosY;
-    int pixelWidth;
+    double pixelPosX;
+    double pixelPosY;
+    double pixelWidth;
 };
 
 /*!
@@ -580,13 +580,13 @@ public:
         double posNormY = (coord.y * TileSizeNorm()) - worldOriginY;
 
         TileScreenPlacement out;
-        out.pixelPosX = (int)floor(posNormX * VpMaxDim());
-        out.pixelPosY = (int)floor(posNormY * VpMaxDim());
+        out.pixelPosX = posNormX * VpMaxDim();
+        out.pixelPosY = posNormY * VpMaxDim();
 
         // We figure out the size of one tile by measuring the distance
         // to the position of the next one.
         double posNormX2 = ((coord.x + 1) * TileSizeNorm()) - worldOriginX;
-        out.pixelWidth = (int)floor(posNormX2 * VpMaxDim()) - (int)floor(posNormX * VpMaxDim());
+        out.pixelWidth = posNormX2 * VpMaxDim() - posNormX * VpMaxDim();
         return out;
     }
 };
@@ -673,11 +673,11 @@ static void paintTilesGeneric(
 
         // We create a clip rect around our tile, as to only render into
         // the region on-screen the tile occupies.
-        painter.setClipRect(
+        painter.setClipRect(QRectF{
             0,
             0,
             tilePlacement.pixelWidth,
-            tilePlacement.pixelWidth);
+            tilePlacement.pixelWidth });
 
         // Draw the single tile.
         paintSingleTileFn(tileCoord, tilePlacement);
@@ -780,7 +780,7 @@ void Bach::paintRasterTiles(
             return;
 
         const QImage &tileData = **tileIt;
-        QRect target {
+        QRectF target {
             0,
             0,
             tilePlacement.pixelWidth,
