@@ -7,6 +7,10 @@
 #include "Evaluator.h"
 #include "Rendering.h"
 
+/*!
+ * \brief Bach::PaintVectorTileSettings::getDefault
+ * Builds the default settings for painting vector tiles.
+ */
 Bach::PaintVectorTileSettings Bach::PaintVectorTileSettings::getDefault()
 {
     Bach::PaintVectorTileSettings out;
@@ -129,7 +133,6 @@ static void paintVectorLayer_Fill(
     for (const std::unique_ptr<AbstractLayerFeature> &abstractFeature : layer.m_features) {
         if (abstractFeature->type() != AbstractLayerFeature::featureType::polygon)
             continue;
-
 
         const auto &feature = *static_cast<const PolygonFeature*>(abstractFeature.get());
 
@@ -583,10 +586,10 @@ public:
         out.pixelPosX = posNormX * VpMaxDim();
         out.pixelPosY = posNormY * VpMaxDim();
 
-        // We figure out the size of one tile by measuring the distance
-        // to the position of the next one.
-        double posNormX2 = ((coord.x + 1) * TileSizeNorm()) - worldOriginX;
-        out.pixelWidth = posNormX2 * VpMaxDim() - posNormX * VpMaxDim();
+        // Calculate the width of a tile as it's displayed on-screen.
+        // (Height is same as width, perfectly square)
+        out.pixelWidth = TileSizeNorm() * VpMaxDim();
+
         return out;
     }
 };
