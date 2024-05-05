@@ -10,7 +10,7 @@
 /*!
  * \internal
  *
- * \brief The TileScreenPlacement class is a class that describes a tiles
+ * \brief The TileScreenPlacement struct describes a tile's
  * position and size within the viewport.
  */
 struct TileScreenPlacement {
