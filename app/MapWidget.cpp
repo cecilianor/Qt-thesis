@@ -84,59 +84,62 @@ void MapWidget::mouseReleaseEvent(QMouseEvent *event)
  * \brief MapWidget::mouseMoveEvent records mouse position while a
  * mouse button is pressed.
  *
- * Note that a button has to be pressed at the same time for
- * this function to run.
+ * Note that a mouse button has to be pressed at the same time
+ * for this function to run.
  *
  * \param event is the event where the mouse is moved around.
  */
 void MapWidget::mouseMoveEvent(QMouseEvent *event)
 {
-    mouseCurrentPosition = event->pos();
-    //qDebug() << "Current mouse position:   x: " << currentMousePosition.rx()
-    //         << "   y: " << currentMousePosition.ry();
+    // Check if the left mouse button is pressed
+    if (event->buttons() & Qt::LeftButton) {
+        mouseCurrentPosition = event->pos();
 
-    // Calculate the difference between the current and original mouse position.
-    QPointF diff = mouseCurrentPosition - mouseStartPosition;
+        // Calculate the difference between the current and original mouse position.
+        QPointF diff = mouseCurrentPosition - mouseStartPosition;
 
-    // Scaling factor used when zooming.
-    auto scalar = 1/(std::pow(2, getViewportZoomLevel()));
+        // Scaling factor used when zooming.
+        auto scalar = 1/(std::pow(2, getViewportZoomLevel()));
 
-    // Calculate window aspect ratio, used to scale x coordinate
-    // correctly. This was added in after talking to ChatGPT about
-    // what could be the cause of the problem.
-    double windowAspectRatio = static_cast<double>(width())
-                               / static_cast<double>(height());
+        // Calculate window aspect ratio, used to scale x coordinate
+        // correctly. This was added in after talking to ChatGPT about
+        // what could be the cause of the problem.
+        double windowAspectRatio = static_cast<double>(width())
+                                   / static_cast<double>(height());
 
-    // Scale the difference variable based on zoom level.
-    diff *= scalar;
-    diff.rx() *= windowAspectRatio;
+        // Scale the difference variable based on zoom level.
+        diff *= scalar;
 
-    // Translate normalized coordinates to world coordinate space.
-    auto world_x = x * width();
-    auto world_y = y * height();
+        // Scale the difference variable based on aspect ratio.
+        // This makes the mouse cursor stay hovered over the exact area
+        // where it was when the left mouse button was clicked.
+        if (width() < height())
+            diff.rx() *= windowAspectRatio;
+        else if (width() > height())
+            diff.ry() /= windowAspectRatio;
 
-    // Find where to move the position to in the world coordinate space.
-    auto new_x = world_x - diff.rx();
-    auto new_y = world_y - diff.ry();
+        // Translate normalized coordinates to world coordinate space.
+        auto world_x = x * width();
+        auto world_y = y * height();
 
-    // Normalise the new coordinates so they can be put back in the norm space.
-    auto new_x_norm = Bach::normalizeValueToZeroOneRange(new_x, 0, width());
-    auto new_y_norm = Bach::normalizeValueToZeroOneRange(new_y, 0, height());
+        // Find where to move the position to in the world coordinate space.
+        auto new_x = world_x - diff.rx();
+        auto new_y = world_y - diff.ry();
 
-    //qDebug() << "Current normalized mouse position:   x: " << new_x_norm
-    //         << "   y: " << new_y_norm ;
-    //qDebug() << "Current x,y:   x: " << x
-    //         << "   y: " << y ;
+        // Normalise the new coordinates so they can be put back in the norm space.
+        auto new_x_norm = Bach::normalizeValueToZeroOneRange(new_x, 0, width());
+        auto new_y_norm = Bach::normalizeValueToZeroOneRange(new_y, 0, height());
 
-    // Move to the map to the new position.
-    x = new_x_norm;
-    y = new_y_norm;
+        // Move to the map to the new position.
+        x = new_x_norm;
+        y = new_y_norm;
 
-   // Store the current mouse position before re-rendering.
-    mouseStartPosition = mouseCurrentPosition;
+        // Store the current mouse position before re-rendering.
+        mouseStartPosition = mouseCurrentPosition;
 
-    // Call update to render the window.
-    update();
+        // Call update to render the window.
+        update();
+    }
 }
 
 /*!
