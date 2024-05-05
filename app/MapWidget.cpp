@@ -84,7 +84,7 @@ void MapWidget::mouseReleaseEvent(QMouseEvent *event)
  * \brief MapWidget::mouseMoveEvent records mouse position while a
  * mouse button is pressed.
  *
- * Note that a mouse button has to be pressed at the same time
+ * Note that the left mouse button has to be pressed at the same time
  * for this function to run.
  *
  * \param event is the event where the mouse is moved around.
