@@ -177,12 +177,10 @@ static void paintSingleTileDebug(
 /*!
  * \internal
  *
- * \brief isLayerShow
- * Determines whether we should skip this layer during rendering.
+ * \brief isLayerShow determines whether or not to skip a layer during rendering.
  *
- * \param layerStyle The Layer we are considering.
- *
- * \param mapZoom The current zoom of the map.
+ * \param layerStyle is the layer that could be skipped.
+ * \param mapZoom is the current zoom of the map.
  *
  * \return True if the layer should be rendered.
  */
