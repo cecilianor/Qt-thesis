@@ -193,14 +193,13 @@ static bool isLayerShown(const AbstractLayerStyle &layerStyle, int mapZoom)
 }
 
 /*!
- * \brief includeFeature
- * Determines whether a map feature should be rendered given the layer style.
+ * \brief includeFeature determines if a map feature should be rendered given the layer style.
  *
  * \param layerStyle The layer that the feature is part of.
- * \param feature The feature we are considering.
- * \param mapZoom Map zoom level
- * \param vpZoom Viewport zoom level
- * \return Returns true if this feature should be rendered.
+ * \param feature is the feature that may be rendered.
+ * \param mapZoom is the map zoom level.
+ * \param vpZoom is the viewport zoom level.
+ * \return Returns true if the feature should be rendered.
  */
 static bool includeFeature(
     const AbstractLayerStyle &layerStyle,
