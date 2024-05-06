@@ -125,18 +125,6 @@ if (BUILD_TESTS)
     # Find the necessary packages on the system.
     find_package(Qt6 REQUIRED COMPONENTS Test)
 
-    # Add the first test executable: tileloader test
-    qt_add_executable(tileloader_test tests/unit-tests/unittesting_tileloader.cpp)
-    qt_add_resources(tileloader_test "unitTestResourcesTileLoader"
-        PREFIX "/"
-        FILES
-        unitTestResources/loadTileFromCache_fails_on_broken_file/file.mvt
-        unitTestResources/loadTileFromCache_fails_on_broken_file/file.png
-        unitTestResources/loadTileFromCache_parses_cached_file_successfully/file.mvt
-        unitTestResources/loadTileFromCache_parses_cached_file_successfully/file.png
-    )
-    target_link_libraries(tileloader_test PUBLIC maplib Qt6::Test)
-
 
     # Add the second executable: rendering unit test
     qt_add_executable(render_test tests/unit-tests/unittesting_rendering.cpp)
@@ -172,7 +160,6 @@ if (BUILD_TESTS)
     target_link_libraries(evaluator_test PUBLIC maplib Qt6::Test)
 
     # Make sure we deploy the correct runtime dependencies to the test.
-    deploy_runtime_dependencies_if_win32(tileloader_test)
     deploy_runtime_dependencies_if_win32(render_test)
     deploy_runtime_dependencies_if_win32(layerstyle_test)
     deploy_runtime_dependencies_if_win32(vectortile_test)
@@ -180,12 +167,13 @@ if (BUILD_TESTS)
 
     # Add executables to CTest.
     enable_testing()
-    add_test(NAME TileLoaderTest COMMAND tileloader_test)
+
     add_test(NAME RenderTest COMMAND render_test)
     add_test(NAME LayerStyleTest COMMAND layerstyle_test)
     add_test(NAME VectorTileTest COMMAND vectortile_test)
     add_test(NAME EvaluatorTest COMMAND evaluator_test)
 
+    add_subdirectory(tests/unit-tests/tileloader)
     add_subdirectory(tests/merlin)
     add_subdirectory(tests/tile_parsing_benchmark)
     add_subdirectory(tests/tileloader_threaded_benchmark)
