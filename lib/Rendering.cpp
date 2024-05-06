@@ -85,38 +85,43 @@ public:
 
         return out;
     }
+
+    /*!
+     * \internal
+     * \brief createTilePosCalculator constructs a TilePosCalculator
+     * object based on the current state of the viewport.
+     *
+     * \param vpWidth The width of the viewport in pixels on screen.
+     * \param vpHeight The height of the viewport in pixels on screen.
+     * \param vpX The center X coordinate of the viewport in
+     * world-normalized coordinates.
+     * \param vpY The center Y coordinate of the viewport in
+     * world-normalized coordinates.
+     * \param vpZoom The current zoom-level of the viewport.
+     * \param mapZoom The current zoom-level of the map.
+     * \return The TilePosCalculator object that can be used to
+     * position tiles correctly on-screen.
+     */
+    static TilePosCalculator create(
+        int vpWidth,
+        int vpHeight,
+        double vpX,
+        double vpY,
+        double vpZoom,
+        int mapZoom)
+    {
+        TilePosCalculator out;
+        out.vpWidth = vpWidth;
+        out.vpHeight = vpHeight;
+        out.vpX = vpX;
+        out.vpY = vpY;
+        out.vpZoom = vpZoom;
+        out.mapZoom = mapZoom;
+        return out;
+    }
+
 };
 
-/*!
- * \internal
- * \brief createTilePosCalculator
- * Constructs a TilePosCalculator object based on the current state of the viewport.
- *
- * \param vpWidth The width of the viewport in pixels on screen.
- * \param vpHeight The height of the viewport in pixels on screen.
- * \param vpX The center X coordinate of the viewport in world-normalized coordinates.
- * \param vpY The center Y coordinate of the viewport in world-normalized coordinates.
- * \param vpZoom The current zoom-level of the viewport.
- * \param mapZoom The current zoom-level of the map.
- * \return
- */
-static TilePosCalculator createTilePosCalculator(
-    int vpWidth,
-    int vpHeight,
-    double vpX,
-    double vpY,
-    double vpZoom,
-    int mapZoom)
-{
-    TilePosCalculator out;
-    out.vpWidth = vpWidth;
-    out.vpHeight = vpHeight;
-    out.vpX = vpX;
-    out.vpY = vpY;
-    out.vpZoom = vpZoom;
-    out.mapZoom = mapZoom;
-    return out;
-}
 
 /*!
  * \brief Bach::PaintVectorTileSettings::getDefault
@@ -671,7 +676,7 @@ static void paintTilesGeneric(
     int vpWidth = painter.window().width();
     int vpHeight = painter.window().height();
 
-    TilePosCalculator tilePosCalc = createTilePosCalculator(
+    TilePosCalculator tilePosCalc = TilePosCalculator::create(
         vpWidth,
         vpHeight,
         vpX,
