@@ -25,7 +25,7 @@ struct TileScreenPlacement {
  * \brief The TilePosCalculator class
  * is a helper class for positioning tiles within the viewport.
  */
-struct TilePosCalculator {
+class TilePosCalculator {
     int vpWidth;
     int vpHeight;
     double vpX;
