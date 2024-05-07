@@ -149,8 +149,8 @@ namespace Bach {
         double y;
     };
 
-    MapCoordinate lonLatToWorldNormCoord(MapCoordinate);
-    MapCoordinate lonLatToWorldNormCoordDegrees(MapCoordinate);
+    MapCoordinate lonLatToWorldNormCoord(double lon, double lat);
+    MapCoordinate lonLatToWorldNormCoordDegrees(double lon, double lat);
     MapCoordinate calcViewportSizeNorm(double viewportZoom, double viewportAspect);
     double normalizeValueToZeroOneRange(double value, double min, double max);
 
