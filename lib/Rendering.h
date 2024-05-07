@@ -139,10 +139,19 @@ namespace Bach {
         int outlineSize;
     };
 
+    /*!
+     * \brief The MapCoordinate struct stores a map coordinate with a x and y.
+     *
+     * `x` and y are both doubles.
+     */
+    struct MapCoordinate {
+        double x;
+        double y;
+    };
 
-    QPair<double, double> lonLatToWorldNormCoord(double lon, double lat);
-    QPair<double, double> lonLatToWorldNormCoordDegrees(double lon, double lat);
-    QPair<double, double> calcViewportSizeNorm(double viewportZoom, double viewportAspect);
+    MapCoordinate lonLatToWorldNormCoord(MapCoordinate);
+    MapCoordinate lonLatToWorldNormCoordDegrees(MapCoordinate);
+    MapCoordinate calcViewportSizeNorm(double viewportZoom, double viewportAspect);
     double normalizeValueToZeroOneRange(double value, double min, double max);
 
     void paintSingleTileFeature_Polygon(PaintingDetailsPolygon details);
