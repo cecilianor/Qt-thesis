@@ -5,11 +5,11 @@
  * \brief getFillColor
  * Get the QVariant of the color from the layerStyle and resolve and return it if its an expression,
  * or return it as a QColor otherwise. This function also gets the opacity of the polygon.
- * \param layerStyle the layerStyle containing the color variable
- * \param feature the feature to be used in case the QVariant is an expression
- * \param mapZoom the map zoom level to be used in case the QVariant is an expression
- * \param vpZoom the viewport zoom level to be used in case the QVariant is an expression
- * \return the QColor to be used to render the polygon
+ * \param layerStyle the layerStyle containing the color variable.
+ * \param feature The feature to be used in case the QVariant is an expression.
+ * \param mapZoom The map zoom level to be used in case the QVariant is an expression.
+ * \param vpZoom The viewport zoom level to be used in case the QVariant is an expression.
+ * \return The QColor to be used to render the polygon.
  */
 static QColor getFillColor(
     const FillLayerStyle &layerStyle,
@@ -19,8 +19,8 @@ static QColor getFillColor(
 {
     QVariant colorVariant = layerStyle.getFillColorAtZoom(mapZoom);
     QColor color;
-    // The layer style might return an expression, we need to resolve it.
-    if(colorVariant.typeId() == QMetaType::Type::QJsonArray){
+    // The layer style might return an expression, that must be resolved.
+    if (colorVariant.typeId() == QMetaType::Type::QJsonArray){
         color = Evaluator::resolveExpression(
                     colorVariant.toJsonArray(),
                     &feature,
@@ -32,7 +32,7 @@ static QColor getFillColor(
 
     QVariant fillOpacityVariant = layerStyle.getFillOpacityAtZoom(mapZoom);
     float fillOpacity;
-    // The layer style might return an expression, we need to resolve it.
+    // The layer style might return an expression, that must be resolved.
     if (fillOpacityVariant.typeId() == QMetaType::Type::QJsonArray){
         fillOpacity = Evaluator::resolveExpression(
                           fillOpacityVariant.toJsonArray(),
