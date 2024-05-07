@@ -49,9 +49,10 @@ static QColor getFillColor(
 
 
 /*!
- * \brief Bach::paintSingleTileFeature_Polygon
- * This function reders a single polygon feature.
- * \param details the struct containig all the elemets needed to paint the feature includeing the layerStyle and the feature itself.
+ * \brief Bach::paintSingleTileFeature_Polygon reders a single polygon feature.
+ *
+ * \param details The struct containing all the elemets needed to paint the feature
+ * including the layerStyle and the feature itself.
  */
 void Bach::paintSingleTileFeature_Polygon(Bach::PaintingDetailsPolygon details)
 {
