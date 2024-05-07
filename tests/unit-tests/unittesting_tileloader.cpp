@@ -29,6 +29,7 @@ QTEST_MAIN(UnitTesting)
 #include "unittesting_tileloader.moc"
 // This include needs to match the name of this .cpp file.
 
+// Check that the readkey functionality works when  it's set as environment variable
 void UnitTesting::readKey_returns_success_when_env_var_is_set()
 {
     QString expectedKey = "abcd";
@@ -257,6 +258,7 @@ void UnitTesting::loadTileFromCache_parses_cached_file_successfully()
         "Expected loaded to be marked as parsing OK, but result was different.");
 }
 
+// Checks that nothing is returned if there are no tiles to load.
 void UnitTesting::check_new_tileLoader_has_no_tiles()
 {
     std::unique_ptr<TileLoader> tileLoaderPtr = TileLoader::newDummy("");
