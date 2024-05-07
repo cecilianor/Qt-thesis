@@ -339,7 +339,7 @@ static void processVectorLayer_Point(
     QVector<QPair<int, PointFeature>> labels; //Used to order text rendering operation based on "rank" property.
     // Iterate over all the features, and filter out anything that is not point.
     for (const std::unique_ptr<AbstractLayerFeature> &abstractFeature : layer.m_features) {
-        if(abstractFeature->type() == AbstractLayerFeature::featureType::line){
+        if (abstractFeature->type() == AbstractLayerFeature::featureType::line){
             const LineFeature &feature = *static_cast<const LineFeature*>(abstractFeature.get());
             //Bach::paintSingleTileFeature_Point_Curved({&painter, &layerStyle, &feature, mapZoom, vpZoom, geometryTransform});
             Bach::processSingleTileFeature_Point_Curved(
@@ -349,18 +349,18 @@ static void processVectorLayer_Point(
                 tileOriginY,
                 labelRects,
                 vpCurvedTextList);
-        }else if (abstractFeature->type() == AbstractLayerFeature::featureType::point){ //For normal text (continents /countries / cities / places / ...)
+        } else if (abstractFeature->type() == AbstractLayerFeature::featureType::point){
+            //For normal text (continents /countries / cities / places / ...)
             const PointFeature &feature = *static_cast<const PointFeature*>(abstractFeature.get());
             // Tests whether the feature should be rendered at all based on possible expression.
             if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
                 continue;
 
             //Add the feature along with its "rank" (if present, defaults to 100) to the labels map.
-            if(feature.featureMetaData.contains("rank")){
+            if (feature.featureMetaData.contains("rank"))
                 labels.append(QPair<int, PointFeature>(feature.featureMetaData["rank"].toInt(), feature));
-            }else{
+            else
                 labels.append(QPair<int, PointFeature>(100, feature));
-            }
         }
     }
 
@@ -370,7 +370,7 @@ static void processVectorLayer_Point(
     });
 
     //Loop over the ordered label map and add the text that passes the collision filter to the vpTextList list.
-    for(const auto &pair : labels){
+    for (const auto &pair : labels){
         painter.save();
         Bach::processSingleTileFeature_Point(
             {&painter, &layerStyle, &pair.second, mapZoom, vpZoom, geometryTransform},
