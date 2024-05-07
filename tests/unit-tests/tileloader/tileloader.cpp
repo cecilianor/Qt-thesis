@@ -30,7 +30,7 @@ private slots:
 };
 
 QTEST_MAIN(UnitTesting)
-#include "unittesting_tileloader.moc"
+#include "tileloader.moc"
 // This include needs to match the name of this .cpp file.
 
 void UnitTesting::readKey_returns_success_when_env_var_is_set()
@@ -213,19 +213,20 @@ void UnitTesting::loadTileFromCache_fails_on_broken_file()
     Bach::UnitTesting::TempDir tempDir;
 
     // Read and write our input file to the tile cache.
-    QFile vectorFile(":unitTestResources/loadTileFromCache_fails_on_broken_file/file.mvt");
+    QFile vectorFile(":loadTileFromCache_fails_on_broken_file/file.mvt");
     QVERIFY(vectorFile.open(QFile::ReadOnly));
 
     QByteArray vectorFileBytes = vectorFile.readAll();
-    QByteArray rasterFileBytes = rasterFile.readAll();
-    bool writeToCacheResult = Bach::writeTileToDiskCache(
+    bool writeToCacheResult = Bach::writeTileToDiskCache_Vector(
         tempDir.path(),
         expectedCoord,
-        vectorFileBytes,
-        rasterFileBytes);
+        vectorFileBytes);
     QVERIFY2(writeToCacheResult == true, "Unable to write input file into tile cache.");
 
-    std::unique_ptr<TileLoader> tileLoaderPtr = TileLoader::newDummy(tempDir.path());
+    std::unique_ptr<TileLoader> tileLoaderPtr = TileLoader::newDummy(
+        tempDir.path(),
+        nullptr,
+        false);
     TileLoader &tileLoader = *tileLoaderPtr;
 
     QEventLoop loop;
@@ -265,25 +266,24 @@ void UnitTesting::loadTileFromCache_fails_on_broken_file()
 void UnitTesting::loadTileFromCache_parses_cached_file_successfully()
 {
     // Write our input file to the tile cache.
-    QFile vectorFile(":unitTestResources/loadTileFromCache_parses_cached_file_successfully/file.mvt");
+    QFile vectorFile(":loadTileFromCache_parses_cached_file_successfully/file.mvt");
     QVERIFY(vectorFile.open(QFile::ReadOnly));
-    QFile rasterFile(":unitTestResources/loadTileFromCache_parses_cached_file_successfully/file.png");
-    QVERIFY(rasterFile.open(QFile::ReadOnly));
 
     const TileCoord expectedCoord = {0, 0, 0};
 
     Bach::UnitTesting::TempDir tempDir;
 
     QByteArray vectorFileBytes = vectorFile.readAll();
-    QByteArray rasterFileBytes = rasterFile.readAll();
-    bool writeToCacheResult = Bach::writeTileToDiskCache(
+    bool writeToCacheResult = Bach::writeTileToDiskCache_Vector(
         tempDir.path(),
         expectedCoord,
-        vectorFileBytes,
-        rasterFileBytes);
+        vectorFileBytes);
     QVERIFY2(writeToCacheResult == true, "Unable to write input file into tile cache.");
 
-    std::unique_ptr<TileLoader> tileLoaderPtr = TileLoader::newDummy(tempDir.path());
+    std::unique_ptr<TileLoader> tileLoaderPtr = TileLoader::newDummy(
+        tempDir.path(),
+        nullptr,
+        false);
     TileLoader &tileLoader = *tileLoaderPtr;
 
     QEventLoop loop;
