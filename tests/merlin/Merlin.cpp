@@ -229,10 +229,10 @@ SimpleResult<void> TestItem::loadCoordsFromJson(const QJsonObject &testItemJson)
     if (!result.success || result.value > 90 || result.value < -90) { return err; }
     double latitude = result.value;
 
-    QPair<double, double> normCoords = Bach::lonLatToWorldNormCoordDegrees(longitude, latitude);
+    Bach::MapCoordinate normCoords = Bach::lonLatToWorldNormCoordDegrees(longitude, latitude);
 
-    this->vpX = normCoords.first;
-    this->vpY = normCoords.second;
+    this->vpX = normCoords.x;
+    this->vpY = normCoords.y;
 
     return {};
 }
