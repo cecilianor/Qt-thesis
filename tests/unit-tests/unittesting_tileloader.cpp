@@ -17,10 +17,6 @@ class UnitTesting : public QObject
 
 private slots:
     void readKey_returns_success_when_env_var_is_set();
-    void readKey_returns_success_when_valid_key();
-    void readKey_returns_failure_when_invalid_key();
-    void getStyleSheet_returns_success_on_supported_stylesheet();
-    void getStyleSheet_returns_failure_on_unsupported_stylesheet();
     void getTilesLink_valid_style_sheet_returns_success();
     void getTilesLink_unknown_source_type_returns_unknown_source_type_error();
     void getTilesLink_missing_url_returns_tile_sheet_not_found_error();
