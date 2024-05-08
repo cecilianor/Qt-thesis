@@ -26,7 +26,7 @@ static QString getShowingDebugBtnLabel(const MapWidget* mapWidget)
 /*!
  * \brief getRenderingTileBtnLabel creates a string to label the toggle rendering tile button.
  * \param mapWidget The QWidget to render to.
- * \return the label string.
+ * \return the generated label string.
  */
 static QString getRenderingTileBtnLabel(const MapWidget* mapWidget)
 {
@@ -84,7 +84,7 @@ MapRenderSettingsWidget::MapRenderSettingsWidget(MapWidget* mapWidget) : QWidget
             });
     }
 
-    // Setup the checkbox and text for drawing fill elements.
+    // Set up the checkbox and text for drawing fill elements.
     {
         QCheckBox *checkbox = new QCheckBox("Fill", this);
         checkbox->setCheckState(mapWidget->isRenderingFill() ? Qt::Checked : Qt::Unchecked);
