@@ -7,15 +7,16 @@
 // Other header files.
 #include "MapWidget.h"
 
-namespace Bach {
-
+namespace Bach
+{
 /*!
  * \class MapPanControlWidget
  * \brief The MapPanControlWidget class contains the group of controls for panning.
  *
  * This is made to be used in tandem with a MapWidget.
  */
-class MapPanControlWidget : public QWidget {
+class MapPanControlWidget : public QWidget
+{
 public:
     MapPanControlWidget(MapWidget* parent);
 };
