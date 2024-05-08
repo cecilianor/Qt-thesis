@@ -1,19 +1,24 @@
-// Qt header files
+// Qt header files.
 #include <QDoubleValidator>
 #include <QGridLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QPushButton>
 
-// Other header files
+// Other header files.
 #include "MapCoordControlWidget.h"
 #include "Rendering.h"
 
 using Bach::MapCoordControlWidget;
 
 /*!
- * \brief MapCoordControlWidget::setupInputFields sets up
- * \param outerLayout
+ * \brief MapCoordControlWidget::setupInputFields places input fields into a map application.
+ *
+ * The input fields have labels for longitude, latitude, and zoom level. These fields
+ * can take input from the user. The function also sets up a "Go" button that will
+ * move the map to the specified longitude, latitude and zoom level.
+ *
+ * \param outerLayout The layout of the input fields, will be set to grid by the function.
  */
 void MapCoordControlWidget::setupInputFields(QBoxLayout* outerLayout)
 {
@@ -40,7 +45,7 @@ void MapCoordControlWidget::setupInputFields(QBoxLayout* outerLayout)
         longitudeField->setValidator(validator);
     }
 
-    // Sets up the latitude field
+    // Sets up the latitude field.
     {
         layout->addWidget(new QLabel("Latitude"), 1, 0);
 
@@ -78,7 +83,7 @@ void MapCoordControlWidget::setupInputFields(QBoxLayout* outerLayout)
         zoomField->setValidator(validator);
     }
 
-    // Setup the submit button at the end.
+    // Set up the submit button at the end.
     {
         QPushButton *btn = new QPushButton("Go", this);
         QObject::connect(
@@ -92,8 +97,12 @@ void MapCoordControlWidget::setupInputFields(QBoxLayout* outerLayout)
 
 /*!
  * \brief MapCoordControlWidget::setupButtons generates all application buttons.
- * \param outerLayout ???
- * \param mapWidget is the QWidget to render to.
+ *
+ * \param outerLayout The layout of application buttons for Gjøvik and Nydalen.
+ * This is used to quickly be able to move to Gjøvik (where the developers are from),
+ * and where Qt have their offices (in Nydalen).
+ *
+ * \param mapWidget The QWidget to render to.
  */
 void MapCoordControlWidget::setupButtons(QBoxLayout *outerLayout, MapWidget *mapWidget)
 {
@@ -127,16 +136,16 @@ void MapCoordControlWidget::setupButtons(QBoxLayout *outerLayout, MapWidget *map
 }
 
 /*!
- * \param mapWidget is the QWidget to place this widget on top of
+ * \brief MapCoordControlWidget::MapCoordControlWidget
+ * Controls placement of the map application's coordinate controls.
+ *
+ * \param mapWidget The QWidget to place this widget on top of.
  */
 MapCoordControlWidget::MapCoordControlWidget(MapWidget* mapWidget) : QWidget(mapWidget)
 {
     auto temp = new QWidget(mapWidget);
-    // Set a dark and transparent background.
-    //temp->setStyleSheet("background-color: rgba(0, 0, 0, 127);");
 
-    /* From here on we establish a small layout.
-     */
+    //Line up widgets vertically.
     auto outerLayout = new QVBoxLayout;
     temp->setLayout(outerLayout);
 
@@ -145,7 +154,8 @@ MapCoordControlWidget::MapCoordControlWidget(MapWidget* mapWidget) : QWidget(map
 }
 
 /*!
- * \brief MapCoordControlWidget::submitButtonPressed grabs zoom, longitude, and latitude values from GUI.
+ * \brief MapCoordControlWidget::submitButtonPressed
+ * Grabs zoom, longitude, and latitude values from a GUI.
  */
 void MapCoordControlWidget::goButtonPressed()
 {
@@ -160,29 +170,26 @@ void MapCoordControlWidget::goButtonPressed()
     if (longitudeText != "") {
         bool ok = false;
         longitude = longitudeText.toDouble(&ok);
-        if (!ok) {
+        if (!ok)
             return;
-        }
     }
 
     QString latitudeText = latitudeField->text();
     if (latitudeText != "") {
         bool ok = false;
         latitude = latitudeText.toDouble(&ok);
-        if (!ok) {
+        if (!ok)
             return;
-        }
     }
 
     QString zoomText = zoomField->text();
     if (zoomText != "") {
         bool ok = false;
         zoom = zoomText.toDouble(&ok);
-        if (!ok) {
+        if (!ok)
             return;
-        }
     }
-
+    // Convert coordinates to world normalised coordinates.
     auto [x, y] = Bach::lonLatToWorldNormCoordDegrees(longitude, latitude);
 
     emit submitNewCoords(x, y, zoom);
