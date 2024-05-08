@@ -1,56 +1,56 @@
-// Qt headers
+// Qt headers.
 #include <QCheckBox>
 #include <QPushButton>
 #include <QVBoxLayout>
 
-// Other header files
+// Other header files.
 #include "MapRenderSettingsWidget.h"
-#include "Rendering.h"
 
 using Bach::MapRenderSettingsWidget;
 
 /*!
  * \brief getShowingDebugBtnLabel creates a string to label the debug button.
- * \param mapWidget is the QWidget to render to.
- * \return the label string.
+ * \param mapWidget The QWidget to render to.
+ * \return the generated label string.
  */
 static QString getShowingDebugBtnLabel(const MapWidget* mapWidget)
 {
     auto name = QString("Showing debug ");
-    if (mapWidget->isShowingDebug()) {
+    if (mapWidget->isShowingDebug())
         name += "on";
-    } else {
+    else
         name += "off";
-    }
     return name;
 }
 
 /*!
  * \brief getRenderingTileBtnLabel creates a string to label the toggle rendering tile button.
- * \param mapWidget is the QWidget to render to.
+ * \param mapWidget The QWidget to render to.
  * \return the label string.
  */
 static QString getRenderingTileBtnLabel(const MapWidget* mapWidget)
 {
     auto name = QString("Showing tile type: ");
-    if (mapWidget->isRenderingVector()) {
+    if (mapWidget->isRenderingVector())
         name += "Vector";
-    } else {
+    else
         name += "Raster";
-    }
     return name;
 }
+
 /*!
- * \brief MapCoordControlWidget::MapCoordControlWidget controls ???
- * \param mapWidget is the QWidget to render to.
+ * \brief MapCoordControlWidget::MapCoordControlWidget
+ * Controls map coordinate widget.
+ *
+ * \param mapWidget The QWidget to render to.
  */
 MapRenderSettingsWidget::MapRenderSettingsWidget(MapWidget* mapWidget) : QWidget(mapWidget)
 {
-    // We set up our buttons in a simple vertical box layout.
+    // Set up buttons in a simple vertical box layout.
     QVBoxLayout *layout = new QVBoxLayout(this);
     setLayout(layout);
 
-    // Setup the debug lines toggle switch
+    // Set up the debug lines toggle switch.
     {
         QString name = getShowingDebugBtnLabel(mapWidget);
         QPushButton *btn = new QPushButton(name, this);
@@ -60,14 +60,14 @@ MapRenderSettingsWidget::MapRenderSettingsWidget(MapWidget* mapWidget) : QWidget
             &QPushButton::clicked,
             mapWidget,
             [=]() {
-                // Send signal to mapWidget
+                // Send signal to mapWidget.
                 mapWidget->toggleIsShowingDebug();
                 QString name = getShowingDebugBtnLabel(mapWidget);
                 btn->setText(name);
             });
     }
 
-    // Setup the toggle tile type button (supports vector and raster for now).
+    // Setup the toggle map tile type button (supports vector and raster).
     {
         QString name = getRenderingTileBtnLabel(mapWidget);
         QPushButton *btn = new QPushButton(name, this);
@@ -98,7 +98,7 @@ MapRenderSettingsWidget::MapRenderSettingsWidget(MapWidget* mapWidget) : QWidget
             });
     }
 
-    // Setup the checkbox and text for drawing line elements.
+    // Set up the checkbox and text for drawing line elements.
     {
         QCheckBox *checkbox = new QCheckBox("Lines", this);
         checkbox->setCheckState(mapWidget->isRenderingLines() ? Qt::Checked : Qt::Unchecked);
@@ -112,7 +112,7 @@ MapRenderSettingsWidget::MapRenderSettingsWidget(MapWidget* mapWidget) : QWidget
             });
     }
 
-     // Setup the checkbox and text for drawing text elements.
+    // Set up the checkbox and text for drawing text elements.
     {
         QCheckBox *checkbox = new QCheckBox("Text", this);
         checkbox->setCheckState(mapWidget->isRenderingText() ? Qt::Checked : Qt::Unchecked);
