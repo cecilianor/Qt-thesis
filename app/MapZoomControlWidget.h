@@ -19,5 +19,4 @@ public:
 };
 }
 
-
 #endif // MAPZOOMCONTROLWIDGET_H
