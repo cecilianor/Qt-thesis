@@ -1,16 +1,19 @@
+// Qt header files.
 #include <QApplication>
 #include <QMessageBox>
 
+// Other header files.
 #include "MainWindow.h"
 #include "TileLoader.h"
 #include "Utilities.h"
 
-// Helper function to let us do early shutdown during startup.
+// Helper function to let the program shut down easily if there are errors
+// during startup and initialisation.
 [[noreturn]] void earlyShutdown(const QString &msg = "")
 {
-    if (msg != "") {
+    if (msg != "")
         qCritical() << msg;
-    }
+
     QMessageBox::critical(
         nullptr,
         "Unexpected error.",
@@ -18,6 +21,7 @@
     std::exit(EXIT_FAILURE);
 }
 
+// The main program.
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
@@ -45,7 +49,7 @@ int main(int argc, char *argv[])
     }
     const QJsonDocument &styleSheetJson = styleSheetJsonResult.value();
 
-    // Parse the stylesheet into data we can render.
+    // Parse the stylesheet into data that can be rendered.
     std::optional<StyleSheet> parsedStyleSheetResult = StyleSheet::fromJson(styleSheetJson);
     // If the stylesheet can't be parsed, there is nothing to render. Shut down.
     if (!parsedStyleSheetResult.has_value()) {
@@ -73,8 +77,7 @@ int main(int argc, char *argv[])
         }
     }
 
-    // Create our TileLoader based on whether we can do web
-    // or not.
+    // Create TileLoader based on whether one can access online data or not.
     std::unique_ptr<Bach::TileLoader> tileLoaderPtr;
     if (useWeb) {
         tileLoaderPtr = Bach::TileLoader::fromTileUrlTemplate(
