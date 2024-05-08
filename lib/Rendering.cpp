@@ -7,6 +7,126 @@
 #include "Evaluator.h"
 #include "Rendering.h"
 
+/*!
+ * \internal
+ *
+ * \brief The TileScreenPlacement struct describes a tile's
+ * position and size within the viewport.
+ */
+struct TileScreenPlacement {
+    double pixelPosX;
+    double pixelPosY;
+    double pixelWidth;
+};
+
+/*!
+ * \internal
+ *
+ * \brief The TilePosCalculator class
+ * is a helper class for positioning tiles within the viewport.
+ */
+class TilePosCalculator {
+    int vpWidth;
+    int vpHeight;
+    double vpX;
+    double vpY;
+    double vpZoom;
+    int mapZoom;
+
+private:
+    // Largest dimension between viewport height and width, expressed in pixels.
+    int VpMaxDim() const { return qMax(vpWidth, vpHeight); }
+
+    // Aspect ratio of the viewport, as a scalar.
+    double VpAspect() const { return (double)vpWidth / (double)vpHeight; }
+
+    // The scale of the world map as a scalar fraction of the viewport.
+    // Example: A value of 2 means the world map can fit 2 viewports in X and Y directions.
+    double WorldmapScale() const { return pow(2, vpZoom); }
+
+    // Size of an individual tile as a fraction of the world map.
+    //
+    // Exmaple: A value of 0.5 means the tile takes up half the length of the world map
+    // in X and Y directions.
+    double TileSizeNorm() const { return WorldmapScale() / (1 << mapZoom); }
+
+public:
+    /*!
+     * \brief calcTileSizeData
+     * Calculates the on-screen position information of a specific tile.
+     *
+     * \param coord The cooardinates of the tile wanted.
+     * \return The TileScreenPlacement with the correct data.
+     */
+    TileScreenPlacement calcTileSizeData(TileCoord coord) const {
+        // Calculate where the top-left origin of the world map is relative to the viewport.
+        double worldOriginX = vpX * WorldmapScale() - 0.5;
+        double worldOriginY = vpY * WorldmapScale() - 0.5;
+
+        // Adjust the world such that our worldmap is still centered around our center-coordinate
+        // when the aspect ratio changes.
+        if (VpAspect() < 1.0) {
+            worldOriginX += -0.5 * VpAspect() + 0.5;
+        } else if (VpAspect() > 1.0) {
+            worldOriginY += -0.5 / VpAspect() + 0.5;
+        }
+
+        // The position of this tile expressed in world-normalized coordinates.
+        double posNormX = (coord.x * TileSizeNorm()) - worldOriginX;
+        double posNormY = (coord.y * TileSizeNorm()) - worldOriginY;
+
+        TileScreenPlacement out;
+        out.pixelPosX = posNormX * VpMaxDim();
+        out.pixelPosY = posNormY * VpMaxDim();
+
+        // Calculate the width of a tile as it's displayed on-screen.
+        // (Height is same as width, perfectly square)
+        out.pixelWidth = TileSizeNorm() * VpMaxDim();
+
+        return out;
+    }
+
+    /*!
+     * \internal
+     * \brief createTilePosCalculator constructs a TilePosCalculator
+     * object based on the current state of the viewport.
+     *
+     * \param vpWidth The width of the viewport in pixels on screen.
+     * \param vpHeight The height of the viewport in pixels on screen.
+     * \param vpX The center X coordinate of the viewport in
+     * world-normalized coordinates.
+     * \param vpY The center Y coordinate of the viewport in
+     * world-normalized coordinates.
+     * \param vpZoom The current zoom-level of the viewport.
+     * \param mapZoom The current zoom-level of the map.
+     * \return The TilePosCalculator object that can be used to
+     * position tiles correctly on-screen.
+     */
+    static TilePosCalculator create(
+        int vpWidth,
+        int vpHeight,
+        double vpX,
+        double vpY,
+        double vpZoom,
+        int mapZoom)
+    {
+        TilePosCalculator out;
+        out.vpWidth = vpWidth;
+        out.vpHeight = vpHeight;
+        out.vpX = vpX;
+        out.vpY = vpY;
+        out.vpZoom = vpZoom;
+        out.mapZoom = mapZoom;
+        return out;
+    }
+
+};
+
+
+/*!
+ * \brief Bach::PaintVectorTileSettings::getDefault
+ * Builds the default settings for painting vector tiles.
+ */
 Bach::PaintVectorTileSettings Bach::PaintVectorTileSettings::getDefault()
 {
     Bach::PaintVectorTileSettings out;
@@ -33,7 +153,7 @@ Bach::PaintVectorTileSettings Bach::PaintVectorTileSettings::getDefault()
 static void paintSingleTileDebug(
     QPainter &painter,
     const TileCoord &tileCoord,
-    int tileWidthPixels)
+    double tileWidthPixels)
 {
     painter.setPen(Qt::darkGreen);
 
@@ -62,14 +182,12 @@ static void paintSingleTileDebug(
 /*!
  * \internal
  *
- * \brief isLayerHidden
- * Determines whether we should skip this layer during rendering.
+ * \brief isLayerShow determines whether or not to skip a layer during rendering.
  *
- * \param layerStyle
+ * \param layerStyle is the layer that could be skipped.
+ * \param mapZoom is the current zoom of the map.
  *
- * \param mapZoom
- *
- * \return True if the layer should NOT be rendered.
+ * \return True if the layer should be rendered.
  */
 static bool isLayerShown(const AbstractLayerStyle &layerStyle, int mapZoom)
 {
@@ -80,14 +198,13 @@ static bool isLayerShown(const AbstractLayerStyle &layerStyle, int mapZoom)
 }
 
 /*!
- * \brief includeFeature
- * Determines whether a map feature should be included given the layer style.
+ * \brief includeFeature determines if a map feature should be rendered given the layer style.
  *
- * \param layerStyle
- * \param feature
- * \param mapZoom Map zoom level
- * \param vpZoom Viewport zoom level
- * \return Returns true if this feature should be rendered.
+ * \param layerStyle The layer that the feature is part of.
+ * \param feature is the feature that may be rendered.
+ * \param mapZoom is the map zoom level.
+ * \param vpZoom is the viewport zoom level.
+ * \return Returns true if the feature should be rendered.
  */
 static bool includeFeature(
     const AbstractLayerStyle &layerStyle,
@@ -129,7 +246,6 @@ static void paintVectorLayer_Fill(
     for (const std::unique_ptr<AbstractLayerFeature> &abstractFeature : layer.m_features) {
         if (abstractFeature->type() != AbstractLayerFeature::featureType::polygon)
             continue;
-
 
         const auto &feature = *static_cast<const PolygonFeature*>(abstractFeature.get());
 
@@ -223,7 +339,7 @@ static void processVectorLayer_Point(
     QVector<QPair<int, PointFeature>> labels; //Used to order text rendering operation based on "rank" property.
     // Iterate over all the features, and filter out anything that is not point.
     for (const std::unique_ptr<AbstractLayerFeature> &abstractFeature : layer.m_features) {
-        if(abstractFeature->type() == AbstractLayerFeature::featureType::line){
+        if (abstractFeature->type() == AbstractLayerFeature::featureType::line){
             const LineFeature &feature = *static_cast<const LineFeature*>(abstractFeature.get());
             //Bach::paintSingleTileFeature_Point_Curved({&painter, &layerStyle, &feature, mapZoom, vpZoom, geometryTransform});
             Bach::processSingleTileFeature_Point_Curved(
@@ -233,18 +349,18 @@ static void processVectorLayer_Point(
                 tileOriginY,
                 labelRects,
                 vpCurvedTextList);
-        }else if (abstractFeature->type() == AbstractLayerFeature::featureType::point){ //For normal text (continents /countries / cities / places / ...)
+        } else if (abstractFeature->type() == AbstractLayerFeature::featureType::point){
+            //For normal text (continents /countries / cities / places / ...)
             const PointFeature &feature = *static_cast<const PointFeature*>(abstractFeature.get());
             // Tests whether the feature should be rendered at all based on possible expression.
             if (!includeFeature(layerStyle, feature, mapZoom, vpZoom))
                 continue;
 
             //Add the feature along with its "rank" (if present, defaults to 100) to the labels map.
-            if(feature.featureMetaData.contains("rank")){
+            if (feature.featureMetaData.contains("rank"))
                 labels.append(QPair<int, PointFeature>(feature.featureMetaData["rank"].toInt(), feature));
-            }else{
+            else
                 labels.append(QPair<int, PointFeature>(100, feature));
-            }
         }
     }
 
@@ -254,7 +370,7 @@ static void processVectorLayer_Point(
     });
 
     //Loop over the ordered label map and add the text that passes the collision filter to the vpTextList list.
-    for(const auto &pair : labels){
+    for (const auto &pair : labels){
         painter.save();
         Bach::processSingleTileFeature_Point(
             {&painter, &layerStyle, &pair.second, mapZoom, vpZoom, geometryTransform},
@@ -415,16 +531,16 @@ static void paintVectorTile(
     int mapZoom,
     double vpZoom,
     const StyleSheet &styleSheet,
-    int tileWidthPixels,
-    int tileOriginX,
-    int tileOriginY,
+    TileScreenPlacement tileScreenPlacement,
     const Bach::PaintVectorTileSettings &settings,
     QVector<QRect> &labelRects,
     QVector<Bach::vpGlobalText> &vpTextList,
     QVector<Bach::vpGlobalCurvedText> &vpCurvedTextList)
 {
     QTransform geometryTransform;
-    geometryTransform.scale(tileWidthPixels, tileWidthPixels);
+    geometryTransform.scale(
+        tileScreenPlacement.pixelWidth,
+        tileScreenPlacement.pixelWidth);
 
     // We start by iterating over each layer style, it determines the order
     // at which we draw the elements of the map.
@@ -472,9 +588,9 @@ static void paintVectorTile(
                 layer,
                 vpZoom,
                 mapZoom,
-                tileWidthPixels,
-                tileOriginX,
-                tileOriginY,
+                tileScreenPlacement.pixelWidth,
+                tileScreenPlacement.pixelPosX,
+                tileScreenPlacement.pixelPosY,
                 geometryTransform,
                 settings.forceNoChangeFontType,
                 labelRects,
@@ -484,6 +600,14 @@ static void paintVectorTile(
     }
 }
 
+/*!
+ * \brief drawBackgroundColor
+ * Draws the background color of the stylesheet to the Painter object.
+ *
+ * \param painter The painter object we want to render into.
+ * \param styleSheet The stylesheet of the map we are rendering.
+ * \param mapZoom The current zoom of the map.
+ */
 static void drawBackgroundColor(
     QPainter &painter,
     const StyleSheet &styleSheet,
@@ -521,95 +645,6 @@ static void drawBackgroundColor(
 }
 
 /*!
- * \brief The TileScreenPlacement class is a class that describes a tiles
- * position and size within the viewport.
- */
-struct TileScreenPlacement {
-    int pixelPosX;
-    int pixelPosY;
-    int pixelWidth;
-};
-
-/*!
- * \internal
- *
- * \brief The TilePosCalculator class
- * is a helper class for positioning tiles within the viewport.
- */
-struct TilePosCalculator {
-    int vpWidth;
-    int vpHeight;
-    double vpX;
-    double vpY;
-    double vpZoom;
-    int mapZoom;
-
-private:
-    // Largest dimension between viewport height and width, expressed in pixels.
-    int VpMaxDim() const { return qMax(vpWidth, vpHeight); }
-
-    // Aspect ratio of the viewport, as a scalar.
-    double VpAspect() const { return (double)vpWidth / (double)vpHeight; }
-
-    // The scale of the world map as a scalar fraction of the viewport.
-    // Example: A value of 2 means the world map can fit 2 viewports in X and Y directions.
-    double WorldmapScale() const { return pow(2, vpZoom); }
-
-    // Size of an individual tile as a fraction of the world map.
-    //
-    // Exmaple: A value of 0.5 means the tile takes up half the length of the world map
-    // in X and Y directions.
-    double TileSizeNorm() const { return WorldmapScale() / (1 << mapZoom); }
-
-public:
-    TileScreenPlacement calcTileSizeData(TileCoord coord) const {
-        // Calculate where the top-left origin of the world map is relative to the viewport.
-        double worldOriginX = vpX * WorldmapScale() - 0.5;
-        double worldOriginY = vpY * WorldmapScale() - 0.5;
-
-        // Adjust the world such that our worldmap is still centered around our center-coordinate
-        // when the aspect ratio changes.
-        if (VpAspect() < 1.0) {
-            worldOriginX += -0.5 * VpAspect() + 0.5;
-        } else if (VpAspect() > 1.0) {
-            worldOriginY += -0.5 / VpAspect() + 0.5;
-        }
-
-        // The position of this tile expressed in world-normalized coordinates.
-        double posNormX = (coord.x * TileSizeNorm()) - worldOriginX;
-        double posNormY = (coord.y * TileSizeNorm()) - worldOriginY;
-
-        TileScreenPlacement out;
-        out.pixelPosX = (int)floor(posNormX * VpMaxDim());
-        out.pixelPosY = (int)floor(posNormY * VpMaxDim());
-
-        // We figure out the size of one tile by measuring the distance
-        // to the position of the next one.
-        double posNormX2 = ((coord.x + 1) * TileSizeNorm()) - worldOriginX;
-        out.pixelWidth = (int)floor(posNormX2 * VpMaxDim()) - (int)floor(posNormX * VpMaxDim());
-        return out;
-    }
-};
-
-TilePosCalculator createTilePosCalculator(
-    int vpWidth,
-    int vpHeight,
-    double vpX,
-    double vpY,
-    double vpZoom,
-    int mapZoom)
-{
-    TilePosCalculator out;
-    out.vpWidth = vpWidth;
-    out.vpHeight = vpHeight;
-    out.vpX = vpX;
-    out.vpY = vpY;
-    out.vpZoom = vpZoom;
-    out.mapZoom = mapZoom;
-    return out;
-}
-
-/*!
  * \internal
  * \brief A helper class for painting vector-tiles and raster-tiles while reusing code.
  *
@@ -641,7 +676,7 @@ static void paintTilesGeneric(
     int vpWidth = painter.window().width();
     int vpHeight = painter.window().height();
 
-    TilePosCalculator tilePosCalc = createTilePosCalculator(
+    TilePosCalculator tilePosCalc = TilePosCalculator::create(
         vpWidth,
         vpHeight,
         vpX,
@@ -673,11 +708,11 @@ static void paintTilesGeneric(
 
         // We create a clip rect around our tile, as to only render into
         // the region on-screen the tile occupies.
-        painter.setClipRect(
+        painter.setClipRect(QRectF{
             0,
             0,
             tilePlacement.pixelWidth,
-            tilePlacement.pixelWidth);
+            tilePlacement.pixelWidth });
 
         // Draw the single tile.
         paintSingleTileFn(tileCoord, tilePlacement);
@@ -735,9 +770,7 @@ void Bach::paintVectorTiles(
             mapZoom,
             viewportZoom,
             styleSheet,
-            tilePlacement.pixelWidth,
-            tilePlacement.pixelPosX,
-            tilePlacement.pixelPosY,
+            tilePlacement,
             settings,
             labelRects,
             vpTextList,
@@ -780,7 +813,7 @@ void Bach::paintRasterTiles(
             return;
 
         const QImage &tileData = **tileIt;
-        QRect target {
+        QRectF target {
             0,
             0,
             tilePlacement.pixelWidth,

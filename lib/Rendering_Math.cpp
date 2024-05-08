@@ -11,7 +11,7 @@
  * \param lat is the latitude measured in radians.
  * \return a pair containing the normalized longitude and latitude coordinates (radians).
  */
-QPair<double, double> Bach::lonLatToWorldNormCoord(double lon, double lat)
+Bach::MapCoordinate Bach::lonLatToWorldNormCoord(double lon, double lat)
 {
     constexpr double webMercatorPhiCutoff = 1.4844222297;
 
@@ -48,7 +48,7 @@ QPair<double, double> Bach::lonLatToWorldNormCoord(double lon, double lat)
  * \param lat is the latitude measured in degrees.
  * \return a pair containing the normalized longitude and latitude coordinates (degrees).
  */
-QPair<double, double> Bach::lonLatToWorldNormCoordDegrees(double lon, double lat)
+Bach::MapCoordinate Bach::lonLatToWorldNormCoordDegrees(double lon, double lat)
 {
     auto degToRad = [](double deg) {
         return deg * M_PI / 180.0;
@@ -112,7 +112,7 @@ int Bach::calcMapZoomLevelForTileSizePixels(
  * \param viewportAspect is the aspect ratio of the viewport.
  * \return width and height as fractions, in the range [0, 1].
  */
-QPair<double, double> Bach::calcViewportSizeNorm(double vpZoomLevel, double viewportAspect) {
+Bach::MapCoordinate Bach::calcViewportSizeNorm(double vpZoomLevel, double viewportAspect) {
     // Math formula can be seen in the figure in the report, with the caption
     // "Calculating viewport size as a factor of the world map"
     auto temp = 1 / pow(2, vpZoomLevel);

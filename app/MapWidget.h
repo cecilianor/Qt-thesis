@@ -121,7 +121,7 @@ private:
     void genericZoom(bool magnify);
 
     // Controls whether debug lines should be shown.
-    bool showDebug = true;
+    bool showDebug = false;
 
     // If set to true, we should be rendering vector graphics.
     // If set to false, we should be rendering raster graphics.
