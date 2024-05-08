@@ -67,7 +67,7 @@ MapRenderSettingsWidget::MapRenderSettingsWidget(MapWidget* mapWidget) : QWidget
             });
     }
 
-    // Setup the toggle map tile type button (supports vector and raster).
+    // Set up the toggle map tile type button (supports vector and raster).
     {
         QString name = getRenderingTileBtnLabel(mapWidget);
         QPushButton *btn = new QPushButton(name, this);
