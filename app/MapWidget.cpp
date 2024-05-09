@@ -39,21 +39,20 @@ MapWidget::~MapWidget()
 
 void MapWidget::keyPressEvent(QKeyEvent* event)
 {
-    if (event->key() == Qt::Key::Key_Up) {
+    if (event->key() == Qt::Key::Key_Up)
         panUp();
-    } else if (event->key() == Qt::Key::Key_Down) {
+    else if (event->key() == Qt::Key::Key_Down)
         panDown();
-    } else if (event->key() == Qt::Key::Key_Left) {
+    else if (event->key() == Qt::Key::Key_Left)
         panLeft();
-    } else if (event->key() == Qt::Key::Key_Right) {
+    else if (event->key() == Qt::Key::Key_Right)
         panRight();
-    } else if (event->key() == Qt::Key::Key_W) {
+    else if (event->key() == Qt::Key::Key_W)
         zoomIn();
-    } else if (event->key() == Qt::Key::Key_S) {
+    else if (event->key() == Qt::Key::Key_S)
         zoomOut();
-    } else {
+    else
         QWidget::keyPressEvent(event);
-    }
 }
 
 /*!
