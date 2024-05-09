@@ -51,78 +51,68 @@ MapRenderSettingsWidget::MapRenderSettingsWidget(MapWidget* mapWidget) : QWidget
     setLayout(layout);
 
     // Set up the debug lines toggle switch.
-    {
-        QString name = getShowingDebugBtnLabel(mapWidget);
-        QPushButton *btn = new QPushButton(name, this);
-        layout->addWidget(btn);
-        QObject::connect(
-            btn,
-            &QPushButton::clicked,
-            mapWidget,
-            [=]() {
-                // Send signal to mapWidget.
-                mapWidget->toggleIsShowingDebug();
-                QString name = getShowingDebugBtnLabel(mapWidget);
-                btn->setText(name);
-            });
-    }
+    QString debugBtnName = getShowingDebugBtnLabel(mapWidget);
+    QPushButton *debugBtn = new QPushButton(debugBtnName, this);
+    layout->addWidget(debugBtn);
+    QObject::connect(
+        debugBtn,
+        &QPushButton::clicked,
+        mapWidget,
+        [=]() {
+            // Send signal to mapWidget.
+            mapWidget->toggleIsShowingDebug();
+            QString name = getShowingDebugBtnLabel(mapWidget);
+            debugBtn->setText(name);
+        });
 
-    // Set up the toggle map tile type button (supports vector and raster).
-    {
-        QString name = getRenderingTileBtnLabel(mapWidget);
-        QPushButton *btn = new QPushButton(name, this);
-        layout->addWidget(btn);
-        QObject::connect(
-            btn,
-            &QPushButton::clicked,
-            mapWidget,
-            [=]() {
-                // Send signal to mapWidget
-                mapWidget->toggleIsRenderingVectorTile();
-                QString name = getRenderingTileBtnLabel(mapWidget);
-                btn->setText(name);
-            });
-    }
+    // Set up the toggle map tile type button.
+    QString renderBtnName = getRenderingTileBtnLabel(mapWidget);
+    QPushButton *renderBtn = new QPushButton(renderBtnName, this);
+    layout->addWidget(renderBtn);
+    QObject::connect(
+        renderBtn,
+        &QPushButton::clicked,
+        mapWidget,
+        [=]() {
+            // Send signal to mapWidget
+            mapWidget->toggleIsRenderingVectorTile();
+            QString name = getRenderingTileBtnLabel(mapWidget);
+            renderBtn->setText(name);
+        });
 
     // Set up the checkbox and text for drawing fill elements.
-    {
-        QCheckBox *checkbox = new QCheckBox("Fill", this);
-        checkbox->setCheckState(mapWidget->isRenderingFill() ? Qt::Checked : Qt::Unchecked);
-        layout->addWidget(checkbox);
-        QObject::connect(
-            checkbox,
-            &QCheckBox::checkStateChanged,
-            mapWidget,
-            [=](Qt::CheckState boxIsChecked) {
-                mapWidget->setShouldDrawFill(boxIsChecked == Qt::Checked);
-            });
-    }
+    QCheckBox *fillCheckbox = new QCheckBox("Fill", this);
+    fillCheckbox->setCheckState(mapWidget->isRenderingFill() ? Qt::Checked : Qt::Unchecked);
+    layout->addWidget(fillCheckbox);
+    QObject::connect(
+        fillCheckbox,
+        &QCheckBox::checkStateChanged,
+        mapWidget,
+        [=](Qt::CheckState boxIsChecked) {
+            mapWidget->setShouldDrawFill(boxIsChecked == Qt::Checked);
+        });
 
     // Set up the checkbox and text for drawing line elements.
-    {
-        QCheckBox *checkbox = new QCheckBox("Lines", this);
-        checkbox->setCheckState(mapWidget->isRenderingLines() ? Qt::Checked : Qt::Unchecked);
-        layout->addWidget(checkbox);
-        QObject::connect(
-            checkbox,
-            &QCheckBox::checkStateChanged,
-            mapWidget,
-            [=](Qt::CheckState boxIsChecked) {
-                mapWidget->setShouldDrawLines(boxIsChecked == Qt::Checked);
-            });
-    }
+    QCheckBox *linesCheckbox = new QCheckBox("Lines", this);
+    linesCheckbox->setCheckState(mapWidget->isRenderingLines() ? Qt::Checked : Qt::Unchecked);
+    layout->addWidget(linesCheckbox);
+    QObject::connect(
+        linesCheckbox,
+        &QCheckBox::checkStateChanged,
+        mapWidget,
+        [=](Qt::CheckState boxIsChecked) {
+            mapWidget->setShouldDrawLines(boxIsChecked == Qt::Checked);
+        });
 
     // Set up the checkbox and text for drawing text elements.
-    {
-        QCheckBox *checkbox = new QCheckBox("Text", this);
-        checkbox->setCheckState(mapWidget->isRenderingText() ? Qt::Checked : Qt::Unchecked);
-        layout->addWidget(checkbox);
-        QObject::connect(
-            checkbox,
-            &QCheckBox::checkStateChanged,
-            mapWidget,
-            [=](Qt::CheckState boxIsChecked) {
-                mapWidget->setShouldDrawText(boxIsChecked == Qt::Checked);
-            });
-    }
+    QCheckBox *textCheckbox = new QCheckBox("Text", this);
+    textCheckbox->setCheckState(mapWidget->isRenderingText() ? Qt::Checked : Qt::Unchecked);
+    layout->addWidget(textCheckbox);
+    QObject::connect(
+        textCheckbox,
+        &QCheckBox::checkStateChanged,
+        mapWidget,
+        [=](Qt::CheckState boxIsChecked) {
+            mapWidget->setShouldDrawText(boxIsChecked == Qt::Checked);
+        });
 }
