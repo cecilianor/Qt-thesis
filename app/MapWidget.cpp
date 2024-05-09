@@ -326,26 +326,17 @@ void MapWidget::setViewport(double xIn, double yIn, double zoomIn)
 
 bool MapWidget::KeyPressFilter::eventFilter(QObject *obj, QEvent *event)
 {
-    //if (!mapWidget->hasFocus())
-        //return QObject::eventFilter(obj, event);
-
     // Only intercept keypress events.
     if (event->type() == QEvent::KeyPress) {
         auto keyEvent = static_cast<QKeyEvent*>(event);
-        switch (keyEvent->key()) {
-        case Qt::Key_Left:
-        case Qt::Key_Right:
-        case Qt::Key_Up:
-        case Qt::Key_Down:
+
+        if ( keyEvent->key() == Qt::Key_Left || keyEvent->key() == Qt::Key_Right
+            || keyEvent->key() == Qt::Key_Up || keyEvent->key() == Qt::Key_Down) {
             mapWidget->keyPressEvent(keyEvent);
-            // Mark event as handled
             return true;
-        default:
-             // Do not intercept other key presses
-            break;
         }
     }
-    // Pass the event on to the parent class for default processing
+    // Pass the event on to the parent class for default processing.
     return QObject::eventFilter(obj, event);
 }
 
