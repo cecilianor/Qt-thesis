@@ -62,9 +62,9 @@ void MapWidget::keyPressEvent(QKeyEvent* event)
  */
 void MapWidget::mousePressEvent(QMouseEvent *event)
 {
-    if (event->buttons() == Qt::MouseButton::LeftButton) {
+    if (event->buttons() == Qt::MouseButton::LeftButton)
         mouseStartPosition = event->pos();
-    }
+
 }
 
 /*!
