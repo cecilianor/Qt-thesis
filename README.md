@@ -21,9 +21,9 @@ The project is part of a bachelor thesis at the Norwegian University of Science 
 
 ## Features
 
-**Rendering:** The application is able to render polygons, lines, and text including road names.  There is no support for icons in the current version of the application.
-**Styling:** The only supported style is the basic v2 map style.
-**UI:** The application user can move around and  zoom using either the mouse/mouse wheel or the keyboard, move to a specified location (using long lat coordinates), and for the sake of the thesis there are two buttons to move to Gjøvik or Nydalen in Oslo.
+**Rendering:** The application is able to render polygons, lines, and text including road names.  There is no support for icons in the current version of the application.  
+**Styling:** The only supported style is the basic v2 map style.  
+**UI:** The application user can move around and  zoom using either the mouse/mouse wheel or the keyboard, move to a specified location (using long lat coordinates), and for the sake of the thesis there are two buttons to move to Gjøvik or Nydalen in Oslo.  
 
 ## Showcase
 ![zoom_leve_0](https://github.com/cecilianor/Qt-thesis/assets/73423072/1a31ca50-2212-45d0-a244-af0e2e37d5d8)
