@@ -22,33 +22,38 @@ QMap<QString, QVariant(*)(const QJsonArray&, const AbstractLayerFeature*, int ma
  *
  * \return a QVariant containing the result of the evaluation, or an invalid QVariant if the expression was invalid.
  */
-QVariant Evaluator::resolveExpression(const QJsonArray &expression, const AbstractLayerFeature* feature, int mapZoomLevel, float vpZoomeLevel)
+QVariant Evaluator::resolveExpression(
+    const QJsonArray &expression,
+    const AbstractLayerFeature* feature,
+    int mapZoomLevel,
+    float vpZoomLevel)
 {
-    //This will check only the first time the function is called after theprogram starts.
+    // This will check only the first time the function is called after the program starts.
     if (m_expressionMap.isEmpty())
         setupExpressionMap();
 
-    //Check for valid expression.
-    if (expression.empty()) {
+    // Check for valid expression.
+    if (expression.empty())
         return {};
-    }
-    //Extract the operation keyword from the expression.
+
+    // Extract the operation keyword from the expression.
     QString operation = expression.begin()->toString();
 
-    if(operation == "!=") {//This check is made because all operations can have an OPTIONAL "!" sign for negation except "!=" operation.
-        return m_expressionMap["!="](expression, feature, mapZoomLevel, vpZoomeLevel);
-    }else{
-        if(operation.startsWith("!")){ //Check if the operation contains a negation sign
-            if(m_expressionMap.contains(operation.sliced(1))){ //In case the expression is negated we have to remove the "!" sign to get the operation keyword.
-                return m_expressionMap[operation.sliced(1)](expression, feature, mapZoomLevel, vpZoomeLevel);
-            }
+    if (operation == "!=") {
+        // This check is made since all operations can have an OPTIONAL "!" sign for negation except "!=" operation.
+        return m_expressionMap["!="](expression, feature, mapZoomLevel, vpZoomLevel);
+    } else {
+        if (operation.startsWith("!")) {
+            // Check if the operation contains a negation sign.
+            if (m_expressionMap.contains(operation.sliced(1)))
+                // In case the expression is negated, remove the "!" sign to get the operation keyword.
+                return m_expressionMap[operation.sliced(1)](expression, feature, mapZoomLevel, vpZoomLevel);
         } else {
-            if(m_expressionMap.contains(operation)){
-                return m_expressionMap[operation](expression, feature, mapZoomLevel, vpZoomeLevel);
-            }
+            if (m_expressionMap.contains(operation))
+                return m_expressionMap[operation](expression, feature, mapZoomLevel, vpZoomLevel);
         }
     }
-    //Retern an invalid QVariant in case the expression was invalid or not supported.
+    // Return an invalid QVariant in case the expression was invalid or not supported.
     return {};
 }
 
