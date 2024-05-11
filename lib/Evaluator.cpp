@@ -172,14 +172,15 @@ static QString getType(const AbstractLayerFeature *feature)
 
 /*!
  * \brief Evaluator::compare
- * Resolve the "==" and "!=" expression which checks if two values are equal or not
- * \param array the QJsong array containing the expression to be resolved.
+ * Resolves the "==" and "!=" expressions, which checks if two values are equal or not.
+ *
+ * \param array the QJson array containing the expression to be resolved.
  * \param feature the feature on which expression operation will be performed.
- * \param mapZoomLevel the zoom level that will be used to resolve expressions that require a zoom parameter.
- * \param vpZoomeLevel
+ * \param mapZoomLevel The zoom level that will be used to resolve expressions that require a zoom parameter.
+ * \param vpZoomLevel The viewport zoom level.
  * \return return a QVariant containing true if the two compared elements are true or false otherwise.
  */
-QVariant Evaluator::compare(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
+QVariant Evaluator::compare(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomLevel)
 {
     QVariant operand1;
     QVariant operand2;
