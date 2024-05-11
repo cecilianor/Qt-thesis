@@ -331,32 +331,29 @@ QVariant Evaluator::coalesce(const QJsonArray &array, const AbstractLayerFeature
  */
 QVariant Evaluator::match(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomLevel)
 {
-    //Extract the label to be used for the checks.
+    // Extract the label to be used for the checks.
     QJsonArray expression = array.at(1).toArray();
-    QVariant input = resolveExpression(expression, feature, mapZoomLevel, vpZoomeLevel);
+    QVariant input = resolveExpression(expression, feature, mapZoomLevel, vpZoomLevel);
 
-    //loop over the array checking which value matches the input and we return its corresponding output.
-    //we loop over the elemtns from 2 to n-2 because the first two elements contain the expression keyword and
-    //the operation label, and the last element contains the fallback value.
-    for(int i = 2; i < array.size() - 2; i += 2){
-        if(array.at(i).isArray()){
-            if(array.at(i).toArray().toVariantList().contains(input)){
-                if(array.at(i + 1).isArray()){
-                    return resolveExpression(array.at(i + 1).toArray(), feature, mapZoomLevel, vpZoomeLevel);
-                }else{
+    // Loop over the array checking which value matches the input and return its corresponding output.
+    // The elements from 2 to n-2 are looped over because the first two elements contain the expression keyword and
+    // the operation label, and the last element contains the fallback value.
+    for (int i = 2; i < array.size() - 2; i += 2) {
+        if (array.at(i).isArray()) {
+            if (array.at(i).toArray().toVariantList().contains(input)) {
+                if (array.at(i + 1).isArray())
+                    return resolveExpression(array.at(i + 1).toArray(), feature, mapZoomLevel, vpZoomLevel);
+                else
                     return array.at(i + 1).toVariant();
                 }
-            }
-
-        }else if(input == array.at(i).toVariant()){
-            if(array.at(i + 1).isArray()){
-                return resolveExpression(array.at(i + 1).toArray(), feature, mapZoomLevel, vpZoomeLevel);
-            }else{
+        } else if (input == array.at(i).toVariant()) {
+            if(array.at(i + 1).isArray())
+                return resolveExpression(array.at(i + 1).toArray(), feature, mapZoomLevel, vpZoomLevel);
+            else
                 return array.at(i + 1).toVariant();
-            }
         }
     }
-    //If the loop ends without returning, we return the fallback value at index n.
+    // If the loop ends without returning, return the fallback value at index n.
     return array.last().toVariant();
 }
 
