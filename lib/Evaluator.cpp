@@ -285,17 +285,19 @@ QVariant Evaluator::all(const QJsonArray &array, const AbstractLayerFeature *fea
  */
 QVariant Evaluator::case_(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomLevel)
 {
-    //loop over the array elements from 1 to n - 1 (element 0 contains the operation keyword and element n contains the fallback value)
-    for(int i = 1; i < array.size() - 2; i += 2){
-        if(array.at(i).isArray()){
+    // Loop over the array elements from 1 to n - 1
+    // (element 0 contains the operation keyword and element n contains the fallback value)
+    for (int i = 1; i < array.size() - 2; i += 2){
+        if (array.at(i).isArray()){
             QJsonArray expression = array.at(i).toArray();
-            //if the current expression being resolved evaluated to true return its corresponding output (the values right after it).
-            if(resolveExpression(expression, feature, mapZoomLevel, vpZoomeLevel).toBool()){
+            // If the current expression being resolved evaluated to true,
+            // return its corresponding output (the values right after it).
+            if (resolveExpression(expression, feature, mapZoomLevel, vpZoomLevel).toBool()){
                 return array.at(i + 1).toVariant();
             }
         }
     }
-    //if the loop ends without returning, we return the fallback value at index n.
+    // If the loop ends without returning, return the fallback value at index n.
     return array.last().toVariant();
 }
 
