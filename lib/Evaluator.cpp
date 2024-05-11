@@ -324,11 +324,12 @@ QVariant Evaluator::coalesce(const QJsonArray &array, const AbstractLayerFeature
 
 /*!
  * \brief Evaluator::match
- * Resolve the "match" expression which mimics a switch case statement
+ * Resolves the "match" expression, which mimics a switch case statement.
 
- * \return a QVariant containing the value of the output whos label matches the input, or the fallback value if not labels match.
+ * \return a QVariant containing the value of the output whos label matches the input,
+ * or the fallback value if not labels match.
  */
-QVariant Evaluator::match(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
+QVariant Evaluator::match(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomLevel)
 {
     //Extract the label to be used for the checks.
     QJsonArray expression = array.at(1).toArray();
