@@ -387,42 +387,43 @@ static float lerp(QPair<float, float> stop1, QPair<float, float> stop2, int curr
 QVariant Evaluator::interpolate(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomLevel)
 {
     QVariant returnVariant;
-    //Loop over the values array starting at index 3 and find the two pairs that the value falls between.
-    //We start at index 3 because element 0 contains the operation keyword, the element 1 contains the
-    //element 1 contains the type of the interpolation, and element 2 contains the name of the value for the interpolation.
-    if(mapZoomLevel <= array.at(3).toDouble()){//In case the value is less that the smallest element
-        if(array.at(4).isArray()){
-            return resolveExpression(array.at(4).toArray(), feature, mapZoomLevel, vpZoomeLevel);
-        }else{
+    // Loop over the values array starting at index 3 and find the two pairs that the value falls between.
+    // Start at index 3 because element 0 contains the operation keyword, element 1 contains the type of interpolation,
+    // and element 2 contains the name of the value for the interpolation.
+    if (mapZoomLevel <= array.at(3).toDouble()) {
+        // In case the value is less that the smallest element
+        if (array.at(4).isArray())
+            return resolveExpression(array.at(4).toArray(), feature, mapZoomLevel, vpZoomLevel);
+        else
             return array.at(4).toDouble();
-        }
-    }else if(mapZoomLevel >= array.at(array.size()-2).toDouble()){//In case the value is greated than the largest element
-        if(array.last().isArray()){
-            return resolveExpression(array.last().toArray(), feature, mapZoomLevel, vpZoomeLevel);
-        }else{
+    } else if (mapZoomLevel >= array.at(array.size()-2).toDouble()) {
+        // In case the value is greated than the largest element.
+        if (array.last().isArray())
+            return resolveExpression(array.last().toArray(), feature, mapZoomLevel, vpZoomLevel);
+        else
             return array.last().toDouble();
-        }
-    }else{ //In case the value falls between two elements
+    } else {
+        // In case the value falls between two elements.
         int index = 3;
-        while(mapZoomLevel > array.at(index).toDouble() && index < array.size()){
+        while(mapZoomLevel > array.at(index).toDouble() && index < array.size())
             index += 2;
-        }
+
+        // Set the input values to lerp from and declare output values.
         float stopInput1 = array.at(index-2).toDouble();
         float stopInput2 = array.at(index).toDouble();
         float stopOutput1;
         float stopOutput2;
 
-        if(array.at(index - 1).isArray()){
-            stopOutput1 = resolveExpression(array.at(index - 1).toArray(), feature, mapZoomLevel, vpZoomeLevel).toFloat();
-        }else{
+        // Update the stop values to use for lerping.
+        if (array.at(index - 1).isArray())
+            stopOutput1 = resolveExpression(array.at(index - 1).toArray(), feature, mapZoomLevel, vpZoomLevel).toFloat();
+        else
             stopOutput1 = array.at(index - 1).toDouble();
-        }
 
-        if(array.at(index + 1).isArray()){
-            stopOutput2 = resolveExpression(array.at(index + 1).toArray(), feature, mapZoomLevel, vpZoomeLevel).toFloat();
-        }else{
+        if (array.at(index + 1).isArray())
+            stopOutput2 = resolveExpression(array.at(index + 1).toArray(), feature, mapZoomLevel, vpZoomLevel).toFloat();
+        else
             stopOutput2 = array.at(index + 1).toDouble();
-        }
 
         return lerp(QPair<float, float>(stopInput1,stopOutput1), QPair<float, float>(stopInput2,stopOutput2), mapZoomLevel);
     }
