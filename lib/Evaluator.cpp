@@ -375,14 +375,16 @@ static float lerp(QPair<float, float> stop1, QPair<float, float> stop2, int curr
 
 /*!
  * \brief Evaluator::interpolate
- * Resolve the "interpolate" expression which performs an interpolation fiven a zoom level (limited only to linear interpolation)
- * \param array the QJsong array containing the expression to be resolved.
- * \param feature the feature on which expression operation will be performed.
- * \param mapZoomLevel the zoom level that will be used to resolve expressions that require a zoom parameter.
- * \param vpZoomeLevel
+ * Resolves the "interpolate" expression, which performs an interpolation given a zoom level (limited to linear interpolation).
+ *
+ * \param array The QJson array containing the expression to be resolved.
+ * \param feature The feature on which expression operation will be performed.
+ * \param mapZoomLevel The zoom level that will be used to resolve expressions that require a zoom parameter.
+ * \param vpZoomLevel The viewport zoom level.
+ *
  * \return a QVariant containing the result of the interpolation.
  */
-QVariant Evaluator::interpolate(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
+QVariant Evaluator::interpolate(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomLevel)
 {
     QVariant returnVariant;
     //Loop over the values array starting at index 3 and find the two pairs that the value falls between.
