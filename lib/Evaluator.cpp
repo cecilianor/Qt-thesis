@@ -6,9 +6,8 @@
  * https://docs.maptiler.com/gl-style-specification/expressions/
  */
 
-
-//This maps the expression keywords to the functions
-QMap<QString, QVariant(*)(const QJsonArray&, const AbstractLayerFeature*, int mapZoomLevel, float vpZoomeLevel)> Evaluator::m_expressionMap;
+// This maps expression keywords to their corresponding functions.
+QMap<QString, QVariant(*)(const QJsonArray&, const AbstractLayerFeature*, int mapZoomLevel, float vpZoomLevel)> Evaluator::m_expressionMap;
 
 /*!
  * \brief Evaluator::resolveExpression
