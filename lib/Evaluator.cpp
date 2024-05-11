@@ -128,20 +128,19 @@ QVariant Evaluator::has(const QJsonArray &array, const AbstractLayerFeature *fea
 QVariant Evaluator::in(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomLevel)
 {
     QString keyword = array.at(1).toString();
-    if(feature->featureMetaData.contains(keyword)){
+    if (feature->featureMetaData.contains(keyword)){
         QVariant value = feature->featureMetaData[keyword];
 
-        //the range of values to be checked is in the array from elemet 2 to n.
+        // The range of values to be checked is in the array from elemet 2 to n.
         auto temp = array.toVariantList().sliced(2).contains(value);
         //Check for negation.
         auto startsWithNot = array.first().toString().startsWith("!");
-        if (startsWithNot) {
+        if (startsWithNot)
             temp = !temp;
-        }
 
-        bool result = temp;
-        return result;
-    }else{
+        return temp;
+
+    } else {
         return false;
     }
 }
