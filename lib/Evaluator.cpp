@@ -91,13 +91,11 @@ void Evaluator::setupExpressionMap()
 QVariant Evaluator::get(const QJsonArray & array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomLevel)
 {
     QString property = array.at(1).toString();
-    if(feature->featureMetaData.contains(property)){
+    if(feature->featureMetaData.contains(property))
         return feature->featureMetaData[property];
-    }else{
+    else
         return {};
     }
-}
-
 
 /*!
  * \brief Evaluator::has
