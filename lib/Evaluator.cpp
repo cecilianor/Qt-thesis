@@ -95,7 +95,7 @@ QVariant Evaluator::get(const QJsonArray & array, const AbstractLayerFeature *fe
         return feature->featureMetaData[property];
     else
         return {};
-    }
+}
 
 /*!
  * \brief Evaluator::has
@@ -155,18 +155,18 @@ QVariant Evaluator::in(const QJsonArray &array, const AbstractLayerFeature *feat
 static QString getType(const AbstractLayerFeature *feature)
 {
     switch(feature->type()){
-        case AbstractLayerFeature::featureType::polygon:
-            return "Polygon";
-            break;
-        case AbstractLayerFeature::featureType::line:
-            return "LineString";
-            break;
-        case AbstractLayerFeature::featureType::point:
-            return "Point";
-            break;
-        default:
-            return "Unknown";
-            break;
+    case AbstractLayerFeature::featureType::polygon:
+        return "Polygon";
+        break;
+    case AbstractLayerFeature::featureType::line:
+        return "LineString";
+        break;
+    case AbstractLayerFeature::featureType::point:
+        return "Point";
+        break;
+    default:
+        return "Unknown";
+        break;
     }
 }
 
@@ -344,8 +344,8 @@ QVariant Evaluator::match(const QJsonArray &array, const AbstractLayerFeature *f
                 if (array.at(i + 1).isArray())
                     return resolveExpression(array.at(i + 1).toArray(), feature, mapZoomLevel, vpZoomLevel);
                 else
-                    return array.at(i + 1).toVariant();
-                }
+                    return array.at(i + 1).toVariant();      
+            }
         } else if (input == array.at(i).toVariant()) {
             if(array.at(i + 1).isArray())
                 return resolveExpression(array.at(i + 1).toArray(), feature, mapZoomLevel, vpZoomLevel);
