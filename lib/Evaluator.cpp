@@ -227,26 +227,27 @@ QVariant Evaluator::greater(const QJsonArray &array, const AbstractLayerFeature 
 {
     QVariant operand1;
     QVariant operand2;
-    if(array.at(1).isArray()){//If the operand is an expression, we need to resolve it to get the operand value.
+    if (array.at(1).isArray()) {
+        //If the operand is an expression, resolve it to get the operand value.
         static QJsonArray operand1Arr = array.at(1).toArray();
-        operand1 = resolveExpression(operand1Arr, feature, mapZoomLevel, vpZoomeLevel);
-    }else{
+        operand1 = resolveExpression(operand1Arr, feature, mapZoomLevel, vpZoomLevel);
+    } else {
         operand1 = array.at(1).toVariant();
     }
 
-    if(array.at(2).isArray()){//If the operand is an expression, we need to resolve it to get the operand value.
+    if (array.at(2).isArray()){
+        // If the operand is an expression, resolve it to get the operand value.
         static QJsonArray operand2Arr = array.at(2).toArray();
-        operand2 = resolveExpression(operand2Arr, feature, mapZoomLevel, vpZoomeLevel);
-    }else{
+        operand2 = resolveExpression(operand2Arr, feature, mapZoomLevel, vpZoomLevel);
+    } else {
         operand2 = array.at(2).toVariant();
     }
 
-    //The operand types that we can compare are numeric values or strings.
-    if(operand1.typeId() == QMetaType::QString){
+    // The operand types that can be compared are numeric values or strings.
+    if (operand1.typeId() == QMetaType::QString)
         return operand1.toString() > operand2.toString();
-    }else{
+    else
         return operand1.toDouble() > operand2.toDouble();
-    }
 }
 
 /*!
