@@ -184,30 +184,33 @@ QVariant Evaluator::compare(const QJsonArray &array, const AbstractLayerFeature 
 {
     QVariant operand1;
     QVariant operand2;
-    if(array.at(1).isArray()){ //We check if the operation opperand is a simple value or an expression in itself that will need resolving to extract the value.
+
+    if (array.at(1).isArray()){
+        // Check if the operation opperand is a simple value or an expression in itself
+        // that will need resolving to extract the value.
         static QJsonArray operand1Arr = array.at(1).toArray();
-        QString temp = resolveExpression(operand1Arr, feature, mapZoomLevel, vpZoomeLevel).toString();
-        if(temp == "$type"){ //"type" is not a part of the feature's metadata so it is a special case
+        QString temp = resolveExpression(operand1Arr, feature, mapZoomLevel, vpZoomLevel).toString();
+
+        if (temp == "$type")
+            //"type" is not a part of the feature's metadata so it is a special case.
             operand1 = getType(feature);
-        }else{
+        else
             operand1 = feature->featureMetaData.contains(temp) ? feature->featureMetaData[temp] : QVariant();
-        }
-    }else{
+    } else {
         QString temp = array.at(1).toString();
-        if(temp == "$type"){ //type is not a part of the feature's metadata so it is a special case
+        if (temp == "$type")
+            // Type is not a part of the feature's metadata so it is a special case.
             operand1 = getType(feature);
-        }else{
+        else
             operand1 = feature->featureMetaData.contains(temp) ? feature->featureMetaData[temp] : QVariant();
-        }
     }
 
     operand2 = array.at(2).toVariant();
-    //Check wich operation this expression contains and return the result of the comparison
-    if(array.at(0).toString() == "!="){
+    //Check which operation this expression contains, and return the result of the comparison.
+    if(array.at(0).toString() == "!=")
         return operand1 != operand2;
-    }else{
+    else
         return operand1 == operand2;
-    }
 }
 
 /*!
