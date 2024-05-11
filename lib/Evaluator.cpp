@@ -359,10 +359,12 @@ QVariant Evaluator::match(const QJsonArray &array, const AbstractLayerFeature *f
 
 /*!
  * \brief lerp
- * A helper function to Perform a linear interpolation.
- * \param stop1 a QPair containing the x and y for the first stop point
- * \param stop2 a QPair containing the x and y for the second stop point
- * \param currentZoom an int containing the value to be used in the interpolation
+ * A helper function to perform a linear interpolation.
+ *
+ * \param stop1 a QPair containing the x and y for the first stop point.
+ * \param stop2 a QPair containing the x and y for the second stop point.
+ * \param currentZoom an int containing the value to be used in the interpolation.
+ *
  * \return a float containing the result of the interpolation.
  */
 static float lerp(QPair<float, float> stop1, QPair<float, float> stop2, int currentZoom)
