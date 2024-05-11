@@ -59,7 +59,7 @@ QVariant Evaluator::resolveExpression(
 
 /*!
  * \brief Evaluator::setupExpressionMap
- * Map each expression keyword to the function that reolves it.
+ * Maps each expression keyword to the function that resolves it.
  */
 void Evaluator::setupExpressionMap()
 {
@@ -75,7 +75,6 @@ void Evaluator::setupExpressionMap()
     m_expressionMap.insert("match", match);
     m_expressionMap.insert("interpolate", interpolate);
 }
-
 
 /*!
  * \brief Evaluator::get
