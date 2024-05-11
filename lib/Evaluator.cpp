@@ -216,13 +216,14 @@ QVariant Evaluator::compare(const QJsonArray &array, const AbstractLayerFeature 
 /*!
  * \brief Evaluator::greater
  * Resolve the ">" expression which checks if a value is greater than the other.
- * \param array the QJsong array containing the expression to be resolved.
+ *
+ * \param array the QJson array containing the expression to be resolved.
  * \param feature the feature on which expression operation will be performed.
  * \param mapZoomLevel the zoom level that will be used to resolve expressions that require a zoom parameter.
- * \param vpZoomeLevel
+ * \param vpZoomLevel
  * \return a QVariant containing the true if the first value is greated than the other one or false otherwise
  */
-QVariant Evaluator::greater(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
+QVariant Evaluator::greater(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomLevel)
 {
     QVariant operand1;
     QVariant operand2;
