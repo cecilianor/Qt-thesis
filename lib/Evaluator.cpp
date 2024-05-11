@@ -12,13 +12,16 @@ QMap<QString, QVariant(*)(const QJsonArray&, const AbstractLayerFeature*, int ma
 
 /*!
  * \brief Evaluator::resolveExpression
- * This function forwards the expression array to the appropriate function from the function map depending on the expression kyeword wich
- * is always the first element of the array.
- * \param expression the QJsong array containing the expression to be resolved.
- * \param feature the feature on which expression operation will be performed (if aplicable)
- * \param mapZoomLevel the zoom level that will be used to resolve expressions that require a zoom parameter.
- * \param vpZoomeLevel Currently not used for any expression (Can be used for smoother interpolation)
- * \return a QVartiant containing the result of the evaluation, or an invalid QVariant if the expression was invalid.
+ * This function forwards the expression array to the appropriate function from the function map
+ * depending on the expression kyeword wich is always the first element of the array.
+ *
+ * \param expression The QJson array containing the expression to be resolved.
+ * \param feature The feature on which expression operation will be performed (if aplicable)
+ * \param mapZoomLevel The zoom level that will be used to resolve expressions that require a zoom parameter.
+ * \param vpZoomLevel The viewport zoom level.
+ * Currently not used for any expression (Can be used for smoother interpolation).
+ *
+ * \return a QVariant containing the result of the evaluation, or an invalid QVariant if the expression was invalid.
  */
 QVariant Evaluator::resolveExpression(const QJsonArray &expression, const AbstractLayerFeature* feature, int mapZoomLevel, float vpZoomeLevel)
 {
