@@ -148,6 +148,7 @@ QVariant Evaluator::in(const QJsonArray &array, const AbstractLayerFeature *feat
 /*!
  * \brief getType
  * A helper function to check the type of the feature and return it as a string.
+ *
  * \param feature the feature Whose type is being checked.
  * \return a string containing the type of the feature.
  */
@@ -168,6 +169,7 @@ static QString getType(const AbstractLayerFeature *feature)
             break;
     }
 }
+
 /*!
  * \brief Evaluator::compare
  * Resolve the "==" and "!=" expression which checks if two values are equal or not
