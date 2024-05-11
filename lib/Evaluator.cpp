@@ -99,14 +99,16 @@ QVariant Evaluator::get(const QJsonArray & array, const AbstractLayerFeature *fe
 
 /*!
  * \brief Evaluator::has
- * Resolve the "has" expression which checks if a property exists in the metadata of the feature.
- * \param expression the QJsong array containing the expression to be resolved.
+ * Resolves a "has" expression, which checks if a property exists in the metadata of the feature.
+ *
+ * \param expression The QJson array containing the expression to be resolved.
  * \param feature the feature on which expression operation will be performed.
- * \param mapZoomLevel the zoom level that will be used to resolve expressions that require a zoom parameter.
- * \param vpZoomeLevel
+ * \param mapZoomLevel The zoom level that will be used to resolve expressions that require a zoom parameter.
+ * \param vpZoomLevel The viewport zoom level.
+ *
  * \return a QVariant containing True if the feature's metadata include the property, or False otherwise.
  */
-QVariant Evaluator::has(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
+QVariant Evaluator::has(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomLevel)
 {
     QString property = array.at(1).toString();
     return feature->featureMetaData.contains(property);
