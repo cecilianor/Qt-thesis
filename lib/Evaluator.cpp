@@ -116,14 +116,16 @@ QVariant Evaluator::has(const QJsonArray &array, const AbstractLayerFeature *fea
 
 /*!
  * \brief Evaluator::in
- * Resolve the "in" expression which checks if a feature's property is in a range of values.
- * \param array the QJsong array containing the expression to be resolved.
- * \param feature the feature on which expression operation will be performed.
- * \param mapZoomLevel the zoom level that will be used to resolve expressions that require a zoom parameter.
- * \param vpZoomeLevel
- * \return  a QVariant containing true if the property is in the range of values or false otherwise
+ * Resolves an "in" expression, which checks if a feature's property is in a range of values.
+ *
+ * \param array The QJson array containing the expression to be resolved.
+ * \param feature The feature on which expression operation will be performed.
+ * \param mapZoomLevel The zoom level that will be used to resolve expressions that require a zoom parameter.
+ * \param vpZoomLevel The viewport zoom level.
+ *
+ * \return  a QVariant containing true if the property is in the range of values or false otherwise.
  */
-QVariant Evaluator::in(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
+QVariant Evaluator::in(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomLevel)
 {
     QString keyword = array.at(1).toString();
     if(feature->featureMetaData.contains(keyword)){
