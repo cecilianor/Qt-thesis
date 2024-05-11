@@ -1,7 +1,9 @@
+// Non-QT and non-STL header files.
 #include "Evaluator.h"
 
 /*
- * All theses functions follow the maptiler specification: https://docs.maptiler.com/gl-style-specification/expressions/
+ * All thesis functions follow the MapTiler specification, which can be found here:
+ * https://docs.maptiler.com/gl-style-specification/expressions/
  */
 
 
