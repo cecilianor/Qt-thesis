@@ -274,15 +274,16 @@ QVariant Evaluator::all(const QJsonArray &array, const AbstractLayerFeature *fea
 
 /*!
  * \brief Evaluator::case_
- * Resolve the "case" expression which return the first output whose corresponding input evaluates to true
- * or the fallback value if all the inputs are false
- * \param array the QJsong array containing the expression to be resolved.
+ * Resolves the "case" expression, which return the first output whose corresponding input evaluates to true
+ * or the fallback value if all the inputs are false.
+ *
+ * \param array the QJson array containing the expression to be resolved.
  * \param feature the feature on which expression operation will be performed.
  * \param mapZoomLevel the zoom level that will be used to resolve expressions that require a zoom parameter.
- * \param vpZoomeLevel
+ * \param vpZoomLevel The viewport zoom level.
  * \return a QVariant containing the output for the input that evalueated to true, or the fallback value
  */
-QVariant Evaluator::case_(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
+QVariant Evaluator::case_(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomLevel)
 {
     //loop over the array elements from 1 to n - 1 (element 0 contains the operation keyword and element n contains the fallback value)
     for(int i = 1; i < array.size() - 2; i += 2){
