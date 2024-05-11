@@ -262,10 +262,10 @@ QVariant Evaluator::greater(const QJsonArray &array, const AbstractLayerFeature 
  */
 QVariant Evaluator::all(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomLevel)
 {
-    //loop over all the expressions and check that they evaluate to true.
-    for(int i = 1; i <= array.size() - 1; i++){
+    // Loop over all the expressions and check that they evaluate to true.
+    for (int i = 1; i <= array.size() - 1; i++){
         QJsonArray expressionArray = array.at(i).toArray();
-        if(!resolveExpression(expressionArray, feature, mapZoomLevel, vpZoomeLevel).toBool()){
+        if (!resolveExpression(expressionArray, feature, mapZoomLevel, vpZoomLevel).toBool()) {
             return false;
         }
     }
