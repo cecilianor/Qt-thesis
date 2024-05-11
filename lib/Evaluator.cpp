@@ -78,14 +78,17 @@ void Evaluator::setupExpressionMap()
 
 /*!
  * \brief Evaluator::get
- * Resolve the "get" expression which gets a property from the metadata of the feature.
- * \param array the QJsong array containing the expression to be resolved.
- * \param feature the feature on which expression operation will be performed.
- * \param mapZoomLevel the zoom level that will be used to resolve expressions that require a zoom parameter.
- * \param vpZoomeLevel
- * \return a QVariant conatining the value of the feature's property or an invalid(NULL) QVariant if the feature does not contain the specified property.
+ * Resolves a "get" expression, which gets a property from the metadata of the feature.
+ *
+ * \param array The QJson array containing the expression to be resolved.
+ * \param feature The feature on which expression operation will be performed.
+ * \param mapZoomLevel The zoom level that will be used to resolve expressions that require a zoom parameter.
+ * \param vpZoomLevel The viewport zoom level.
+ *
+ * \return a QVariant conatining the value of the feature's property or an invalid(NULL)
+ * QVariant if the feature does not contain the specified property.
  */
-QVariant Evaluator::get(const QJsonArray & array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
+QVariant Evaluator::get(const QJsonArray & array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomLevel)
 {
     QString property = array.at(1).toString();
     if(feature->featureMetaData.contains(property)){
