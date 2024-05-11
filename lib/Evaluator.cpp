@@ -252,14 +252,15 @@ QVariant Evaluator::greater(const QJsonArray &array, const AbstractLayerFeature 
 
 /*!
  * \brief Evaluator::all
- * Resolve the "all" expression which checks if all the inner expressions in the array evaluate to true
- * \param array the QJsong array containing the expression to be resolved.
+ * Resolves the "all" expression, which checks if all the inner expressions in the array evaluate to true.
+ *
+ * \param array the QJson array containing the expression to be resolved.
  * \param feature the feature on which expression operation will be performed.
- * \param mapZoomLevel the zoom level that will be used to resolve expressions that require a zoom parameter.
- * \param vpZoomeLevel
+ * \param mapZoomLevel The zoom level that will be used to resolve expressions that require a zoom parameter.
+ * \param vpZoomLevel The viewport zoom level.
  * \return a QVariant containing true if all the inner expressions are true or returns false otehrwise
  */
-QVariant Evaluator::all(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
+QVariant Evaluator::all(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomLevel)
 {
     //loop over all the expressions and check that they evaluate to true.
     for(int i = 1; i <= array.size() - 1; i++){
