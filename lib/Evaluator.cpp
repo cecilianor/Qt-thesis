@@ -313,10 +313,10 @@ QVariant Evaluator::case_(const QJsonArray &array, const AbstractLayerFeature *f
  */
 QVariant Evaluator::coalesce(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomLevel)
 {
-    //loop over the expression array returning the first valid QVariant.
+    // Loop over the expression array and return the first valid QVariant.
     for(int i = 1; i <= array.size() - 1; i++){
         QJsonArray expression = array.at(i).toArray();
-        auto returnVariant = resolveExpression(expression, feature, mapZoomLevel, vpZoomeLevel);
+        auto returnVariant = resolveExpression(expression, feature, mapZoomLevel, vpZoomLevel);
         if(returnVariant.isValid()) return returnVariant;
     }
     return {};
