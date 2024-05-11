@@ -303,14 +303,15 @@ QVariant Evaluator::case_(const QJsonArray &array, const AbstractLayerFeature *f
 
 /*!
  * \brief Evaluator::coalesce
- * Resolve the "coalesce" expression which return the first non null output.
- * \param array the QJsong array containing the expression to be resolved.
- * \param feature the feature on which expression operation will be performed.
- * \param mapZoomLevel the zoom level that will be used to resolve expressions that require a zoom parameter.
- * \param vpZoomeLevel
+ * Resolves the "coalesce" expression, which return the first non null output.
+ *
+ * \param array The QJson array containing the expression to be resolved.
+ * \param feature The feature on which expression operation will be performed.
+ * \param mapZoomLevel The zoom level that will be used to resolve expressions that require a zoom parameter.
+ * \param vpZoomLevel The viewport zoom level.
  * \return a QVariant containing the value of the first non-null expression, or an invalid QVariant if non exist.
  */
-QVariant Evaluator::coalesce(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomeLevel)
+QVariant Evaluator::coalesce(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomLevel)
 {
     //loop over the expression array returning the first valid QVariant.
     for(int i = 1; i <= array.size() - 1; i++){
