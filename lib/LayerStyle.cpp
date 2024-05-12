@@ -159,8 +159,8 @@ std::optional<StyleSheet> StyleSheet::fromJsonFile(const QString& path)
 {
     QFile file{ path };
     bool openSuccess = file.open(QFile::ReadOnly);
-    if (!openSuccess) {
+    if (!openSuccess)
         return std::nullopt;
-    }
+
     return fromJsonBytes(file.readAll());
 }
