@@ -128,6 +128,14 @@ std::optional<StyleSheet> StyleSheet::fromJson(const QJsonDocument &styleSheetJs
     return out;
 }
 
+/*!
+ * \brief StyleSheet::fromJsonBytes
+ * Converts a style sheet QByteArray to a StyleSheet.
+ * If the conversion is unsuccessful, return std::nullopt instead.
+ *
+ * \param input A QByteArray encoding JSON data.
+ * \return The parsed stylesheet or std::nullopt.
+ */
 std::optional<StyleSheet> StyleSheet::fromJsonBytes(const QByteArray& input)
 {
     QJsonParseError parseError;
