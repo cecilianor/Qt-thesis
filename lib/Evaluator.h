@@ -20,14 +20,12 @@ private:
     static QVariant case_(const QJsonArray& array, const AbstractLayerFeature* feature, int mapZoomLevel, float vpZoomeLevel);
     static QVariant coalesce(const QJsonArray& array, const AbstractLayerFeature* feature, int mapZoomLevel, float vpZoomeLevel);
     static QVariant compare(const QJsonArray& array, const AbstractLayerFeature* feature, int mapZoomLevel, float vpZoomeLevel);
-    static QVariant equal(const QJsonArray& array, const AbstractLayerFeature* feature, int mapZoomLevel, float vpZoomeLevel);
     static QVariant get(const QJsonArray& array, const AbstractLayerFeature* feature, int mapZoomLevel, float vpZoomeLevel);
     static QVariant greater(const QJsonArray& array, const AbstractLayerFeature* feature, int mapZoomLevel, float vpZoomeLevel);
     static QVariant has(const QJsonArray& array, const AbstractLayerFeature* feature, int mapZoomLevel, float vpZoomeLevel);
     static QVariant in(const QJsonArray& array, const AbstractLayerFeature* feature, int mapZoomLevel, float vpZoomeLevel);
     static QVariant interpolate(const QJsonArray& array, const AbstractLayerFeature* feature, int mapZoomLevel, float vpZoomeLevel);
     static QVariant match(const QJsonArray& array, const AbstractLayerFeature* feature, int mapZoomLevel, float vpZoomeLevel);
-    static QVariant notEqual(const QJsonArray& array, const AbstractLayerFeature* feature, int mapZoomLevel, float vpZoomeLevel);
 
 public:
     Evaluator(){};
