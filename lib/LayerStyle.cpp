@@ -71,33 +71,35 @@ std::unique_ptr<AbstractLayerStyle> AbstractLayerStyle::fromJson(const QJsonObje
 {
     QString layerType = json.value("type").toString();
     std::unique_ptr<AbstractLayerStyle> returnLayerPtr;
-    if (layerType == "background") {
+    if (layerType == "background")
         returnLayerPtr = BackgroundStyle::fromJson(json);
-    } else if (layerType == "fill") {
+    else if (layerType == "fill")
         returnLayerPtr = FillLayerStyle::fromJson(json);
-    } else if (layerType == "line") {
+    else if (layerType == "line")
         returnLayerPtr = LineLayerStyle::fromJson(json);
-    } else if (layerType == "symbol"){
+    else if (layerType == "symbol")
         returnLayerPtr = SymbolLayerStyle::fromJson(json);
-    } else {
+    else
         returnLayerPtr = NotImplementedStyle::fromJson(json);
-    }
+
+    // Set layer properties.
     AbstractLayerStyle *newLayer = returnLayerPtr.get();
     newLayer->m_id = json.value("id").toString();
     newLayer->m_source = json.value("source").toString();
     newLayer->m_sourceLayer = json.value("source-layer").toString();
     newLayer->m_minZoom = json.value("minzoom").toInt(0);
     newLayer->m_maxZoom = json.value("maxzoom").toInt(24);
-    QJsonValue layout = json.value("layout");
-    if(layout != QJsonValue::Undefined){
-        newLayer->m_visibility = (layout.toObject().contains("visibility")) ? layout.toObject().value("visibility").toString() : "none";
-    } else {
-        newLayer->m_visibility = QString("none");
-    }
 
-    if(json.contains("filter")){
+    QJsonValue layout = json.value("layout");
+    if(layout != QJsonValue::Undefined)
+        newLayer->m_visibility = (layout.toObject().contains("visibility"))
+                                     ? layout.toObject().value("visibility").toString() : "none";
+     else
+        newLayer->m_visibility = QString("none");
+
+    if(json.contains("filter"))
         newLayer->m_filter = json.value("filter").toArray();
-    }
+
     return returnLayerPtr;
 }
 
