@@ -64,7 +64,7 @@ QColor Bach::getColorFromString(QString colorString)
  *
  * - Otherwise: NotImplementedStyle will be used.
  *
- * \param jsonObj is the JsonObject to parse
+ * \param jsonObj The QJsonObject to parse.
  * \return The Abstract Layer style with all parsed data.
  */
 std::unique_ptr<AbstractLayerStyle> AbstractLayerStyle::fromJson(const QJsonObject &json)
