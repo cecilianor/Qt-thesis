@@ -67,6 +67,11 @@ public:
 
 class FillLayerStyle : public AbstractLayerStyle
 {
+private:
+    QVariant m_fillColor;
+    QVariant m_fillOpacity;
+    QVariant m_fillOutlineColor;
+
 public:
     static std::unique_ptr<FillLayerStyle> fromJson(const QJsonObject &json);
 
@@ -80,10 +85,6 @@ public:
     QVariant getFillOutLineColorAtZoom(int zoomLevel) const;
 
     bool m_antialias;
-private:
-    QVariant m_fillColor;
-    QVariant m_fillOpacity;
-    QVariant m_fillOutlineColor;
 };
 
 class LineLayerStyle : public AbstractLayerStyle
