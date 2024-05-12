@@ -1,9 +1,9 @@
-// Qt header files
+// Qt header files.
 #include <QFile>
 #include <QRegularExpression>
 #include <QtMath>
 
-// Other header files
+// Other header files.
 #include "LayerStyle.h"
 
 /*!
@@ -64,50 +64,52 @@ QColor Bach::getColorFromString(QString colorString)
  *
  * - Otherwise: NotImplementedStyle will be used.
  *
- * \param jsonObj is the JsonObject to parse
+ * \param jsonObj The QJsonObject to parse.
  * \return The Abstract Layer style with all parsed data.
  */
 std::unique_ptr<AbstractLayerStyle> AbstractLayerStyle::fromJson(const QJsonObject &json)
 {
     QString layerType = json.value("type").toString();
     std::unique_ptr<AbstractLayerStyle> returnLayerPtr;
-    if (layerType == "background") {
+    if (layerType == "background")
         returnLayerPtr = BackgroundStyle::fromJson(json);
-    } else if (layerType == "fill") {
+    else if (layerType == "fill")
         returnLayerPtr = FillLayerStyle::fromJson(json);
-    } else if (layerType == "line") {
+    else if (layerType == "line")
         returnLayerPtr = LineLayerStyle::fromJson(json);
-    } else if (layerType == "symbol"){
+    else if (layerType == "symbol")
         returnLayerPtr = SymbolLayerStyle::fromJson(json);
-    } else {
+    else
         returnLayerPtr = NotImplementedStyle::fromJson(json);
-    }
+
+    // Set layer properties.
     AbstractLayerStyle *newLayer = returnLayerPtr.get();
     newLayer->m_id = json.value("id").toString();
     newLayer->m_source = json.value("source").toString();
     newLayer->m_sourceLayer = json.value("source-layer").toString();
     newLayer->m_minZoom = json.value("minzoom").toInt(0);
     newLayer->m_maxZoom = json.value("maxzoom").toInt(24);
-    QJsonValue layout = json.value("layout");
-    if(layout != QJsonValue::Undefined){
-        newLayer->m_visibility = (layout.toObject().contains("visibility")) ? layout.toObject().value("visibility").toString() : "none";
-    } else {
-        newLayer->m_visibility = QString("none");
-    }
 
-    if(json.contains("filter")){
+    QJsonValue layout = json.value("layout");
+    if(layout != QJsonValue::Undefined)
+        newLayer->m_visibility = (layout.toObject().contains("visibility"))
+                                     ? layout.toObject().value("visibility").toString() : "none";
+     else
+        newLayer->m_visibility = QString("none");
+
+    if(json.contains("filter"))
         newLayer->m_filter = json.value("filter").toArray();
-    }
+
     return returnLayerPtr;
 }
 
 /*!
  * \brief StyleSheet::fromJson parses a style sheet.
  *
- * \param styleSheet is a style sheet to parse, passed as a reference to
+ * \param styleSheet The style sheet to parse, passed as a reference to
  * a QJsonDocument.
  *
- * \return  is either the parsed data or a nullopt of there was no data.
+ * \return is either the parsed data or a nullopt of there was no data.
  */
 std::optional<StyleSheet> StyleSheet::fromJson(const QJsonDocument &styleSheetJson)
 {
@@ -119,13 +121,20 @@ std::optional<StyleSheet> StyleSheet::fromJson(const QJsonDocument &styleSheetJs
     out.m_name = styleSheetObject.value("name").toString();
 
     QJsonArray layers = styleSheetObject.value("layers").toArray();
-    for (const auto &layer : layers) {
+    for (const auto &layer : layers)
         out.m_layerStyles.push_back(AbstractLayerStyle::fromJson(layer.toObject()));
-    }
 
     return out;
 }
 
+/*!
+ * \brief StyleSheet::fromJsonBytes
+ * Converts a style sheet QByteArray to a StyleSheet.
+ * If the conversion is unsuccessful, return std::nullopt instead.
+ *
+ * \param input A QByteArray encoding JSON data.
+ * \return The parsed stylesheet or std::nullopt.
+ */
 std::optional<StyleSheet> StyleSheet::fromJsonBytes(const QByteArray& input)
 {
     QJsonParseError parseError;
@@ -150,8 +159,8 @@ std::optional<StyleSheet> StyleSheet::fromJsonFile(const QString& path)
 {
     QFile file{ path };
     bool openSuccess = file.open(QFile::ReadOnly);
-    if (!openSuccess) {
+    if (!openSuccess)
         return std::nullopt;
-    }
+
     return fromJsonBytes(file.readAll());
 }

@@ -1,4 +1,4 @@
-// Qt header files
+// Qt header files.
 #include <QCoreApplication>
 #include <QKeyEvent>
 #include <QtMath>
@@ -6,54 +6,74 @@
 #include <QtMath>
 #include <QWheelEvent>
 
-// Other header files
+// Other header files.
 #include "MapWidget.h"
 #include "Rendering.h"
 
 /*!
  * \brief The TileType enum determines what tile type to render.
  *
- * Supported types:
- *
- * * VectorTile
- * * ImageTile
+ *  Supported types: VectorTile, ImageTile
  */
 enum class TileType {
     VectorTile,
-    ImageTile, // Can be png, jpg, ...
+    ImageTile, // Can be png, jpg, or other types.
 };
 
 
+/*!
+ * \brief MapWidget::MapWidget
+ * Constructs a MapWidget and attaches a filter for key presses.
+ *
+ * \param parent The QWidget to attach the MapWidget to.
+ */
 MapWidget::MapWidget(QWidget *parent) : QWidget(parent)
 {
-    // Establish and install our keypress filter.
+    // Establish and install the keypress filter.
     this->keyPressFilter = std::make_unique<KeyPressFilter>(this);
     QCoreApplication::instance()->installEventFilter(this->keyPressFilter.get());
 }
 
+/*!
+ * \brief MapWidget::~MapWidget
+ * Destructor for the MapWidget class.
+ *
+ * The destructor removes the keypress filter that's used to handle
+ * application key presses.
+ */
 MapWidget::~MapWidget()
 {
-    // Remember to remove our keypress filter.
+    // Remember to remove the keypress filter.
     QCoreApplication::instance()->removeEventFilter(this->keyPressFilter.get());
 }
 
+/*!
+ * \brief MapWidget::keyPressEvent
+ * Handles key presses in the map application.
+ *
+ * Supported keys:
+ * Arrow keys to move around (up, down, left, right).
+ * W zooms in.
+ * S zooms out.
+ *
+ * \param event The event where keyboard keys were pressed.
+ */
 void MapWidget::keyPressEvent(QKeyEvent* event)
 {
-    if (event->key() == Qt::Key::Key_Up) {
+    if (event->key() == Qt::Key::Key_Up)
         panUp();
-    } else if (event->key() == Qt::Key::Key_Down) {
+    else if (event->key() == Qt::Key::Key_Down)
         panDown();
-    } else if (event->key() == Qt::Key::Key_Left) {
+    else if (event->key() == Qt::Key::Key_Left)
         panLeft();
-    } else if (event->key() == Qt::Key::Key_Right) {
+    else if (event->key() == Qt::Key::Key_Right)
         panRight();
-    } else if (event->key() == Qt::Key::Key_W) {
+    else if (event->key() == Qt::Key::Key_W)
         zoomIn();
-    } else if (event->key() == Qt::Key::Key_S) {
+    else if (event->key() == Qt::Key::Key_S)
         zoomOut();
-    } else {
+    else
         QWidget::keyPressEvent(event);
-    }
 }
 
 /*!
@@ -63,9 +83,9 @@ void MapWidget::keyPressEvent(QKeyEvent* event)
  */
 void MapWidget::mousePressEvent(QMouseEvent *event)
 {
-    if (event->buttons() == Qt::MouseButton::LeftButton) {
+    if (event->buttons() == Qt::MouseButton::LeftButton)
         mouseStartPosition = event->pos();
-    }
+
 }
 
 /*!
@@ -187,23 +207,21 @@ void MapWidget::paintEvent(QPaintEvent *event)
 {
     QVector<TileCoord> visibleTiles = calcVisibleTiles();
     std::set<TileCoord> tilesRequested{ visibleTiles.begin(), visibleTiles.end()};
-    // We want this signal to run every time a new tile is loaded later.
+    // This signal should run every time a new tile is loaded later.
     auto signalFn = [this](TileCoord newTile) {
         // Possible optimization:
         // Check if this new tile is relevant anymore, and only
         // issue redraw if it is.
-
         update();
     };
-    // Request tiles
+    // Request tiles.
     QScopedPointer<Bach::RequestTilesResult> requestResult = requestTilesFn(
         tilesRequested,
         signalFn);
 
     QPainter painter(this);
 
-    if (isRenderingVector())
-    {
+    if (isRenderingVector()) {
         // Set up the paint settings based on the MapWidget configuration.
         Bach::PaintVectorTileSettings paintSettings = Bach::PaintVectorTileSettings::getDefault();
         paintSettings.drawFill = isRenderingFill();
@@ -221,9 +239,7 @@ void MapWidget::paintEvent(QPaintEvent *event)
             requestResult->styleSheet(),
             paintSettings,
             isShowingDebug());
-    }
-    else
-    {
+    } else {
         Bach::paintRasterTiles(
             painter,
             x,
@@ -236,11 +252,23 @@ void MapWidget::paintEvent(QPaintEvent *event)
     }
 }
 
+/*!
+ * \brief MapWidget::getViewportZoomLevel
+ * Gets the zoom level of the viewport.
+ *
+ * \return The zoom level of the viewport.
+ */
 double MapWidget::getViewportZoomLevel() const
 {
     return viewportZoomLevel;
 }
 
+/*!
+ * \brief MapWidget::getMapZoomLevel
+ * Gets the zoom level of the map.
+ *
+ * \return The zoom level of the map.
+ */
 int MapWidget::getMapZoomLevel() const
 {
     // Calculate the map zoom level based on the viewport,
@@ -250,6 +278,12 @@ int MapWidget::getMapZoomLevel() const
         getViewportZoomLevel());
 }
 
+/*!
+ * \brief MapWidget::calcVisibleTiles
+ * Calculates which tiles to be displayed in the viewport.
+ *s
+ * \return A QVector containing the coordinates if tiles that should be visible.
+ */
 QVector<TileCoord> MapWidget::calcVisibleTiles() const
 {
     return Bach::calcVisibleTiles(
@@ -260,11 +294,24 @@ QVector<TileCoord> MapWidget::calcVisibleTiles() const
         getMapZoomLevel());
 }
 
+/*!
+ * \brief MapWidget::getPanStepAmount
+ * Gets how much to pan when a panning key is pressed on the keyboard.
+ * The amount to pan varies based on how zoomed in the viewport is.
+ *
+ * \return A number (double) representing how much to pan when panning with arrow keys.
+ */
 double MapWidget::getPanStepAmount() const
 {
     return 0.1 / pow(2, getViewportZoomLevel());
 }
 
+/*!
+ * \brief MapWidget::genericZoom
+ * Zooms in or out the viewport in the application.
+ *
+ * \param magnify If the viewport should be zoomed in (true) or not (false).
+ */
 void MapWidget::genericZoom(bool magnify)
 {
     if (magnify)
@@ -274,16 +321,28 @@ void MapWidget::genericZoom(bool magnify)
     update();
 }
 
+/*!
+ * \brief MapWidget::zoomIn
+ * Zooms in a single step.
+ */
 void MapWidget::zoomIn()
 {
     genericZoom(true);
 }
 
+/*!
+ * \brief MapWidget::zoomOut
+ * Zooms out a single step.
+ */
 void MapWidget::zoomOut()
 {
     genericZoom(false);
 }
 
+/*!
+ * \brief MapWidget::panUp
+ * Pans a single step up.
+ */
 void MapWidget::panUp()
 {
     auto amount = getPanStepAmount();
@@ -291,6 +350,10 @@ void MapWidget::panUp()
     update();
 }
 
+/*!
+ * \brief MapWidget::panDown
+ * Pans a single step down.
+ */
 void MapWidget::panDown()
 {
     auto amount = getPanStepAmount();
@@ -298,6 +361,10 @@ void MapWidget::panDown()
     update();
 }
 
+/*!
+ * \brief MapWidget::panLeft
+ * Pans a single step to the left.
+ */
 void MapWidget::panLeft()
 {
     auto amount = getPanStepAmount();
@@ -305,6 +372,10 @@ void MapWidget::panLeft()
     update();
 }
 
+/*!
+ * \brief MapWidget::panRight
+ * Pans a single step to the right.
+ */
 void MapWidget::panRight()
 {
     auto amount = getPanStepAmount();
@@ -312,6 +383,14 @@ void MapWidget::panRight()
     update();
 }
 
+/*!
+ * \brief MapWidget::setViewport
+ * Updates the center coordinates and the zoom-level of the viewport.
+ *
+ * \param xIn The width of the viewport.
+ * \param yIn The height of the viewport.
+ * \param zoomIn The zoom level to set.
+ */
 void MapWidget::setViewport(double xIn, double yIn, double zoomIn)
 {
     bool change = false;
@@ -324,56 +403,81 @@ void MapWidget::setViewport(double xIn, double yIn, double zoomIn)
         update();
     }
 }
-
+/*!
+ * \brief MapWidget::KeyPressFilter::eventFilter
+ * Filters the arrow key events of the QApplication
+ * and feeds them directly to the MapWidget whenever it's alive.
+ *
+ * \param obj Used to pass the key event to its parent classs.
+ * \param event The arrow key event to be filtered.
+ * \return True if the arrow keys have been pressed.
+ */
 bool MapWidget::KeyPressFilter::eventFilter(QObject *obj, QEvent *event)
-{
-    //if (!mapWidget->hasFocus())
-        //return QObject::eventFilter(obj, event);
-
+{  
     // Only intercept keypress events.
     if (event->type() == QEvent::KeyPress) {
         auto keyEvent = static_cast<QKeyEvent*>(event);
-        switch (keyEvent->key()) {
-        case Qt::Key_Left:
-        case Qt::Key_Right:
-        case Qt::Key_Up:
-        case Qt::Key_Down:
+
+        if ( keyEvent->key() == Qt::Key_Left || keyEvent->key() == Qt::Key_Right
+            || keyEvent->key() == Qt::Key_Up || keyEvent->key() == Qt::Key_Down) {
             mapWidget->keyPressEvent(keyEvent);
-            // Mark event as handled
             return true;
-        default:
-             // Do not intercept other key presses
-            break;
         }
     }
-    // Pass the event on to the parent class for default processing
+    // Pass the event on to the parent class for default processing.
     return QObject::eventFilter(obj, event);
 }
 
+/*!
+ * \brief MapWidget::setShouldDrawFill
+ * Controls if filled in colors should be drawn on the map or not.
+ *
+ * \param drawFill indicates if color should be filled in (true) or not (false).
+ */
 void MapWidget::setShouldDrawFill(bool drawFill)
 {
     renderFill = drawFill;
     update();
 }
 
+/*!
+ * \brief MapWidget::setShouldDrawLines
+ * Controls if lines should be drawn on the map or not.
+ *
+ * \param indicates if lines should be drawn (true) or not (false).
+ */
 void MapWidget::setShouldDrawLines(bool drawLines)
 {
     renderLines = drawLines;
     update();
 }
 
+/*!
+ * \brief MapWidget::setShouldDrawText
+ * Controls if text should be drawn on the map or not.
+ *
+ * \param drawText indicates if text should be drawn (true) or not (false).
+ */
 void MapWidget::setShouldDrawText(bool drawText)
 {
     renderText = drawText;
     update();
 }
 
+/*!
+ * \brief MapWidget::toggleIsShowingDebug
+ * Toggles if the debug menu and lines should be shown or not.
+ */
 void MapWidget::toggleIsShowingDebug()
 {
     showDebug = !showDebug;
     update();
 }
 
+/*!
+ * \brief MapWidget::toggleIsRenderingVectorTile
+ * Toggles if the vector map type should be rendered or not.
+ */
 void MapWidget::toggleIsRenderingVectorTile()
 {
     renderVectorTile = !renderVectorTile;

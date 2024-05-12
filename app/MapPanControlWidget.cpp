@@ -1,18 +1,23 @@
-// Qt header files
+// Qt header files.
 #include <QGridLayout>
 #include <QPushButton>
 
-// Other header files
+// Other header files.
 #include "MapPanControlWidget.h"
 
 using Bach::MapPanControlWidget;
 
-MapPanControlWidget::MapPanControlWidget(MapWidget* parent) : QWidget(parent) {
-    // We set up our 4 directional buttons in a 3x3 grid where most cells are empty.
+/*!
+ * \brief MapPanControlWidget::MapPanControlWidget
+ * Sets up graphical user interface buttons to move up, down, left, and right in app.
+ *
+ * \param parent The MapWidget application that panning controls are attached to.
+ */
+MapPanControlWidget::MapPanControlWidget(MapWidget* parent) : QWidget(parent)
+{
+    // 4 directional buttons are set up in a 3x3 grid where most cells are empty.
     auto layout = new QGridLayout(this);
     setLayout(layout);
-    //layout->setContentsMargins(0,0,0,0);
-    //layout->setSpacing(0);
 
     // Set up each individual button and connect their signals.
     auto upBtn = new QPushButton("Up", this);
