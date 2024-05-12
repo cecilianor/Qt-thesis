@@ -1,18 +1,25 @@
-#include "MapZoomControlWidget.h"
-
-#include <QVBoxLayout>
+// Qt header files.
 #include <QPushButton>
+#include <QVBoxLayout>
+
+// Other header files.
+#include "MapZoomControlWidget.h"
 
 using Bach::MapZoomControlWidget;
 
-MapZoomControlWidget::MapZoomControlWidget(MapWidget* parent) : QWidget(parent) {
-    // We set up our buttons in a simple vertical box layout.
+/*!
+ * \brief MapZoomControlWidget::MapZoomControlWidget
+ * Controls zooming in the map application.
+ *
+ * \param parent The MapWidget application that map zoom controls are attached to.
+ */
+MapZoomControlWidget::MapZoomControlWidget(MapWidget* parent) : QWidget(parent)
+{
+    // Set up application buttons in a simple vertical box layout.
     auto vLayout = new QVBoxLayout(this);
     setLayout(vLayout);
-    //vLayout->setContentsMargins(0,0,0,0);
-    //vLayout->setSpacing(0);
 
-    // Then we set up each individual button and hook them up to the MapWidget events.
+    // Then, set up each individual button and connect them to the MapWidget events.
     auto zoomInBtn = new QPushButton("+", this);
     QObject::connect(zoomInBtn, &QPushButton::clicked, parent, &MapWidget::zoomIn);
     vLayout->addWidget(zoomInBtn);

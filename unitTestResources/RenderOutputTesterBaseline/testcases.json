@@ -1,0 +1,62 @@
+[
+	{
+        "name": "Background only",
+		"draw-fill": false,
+		"draw-lines": false
+    },
+	{
+		"name": "Top worldmap"
+	},
+	{
+		"name": "Top worldmap, map zoom 1",
+		"vp-zoom": 0.1,
+		"map-zoom": 1
+	},
+	{
+		"name": "Top worldmap, viewport zoom 1",
+		"vp-zoom": 1
+	},
+	{
+		"name": "Top worldmap, tile-subset",
+		"map-zoom": 1,
+		"tiles": [ 
+			[1, 0, 0],
+			[1, 1, 1] ]
+	},
+	{
+		"name": "Top worldmap, viewport offset",
+		"coords": [ -180, 45 ]
+	},
+	{
+		"name": "Top worldmap, viewport offset, slight zoom",
+		"coords": [ 10, 60 ],
+		"vp-zoom": 2,
+		"map-zoom": 1
+	},
+	{
+		"name": "Nydalen",
+		"coords": [ 10.765248, 59.949584413 ],
+		"vp-zoom": 12,
+		"map-zoom": 12
+	},
+	{
+		"name": "Nydalen",
+		"coords": [ 10.765248, 59.949584413 ],
+		"vp-zoom": 12.1,
+		"map-zoom": 12
+	},
+	{
+		"name": "Nydalen, no fill",
+		"coords": [ 10.765248, 59.949584413 ],
+		"vp-zoom": 12,
+		"map-zoom": 12,
+		"draw-lines": false
+	},
+	{
+		"name": "Nydalen, no lines",
+		"coords": [ 10.765248, 59.949584413 ],
+		"vp-zoom": 12,
+		"map-zoom": 12,
+		"draw-fill": false
+	}
+]

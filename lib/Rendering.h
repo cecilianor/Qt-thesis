@@ -1,11 +1,13 @@
 #ifndef RENDERING_HPP
 #define RENDERING_HPP
 
+// Qt header files
 #include <QMap>
 #include <QPainter>
 #include <QPair>
 
-#include "Layerstyle.h"
+// Other header files
+#include "LayerStyle.h"
 #include "TileCoord.h"
 #include "VectorTiles.h"
 
@@ -23,8 +25,15 @@ namespace Bach {
      */
     const int defaultDesiredTileSizePixels = 512;
 
-    struct PaintingDetailsPolygon{
-        QPainter *painter;
+    /*!
+     * \internal
+     * \brief The PaintingDetailsPolygon class
+     * Helper class for passing values around internally in painter functions.
+     *
+     * Only for internal use.
+     */
+    struct PaintingDetailsPolygon {
+        QPainter *painter = nullptr;
         const FillLayerStyle *layerStyle = nullptr;
         const PolygonFeature *feature = nullptr;
         int mapZoom{};
@@ -32,8 +41,15 @@ namespace Bach {
         QTransform transformIn;
     };
 
-    struct PaintingDetailsLine{
-        QPainter *painter;
+    /*!
+     * \internal
+     * \brief The PaintingDetailsLine class
+     * Helper class for passing values around internally in painter functions.
+     *
+     * Only for internal use.
+     */
+    struct PaintingDetailsLine {
+        QPainter *painter = nullptr;
         const LineLayerStyle *layerStyle = nullptr;
         const LineFeature *feature = nullptr;
         int mapZoom{};
@@ -41,8 +57,15 @@ namespace Bach {
         QTransform transformIn;
     };
 
-    struct PaintingDetailsPoint{
-        QPainter *painter;
+    /*!
+     * \internal
+     * \brief The PaintingDetailsPoint class
+     * Helper class for passing values around internally in painter functions.
+     *
+     * Only for internal use.
+     */
+    struct PaintingDetailsPoint {
+        QPainter *painter = nullptr;
         const SymbolLayerStyle *layerStyle = nullptr;
         const PointFeature *feature = nullptr;
         int mapZoom{};
@@ -50,10 +73,85 @@ namespace Bach {
         QTransform transformIn;
     };
 
+    /*!
+     * \internal
+     * \brief The PaintingDetailsPointCurved class
+     * Helper class for passing values around internally in painter functions.
+     *
+     * Only for internal use.
+     */
+    struct PaintingDetailsPointCurved {
+        QPainter *painter = nullptr;
+        const SymbolLayerStyle *layerStyle = nullptr;
+        const LineFeature *feature = nullptr;
+        int mapZoom{};
+        double vpZoom{};
+        QTransform transformIn;
+    };
 
-    QPair<double, double> lonLatToWorldNormCoord(double lon, double lat);
-    QPair<double, double> lonLatToWorldNormCoordDegrees(double lon, double lat);
-    QPair<double, double> calcViewportSizeNorm(double viewportZoom, double viewportAspect);
+    /*!
+     * \internal
+     * \brief The vpGlobalText class
+     * Helper class for passing values around internally in painter functions.
+     *
+     * Only for internal use.
+     */
+    struct vpGlobalText{
+        QPoint tileOrigin;
+        QList<QPainterPath> path;
+        QList<QString> text;
+        QList<QPoint> position;
+        QFont font;
+        QColor textColor;
+        int outlineSize;
+        QColor outlineColor;
+        QRect boundingRect;
+    };
+
+
+    /*!
+     * \internal
+     * \brief The singleCurvedTextCharacter class
+     * Helper class for passing values around internally in painter functions.
+     *
+     * Only for internal use.
+     */
+    struct singleCurvedTextCharacter {
+        QChar character;
+        QPointF position;
+        qreal angle;
+    };
+
+    /*!
+     * \internal
+     * \brief The vpGlobalCurvedText class
+     * Helper class for passing values around internally in painter functions.
+     *
+     * Only for internal use.
+     */
+    struct vpGlobalCurvedText {
+        QVector<singleCurvedTextCharacter> textList;
+        QFont font;
+        QColor textColor;
+        float opacity;
+        QPoint tileOrigin;
+        QColor outlineColor;
+        int outlineSize;
+    };
+
+    /*!
+     * \brief The MapCoordinate struct stores a map coordinate with a x and y.
+     *
+     * `x` and y are both doubles.
+     */
+    struct MapCoordinate {
+        double x;
+        double y;
+    };
+
+    MapCoordinate lonLatToWorldNormCoord(double lon, double lat);
+    MapCoordinate lonLatToWorldNormCoordDegrees(double lon, double lat);
+    MapCoordinate calcViewportSizeNorm(double viewportZoom, double viewportAspect);
     double normalizeValueToZeroOneRange(double value, double min, double max);
 
     void paintSingleTileFeature_Polygon(PaintingDetailsPolygon details);
@@ -61,11 +159,24 @@ namespace Bach {
     void paintSingleTileFeature_Line(PaintingDetailsLine details);
 
 
-    void paintSingleTileFeature_Point(
+    void processSingleTileFeature_Point(
         PaintingDetailsPoint details,
         const int tileSize,
-        bool forceNoChangeFontType,
-        QVector<QRect> &rects);
+        const int tileOriginX,
+        const int tileOriginY,
+        const bool forceNoChangeFontType,
+        QVector<QRect> &rects,
+        QVector<vpGlobalText> &vpTextList);
+
+    void paintSingleTileFeature_Point_Curved(PaintingDetailsPointCurved details);
+
+    void processSingleTileFeature_Point_Curved(
+        PaintingDetailsPointCurved details,
+        const int tileSize,
+        int tileOriginX,
+        int tileOriginY,
+        QVector<QRect> &rects,
+        QVector<vpGlobalCurvedText> &vpCurvedTextList);
 
 
     int calcMapZoomLevelForTileSizePixels(
@@ -110,6 +221,13 @@ namespace Bach {
          *  the one that is already set by the QPainter beforehand.
          */
         bool forceNoChangeFontType = {};
+
+        /*!
+         * \brief
+         * used to switch the rendering function between the QPainter drawPath function
+         * and the QTextLayout draw function for text rendering.
+         */
+        bool useQTextLayout = {};
 
         static PaintVectorTileSettings getDefault();
     };

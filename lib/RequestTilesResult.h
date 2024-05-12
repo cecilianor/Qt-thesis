@@ -1,9 +1,11 @@
 #ifndef REQUESTTILESRESULT_H
 #define REQUESTTILESRESULT_H
 
+// Qt header files
 #include <QObject>
 
-#include <Layerstyle.h>
+// Other header files
+#include <LayerStyle.h>
 #include <TileCoord.h>
 #include <VectorTiles.h>
 

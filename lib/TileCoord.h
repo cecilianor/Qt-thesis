@@ -1,6 +1,7 @@
 #ifndef TILECOORD_HPP
 #define TILECOORD_HPP
 
+// Qt header files
 #include <QString>
 
 // Represents the position of a tile within the maps grid at a given zoom level.

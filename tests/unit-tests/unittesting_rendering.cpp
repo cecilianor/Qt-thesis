@@ -1,6 +1,8 @@
+// Qt header files
 #include <QObject>
 #include <QTest>
 
+// Other header files
 #include "Rendering.h"
 
 class UnitTesting : public QObject
@@ -44,10 +46,10 @@ void UnitTesting::normalizeValueToZeroOneRange_returns_number_when_large_divisor
 void UnitTesting::calcViewportSizeNorm_returns_expected_basic_cases()
 {
     constexpr auto epsilon = 0.001;
-    auto compareFn = [](QPair<double, double> a, QPair<double, double> b) {
-        if (std::abs(a.first - b.first) > epsilon)
+    auto compareFn = [](Bach::MapCoordinate a, Bach::MapCoordinate b) {
+        if (std::abs(a.x - b.x) > epsilon)
             return false;
-        if (std::abs(a.second - b.second) > epsilon)
+        if (std::abs(a.y - b.y) > epsilon)
             return false;
         return true;
     };
@@ -55,7 +57,7 @@ void UnitTesting::calcViewportSizeNorm_returns_expected_basic_cases()
     struct TestItem {
         double inputViewportZoom;
         double inputAspect;
-        QPair<double, double> expectedOut;
+        Bach::MapCoordinate expectedOut;
     };
     QVector<TestItem> testItems = {
         { 0, 1.0, {1, 1 } },
@@ -69,13 +71,13 @@ void UnitTesting::calcViewportSizeNorm_returns_expected_basic_cases()
 
     for (int i = 0; i < testItems.size(); i++) {
         const auto &item = testItems[i];
-        auto result = Bach::calcViewportSizeNorm(item.inputViewportZoom, item.inputAspect);
+        Bach::MapCoordinate result = Bach::calcViewportSizeNorm(item.inputViewportZoom, item.inputAspect);
         auto errorMsg = QString("At item #%1. Expected (%2, %3), but result was (%4, %5).")
                             .arg(i)
-                            .arg(item.expectedOut.first)
-                            .arg(item.expectedOut.second)
-                            .arg(result.first)
-                            .arg(result.second);
+                            .arg(item.expectedOut.x)
+                            .arg(item.expectedOut.y)
+                            .arg(result.x)
+                            .arg(result.y);
         QVERIFY2(compareFn(item.expectedOut, result), errorMsg.toUtf8());
     }
 }
@@ -125,17 +127,17 @@ void UnitTesting::calcMapZoomLevelForTileSizePixels_returns_expected_basic_value
 void UnitTesting::longLatToWorldNormCoordDegrees_returns_expected_basic_values()
 {
     constexpr double epsilon = 0.001;
-    auto comparePair = [](const QPair<double, double> &a, const QPair<double, double> &b) {
-        if (std::abs(a.first - b.first) > epsilon)
+    auto comparePair = [](Bach::MapCoordinate a, Bach::MapCoordinate b) {
+        if (std::abs(a.x - b.x) > epsilon)
             return false;
-        else if (std::abs(a.second - b.second) > epsilon)
+        else if (std::abs(a.y - b.y) > epsilon)
             return false;
         return true;
     };
 
     struct TestItem {
-        QPair<double, double> input;
-        QPair<double, double> expectedOut;
+        Bach::MapCoordinate input;
+        Bach::MapCoordinate expectedOut;
     };
     TestItem items[] = {
         { {0, 0}, {0.5, 0.5} },
@@ -146,15 +148,15 @@ void UnitTesting::longLatToWorldNormCoordDegrees_returns_expected_basic_values()
     };
 
     for (const auto &item : items) {
-        auto out = Bach::lonLatToWorldNormCoordDegrees(item.input.first, item.input.second);
+        auto out = Bach::lonLatToWorldNormCoordDegrees(item.input.x, item.input.y);
 
         auto descr = QString("Input (%1, %2) did not match expected output (%3, %4). Instead got (%5, %6).")
-            .arg(item.input.first)
-            .arg(item.input.second)
-            .arg(item.expectedOut.first)
-            .arg(item.expectedOut.second)
-            .arg(out.first)
-            .arg(out.second)
+            .arg(item.input.x)
+            .arg(item.input.y)
+            .arg(item.expectedOut.x)
+            .arg(item.expectedOut.y)
+            .arg(out.x)
+            .arg(out.y)
             .toUtf8();
 
         QVERIFY2(comparePair(out, item.expectedOut), descr.constData());

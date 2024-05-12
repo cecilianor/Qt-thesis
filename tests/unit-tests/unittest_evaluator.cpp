@@ -1,3 +1,4 @@
+// Qt header files
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -5,6 +6,7 @@
 #include <QObject>
 #include <QTest>
 
+// Other header files
 #include "Evaluator.h"
 
 class UnitTesting : public QObject

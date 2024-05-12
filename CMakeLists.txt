@@ -44,15 +44,21 @@ qt_add_library(maplib STATIC
     lib/Rendering_Text.cpp
     lib/TileCoord.h
     lib/TileCoord.cpp
-    lib/Layerstyle.h
-    lib/Layerstyle.cpp
     lib/TileLoader.h
     lib/TileLoader.cpp
     lib/Evaluator.h
     lib/Evaluator.cpp
     lib/Utilities.h
     lib/Utilities.cpp
-    lib/RequestTilesResult.h)
+    lib/RequestTilesResult.h
+    lib/LayerStyle.h
+    lib/LayerStyle.cpp
+    lib/LayerStyle_Background.cpp
+    lib/LayerStyle_Fill.cpp
+    lib/LayerStyle_Line.cpp
+    lib/LayerStyle_Symbol.cpp
+    lib/LayerStyle_NotImplemented.cpp
+    )
 
 # Qt containers by default don't include asserts (i.e out of bounds checks) in their containers
 # under the RelWithDebInfo config. We enforce that they do to help us catch bugs.
@@ -113,27 +119,11 @@ qt_finalize_executable(application)
 # Apply the windows deployment process to our executable.
 deploy_runtime_dependencies_if_win32(application)
 
-# Create the example command line utility example.
-qt_add_executable(cmd_example cmd_example.cpp)
-target_link_libraries(cmd_example PUBLIC maplib)
-
 # All testing related code goes in here
 if (BUILD_TESTS)
     set(CMAKE_AUTOMOC ON)
     # Find the necessary packages on the system.
     find_package(Qt6 REQUIRED COMPONENTS Test)
-
-    # Add the first test executable: tileloader test
-    qt_add_executable(tileloader_test tests/unit-tests/unittesting_tileloader.cpp)
-    qt_add_resources(tileloader_test "unitTestResourcesTileLoader"
-        PREFIX "/"
-        FILES
-        unitTestResources/loadTileFromCache_fails_on_broken_file/file.mvt
-        unitTestResources/loadTileFromCache_fails_on_broken_file/file.png
-        unitTestResources/loadTileFromCache_parses_cached_file_successfully/file.mvt
-        unitTestResources/loadTileFromCache_parses_cached_file_successfully/file.png
-    )
-    target_link_libraries(tileloader_test PUBLIC maplib Qt6::Test)
 
 
     # Add the second executable: rendering unit test
@@ -170,7 +160,6 @@ if (BUILD_TESTS)
     target_link_libraries(evaluator_test PUBLIC maplib Qt6::Test)
 
     # Make sure we deploy the correct runtime dependencies to the test.
-    deploy_runtime_dependencies_if_win32(tileloader_test)
     deploy_runtime_dependencies_if_win32(render_test)
     deploy_runtime_dependencies_if_win32(layerstyle_test)
     deploy_runtime_dependencies_if_win32(vectortile_test)
@@ -178,9 +167,14 @@ if (BUILD_TESTS)
 
     # Add executables to CTest.
     enable_testing()
-    add_test(NAME TileLoaderTest COMMAND tileloader_test)
+
     add_test(NAME RenderTest COMMAND render_test)
     add_test(NAME LayerStyleTest COMMAND layerstyle_test)
     add_test(NAME VectorTileTest COMMAND vectortile_test)
     add_test(NAME EvaluatorTest COMMAND evaluator_test)
+
+    add_subdirectory(tests/unit-tests/tileloader)
+    add_subdirectory(tests/merlin)
+    add_subdirectory(tests/tile_parsing_benchmark)
+    add_subdirectory(tests/tileloader_threaded_benchmark)
 endif()

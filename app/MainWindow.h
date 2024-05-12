@@ -1,40 +1,35 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
+// Qt header files.
 #include <QKeyEvent>
+#include <QMainWindow>
 
+// Other header files.
 #include "MapWidget.h"
 
 namespace Bach {
-    /*! \class Main window Widget class for our application.
+/*! \class Main window Widget class for the application.
      *
-     * Constructor sets up the smaller Widgets also.
+     * Constructor sets up the smaller Widgets as well.
      */
-    class MainWindow : public QMainWindow {
-        Q_OBJECT
+class MainWindow : public QMainWindow
+{
+    Q_OBJECT
 
-    public:
-        MainWindow(MapWidget*);
+private:
+    // References to the various widgets whose position must remain updated.
+    MapWidget* mapWidget = nullptr;
+    QWidget* zoomControls = nullptr;
+    QWidget* panControls = nullptr;
+    QWidget* renderControls = nullptr;
 
-        void resizeEvent(QResizeEvent*) override;
-        void showEvent(QShowEvent*) override;
+    void updateControlsPositions();
 
-    private:
-        /* Updates the positions of the floating control widgets (zoom, panning...)
-         *
-         * Should be called every time the widget changes size.
-         * This updates the position of our control widgets,
-         * so that they're placed correctly relative to this window.
-         */
-        void updateControlsPositions();
-
-        // References to the various widgets whose position we need to keep
-        // updated.
-        MapWidget* mapWidget = nullptr;
-        QWidget* zoomControls = nullptr;
-        QWidget* panControls = nullptr;
-        QWidget* renderControls = nullptr;
-    };
+public:
+    MainWindow(MapWidget*);
+    void resizeEvent(QResizeEvent*) override;
+    void showEvent(QShowEvent*) override;
+};
 }
 #endif // MAINWINDOW_H

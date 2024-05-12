@@ -1,7 +1,8 @@
+// Qt header files
 #include <QObject>
 #include <QTest>
 
-#include "Layerstyle.h"
+#include "LayerStyle.h"
 
 class UnitTesting : public QObject
 {
@@ -50,7 +51,12 @@ void UnitTesting::initTestCase()
     if (parserError.error != QJsonParseError::NoError)
         QFAIL("JSON parsing error: " + parserError.errorString().toUtf8());
 
-    styleSheet.parseSheet(styleSheetDoc);
+    std::optional<StyleSheet> styleSheetOpt = StyleSheet::fromJson(styleSheetDoc);
+    QVERIFY2(
+        styleSheetOpt.has_value(),
+        "Failed to parse the style sheet object. Expect following tests to fail.");
+    styleSheet = std::move(styleSheetOpt.value());
+
     backgroundLayer = styleSheet.m_layerStyles.at(0).get();
     fillLayer = styleSheet.m_layerStyles.at(1).get();
     lineLayer = styleSheet.m_layerStyles.at(2).get();
