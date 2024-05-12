@@ -48,6 +48,10 @@ public:
 
 class BackgroundStyle : public AbstractLayerStyle
 {
+private:
+    QVariant m_backgroundColor;
+    QVariant m_backgroundOpacity;
+
 public:
     static std::unique_ptr<BackgroundStyle> fromJson(const QJsonObject &json);
 
@@ -58,11 +62,6 @@ public:
 
     QVariant getColorAtZoom(int zoomLevel) const;
     QVariant getOpacityAtZoom(int zoomLevel) const;
-
-private:
-    QVariant m_backgroundColor;
-    QVariant m_backgroundOpacity;
-
 };
 
 class FillLayerStyle : public AbstractLayerStyle
