@@ -88,6 +88,13 @@ private:
 
 class LineLayerStyle : public AbstractLayerStyle
 {
+private:
+    QString m_lineCap;
+    QString m_lineJoin;
+    QVariant m_lineColor;
+    QVariant m_lineOpacity;
+    QVariant m_lineWidth;
+
 public:
     static std::unique_ptr<LineLayerStyle> fromJson(const QJsonObject &json);
 
@@ -103,16 +110,6 @@ public:
     Qt::PenCapStyle getCapStyle() const;
 
     QList<qreal> m_lineDashArray;
-
-private:
-    QString m_lineCap;
-    QString m_lineJoin;
-
-    QVariant m_lineColor;
-
-    QVariant m_lineOpacity;
-
-    QVariant m_lineWidth;
 };
 
 class SymbolLayerStyle : public AbstractLayerStyle
