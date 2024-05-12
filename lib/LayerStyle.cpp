@@ -106,10 +106,10 @@ std::unique_ptr<AbstractLayerStyle> AbstractLayerStyle::fromJson(const QJsonObje
 /*!
  * \brief StyleSheet::fromJson parses a style sheet.
  *
- * \param styleSheet is a style sheet to parse, passed as a reference to
+ * \param styleSheet The style sheet to parse, passed as a reference to
  * a QJsonDocument.
  *
- * \return  is either the parsed data or a nullopt of there was no data.
+ * \return is either the parsed data or a nullopt of there was no data.
  */
 std::optional<StyleSheet> StyleSheet::fromJson(const QJsonDocument &styleSheetJson)
 {
@@ -121,9 +121,8 @@ std::optional<StyleSheet> StyleSheet::fromJson(const QJsonDocument &styleSheetJs
     out.m_name = styleSheetObject.value("name").toString();
 
     QJsonArray layers = styleSheetObject.value("layers").toArray();
-    for (const auto &layer : layers) {
+    for (const auto &layer : layers)
         out.m_layerStyles.push_back(AbstractLayerStyle::fromJson(layer.toObject()));
-    }
 
     return out;
 }
