@@ -1,6 +1,7 @@
 #ifndef LAYERSTYLE_H
 #define LAYERSTYLE_H
 
+// Qt header files.
 #include <QColor>
 #include <QFont>
 #include <QImage>
