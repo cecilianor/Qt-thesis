@@ -114,6 +114,14 @@ public:
 
 class SymbolLayerStyle : public AbstractLayerStyle
 {
+private:
+    QVariant m_textSize;
+    QVariant m_textColor;
+    QVariant m_textOpacity;
+    QVariant m_symbolSpacing;
+    QVariant m_textLetterSpacing;
+    QVariant m_textMaxAngle;
+
 public:
     static std::unique_ptr<SymbolLayerStyle> fromJson(const QJsonObject &json);
 
@@ -130,21 +138,9 @@ public:
 
     QVariant m_textField;
     QStringList m_textFont;
-
     QVariant m_textMaxWidth = 10;
-
     QVariant m_textHaloWidth;
     QVariant m_textHaloColor;
-private:
-    QVariant m_textSize;
-
-    QVariant m_textColor;
-
-    QVariant m_textOpacity;
-
-    QVariant m_symbolSpacing;
-    QVariant m_textLetterSpacing;
-    QVariant m_textMaxAngle;
 };
 
 class NotImplementedStyle : public AbstractLayerStyle
@@ -198,7 +194,7 @@ inline T getStopOutput(QList<QPair<int, T>> list, int currentZoom)
 
 namespace Bach {
 
-    /*!
+/*!
      * \brief getColorFromString creates a QColor object from an HSL color string.
      *
      * The string is expected to be in one of the following formats:
@@ -209,7 +205,7 @@ namespace Bach {
      *
      * \return a QColor object.
      */
-    QColor getColorFromString(QString colorString);
+QColor getColorFromString(QString colorString);
 }
 
 #endif // LAYERSTYLE_H
