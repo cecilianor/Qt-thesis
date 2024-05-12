@@ -384,9 +384,12 @@ static float lerp(QPair<float, float> stop1, QPair<float, float> stop2, int curr
  *
  * \return a QVariant containing the result of the interpolation.
  */
-QVariant Evaluator::interpolate(const QJsonArray &array, const AbstractLayerFeature *feature, int mapZoomLevel, float vpZoomLevel)
+QVariant Evaluator::interpolate(
+    const QJsonArray &array,
+    const AbstractLayerFeature *feature,
+    int mapZoomLevel,
+    float vpZoomLevel)
 {
-    QVariant returnVariant;
     // Loop over the values array starting at index 3 and find the two pairs that the value falls between.
     // Start at index 3 because element 0 contains the operation keyword, element 1 contains the type of interpolation,
     // and element 2 contains the name of the value for the interpolation.
