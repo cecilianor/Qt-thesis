@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Cecilia Norevik Bratlie, Nils Petter Skålerud, Eimen Oueslati
+// SPDX-License-Identifier: MIT
+
 #ifndef VECTORTILES_H
 #define VECTORTILES_H
 
