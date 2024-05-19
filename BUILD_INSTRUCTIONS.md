@@ -121,12 +121,5 @@ If you are using Windows at this point, you will get an error when running the i
 ```
 Then press the button "Re-Configure with Initial Parameters".
 
-
-# Running the tests
-Tests can be ran by navigating to the build folder and running `ctest`.
-
-Note: On headless environments we need to set the `QT_QPA_PLATFORM` environment variable to `offscreen`. This step is optional on some systems (such as regular Windows).
-```
-export QT_QPA_PLATFORM=offscreen
-ctest --rerun-failed --output-on-failure
-```
+# Running the software
+Instructions on how to run the software can be found in [HOW_TO_RUN.md](HOW_TO_RUN.md)

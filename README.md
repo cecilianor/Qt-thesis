@@ -35,7 +35,10 @@ https://github.com/cecilianor/Qt-thesis/assets/73423072/b443ae4d-13ac-49cd-91fb-
 ## How to Build the Project
 Build instructions can be found in [BUILD_INSTRUCTIONS.md](BUILD_INSTRUCTIONS.md)
 
+## How to Run the Project
+Once built, instructions on how to run the code can be found in [HOW_TO_RUN.md](HOW_TO_RUN.md)
+
 ## Merlin
-Details on the rendering testing system can be found in [tests/merlin/README.md](tests/merlin/README.md)
+Details on the rendering testing subsystem can be found in [tests/merlin/README.md](tests/merlin/README.md)
 
 

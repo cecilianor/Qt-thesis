@@ -1,3 +1,6 @@
+// Copyright (c) 2024 Cecilia Norevik Bratlie, Nils Petter Skålerud, Eimen Oueslati
+// SPDX-License-Identifier: MIT
+
 #include "Evaluator.h"
 #include "Rendering.h"
 #include <QRandomGenerator>
