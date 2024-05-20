@@ -1,7 +1,7 @@
 # Qt Bachelor Thesis Repository
 
 ## About this Repository
-This repository hosts the bachelor project authored by [Eimen Oueslati](https://github.com/EimenOueslati), [Nils Petter Skålerud](https://github.com/Didgy74), and [Cecilia Norevik Bratlie](https://github.com/cecilianor). The core goal of the project is to develop a vector-based map application that uses the [MapBox vector format](https://github.com/mapbox/vector-tile-spec/blob/master/2.1/README.md). The application is developed in C++ with the Qt framework.
+This repository, accessible through the URL [https://github.com/cecilianor/QT-thesis](https://github.com/cecilianor/QT-thesis), hosts the bachelor project authored by [Eimen Oueslati](https://github.com/EimenOueslati), [Nils Petter Skålerud](https://github.com/Didgy74), and [Cecilia Norevik Bratlie](https://github.com/cecilianor). The core goal of the project is to develop a vector-based map application that uses the [MapBox vector format](https://github.com/mapbox/vector-tile-spec/blob/master/2.1/README.md). The application is developed in C++ with the Qt framework.
 
 ## Details
 The project is part of a bachelor thesis at the Norwegian University of Science and Technology (NTNU). The solution is developed in C++17 and relies heavily on the Qt framework. Cmake is the project's build system. The application renders geographical data in both vector and raster format, and the data is supplied by [MapTiler](https://www.maptiler.com). The application first requests and parses styling data, and then requests, decodes, styles, and renders the geographical data on screen. The application is multithreaded, and the current solution only supports the Basic v2 map style. The requested map tiles are cached on disk for better performance.
